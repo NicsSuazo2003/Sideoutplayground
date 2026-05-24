@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Lock, Check, Zap, Wind, Shield, Droplets, ParkingCircle, Tv2, Users } from 'lucide-react';
 import { useBookingStore } from '../../stores/bookingStore';
-import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
 import { StarRating } from '../../components/ui/StarRating';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -29,7 +28,6 @@ function getDateStrip(): string[] {
 export function BookingPage() {
   const navigate = useNavigate();
   const { court, selectedDate, selectedSlots, availability, isLoading, fetchCourt, fetchAvailability, setSelectedDate, selectSlot, deselectSlot } = useBookingStore();
-  const { user } = useAuthStore();
   const [dateOffset, setDateOffset] = useState(0);
   const dates = getDateStrip();
   const visibleDates = dates.slice(dateOffset, dateOffset + 7);
@@ -44,13 +42,8 @@ export function BookingPage() {
     else selectSlot(slot);
   };
 
-  const discount = user?.membershipTier === 'gold' ? 0.10 : user?.membershipTier === 'silver' ? 0.08 : user?.membershipTier === 'bronze' ? 0.05 : 0;
   const pricePerHour = court?.pricePerHour || 20;
   const subtotal = selectedSlots.length * pricePerHour;
-  const discountAmt = Math.round(subtotal * discount * 100) / 100;
-  const total = subtotal - discountAmt;
-
-  const tierLabels: Record<string, string> = { gold: 'Gold Member 10% off', silver: 'Silver Member 8% off', bronze: 'Bronze Member 5% off' };
 
   return (
     <div className="pt-16 min-h-screen">
@@ -200,20 +193,10 @@ export function BookingPage() {
                       </div>
                     ))}
                   </div>
-                  <div className="border-t border-white/8 pt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-white/50">{selectedSlots.length}h × ${pricePerHour}</span>
-                      <span className="text-white">${subtotal}</span>
-                    </div>
-                    {discount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-[#7CFC00]">{tierLabels[user?.membershipTier || '']}</span>
-                        <span className="text-[#7CFC00]">-${discountAmt.toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between font-black text-lg border-t border-white/8 pt-2 mt-2">
-                      <span className="text-white">Total</span>
-                      <span className="text-[#7CFC00]">${total.toFixed(2)}</span>
+                  <div className="border-t border-white/8 pt-4">
+                    <div className="flex justify-between font-black text-lg">
+                      <span className="text-white">{selectedSlots.length} {selectedSlots.length === 1 ? 'hour' : 'hours'}</span>
+                      <span className="text-[#7CFC00]">${subtotal}</span>
                     </div>
                   </div>
                   <Button

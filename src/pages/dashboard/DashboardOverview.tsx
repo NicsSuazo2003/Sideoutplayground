@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, CreditCard, ArrowRight, TrendingUp } from 'lucide-react';
+import { Calendar, Clock, Zap, ArrowRight, TrendingUp } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { getUserBookings } from '../../services/bookingService';
 import { Button } from '../../components/ui/Button';
-import { StatusBadge, TierBadge } from '../../components/ui/Badge';
+import { StatusBadge } from '../../components/ui/Badge';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import type { Booking } from '../../types';
@@ -32,7 +32,7 @@ export function DashboardOverview() {
   const stats = [
     { label: 'Total Bookings', value: totalBookings, icon: Calendar, color: '#7CFC00' },
     { label: 'Hours Played', value: hoursPlayed, icon: Clock, color: '#FF1493' },
-    { label: 'Current Tier', value: user?.membershipTier ? user.membershipTier.charAt(0).toUpperCase() + user.membershipTier.slice(1) : 'Free', icon: CreditCard, color: '#FFD700' },
+    { label: 'Upcoming', value: upcoming.length, icon: Zap, color: '#FFD700' },
   ];
 
   return (
@@ -108,24 +108,16 @@ export function DashboardOverview() {
           transition={{ delay: 0.4 }}
           className="glass-card p-5"
         >
-          <h2 className="text-white font-bold mb-4">Membership Status</h2>
+          <h2 className="text-white font-bold mb-4">Account</h2>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-full bg-[#7CFC00]/20 flex items-center justify-center text-[#7CFC00] font-black text-lg">
               {user?.name?.charAt(0)}
             </div>
             <div>
               <div className="text-white font-semibold">{user?.name}</div>
-              <TierBadge tier={user?.membershipTier || 'free'} />
+              <div className="text-white/50 text-xs">{user?.email}</div>
             </div>
           </div>
-          {user?.membershipTier === 'free' && (
-            <div className="glass rounded-xl p-4 mb-4">
-              <p className="text-white/60 text-sm mb-3">Upgrade for exclusive discounts & priority booking</p>
-              <Button variant="pink" size="sm" onClick={() => navigate('/dashboard/membership')}>
-                Upgrade Now
-              </Button>
-            </div>
-          )}
           <div className="text-xs text-white/30 mt-2">
             Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—'}
           </div>

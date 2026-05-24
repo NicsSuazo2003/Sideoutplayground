@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, Calendar, CreditCard, Trophy, Settings, CheckCheck } from 'lucide-react';
+import { Bell, Calendar, Settings, CheckCheck } from 'lucide-react';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -9,15 +9,11 @@ import type { NotificationType } from '../../types';
 
 const typeIcon: Record<NotificationType, typeof Bell> = {
   booking: Calendar,
-  membership: CreditCard,
-  tournament: Trophy,
   system: Settings,
 };
 
 const typeColor: Record<NotificationType, string> = {
   booking: '#7CFC00',
-  membership: '#FFD700',
-  tournament: '#FF1493',
   system: '#94a3b8',
 };
 

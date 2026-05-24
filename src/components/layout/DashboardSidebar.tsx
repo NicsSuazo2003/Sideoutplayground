@@ -1,12 +1,11 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, CreditCard, User, Bell, LogOut, Zap } from 'lucide-react';
+import { LayoutDashboard, Calendar, User, Bell, LogOut, Zap } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useNotificationStore } from '../../stores/notificationStore';
 
 const links = [
   { icon: LayoutDashboard, label: 'Overview', href: '/dashboard' },
   { icon: Calendar, label: 'My Bookings', href: '/dashboard/my-bookings' },
-  { icon: CreditCard, label: 'Membership', href: '/dashboard/membership' },
   { icon: User, label: 'Profile', href: '/dashboard/profile' },
   { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
 ];
@@ -37,7 +36,7 @@ export function DashboardSidebar() {
           </div>
           <div className="overflow-hidden">
             <div className="text-white text-sm font-semibold truncate">{user?.name}</div>
-            <div className="text-white/40 text-xs capitalize">{user?.membershipTier} member</div>
+            <div className="text-white/40 text-xs">{user?.email}</div>
           </div>
         </div>
 

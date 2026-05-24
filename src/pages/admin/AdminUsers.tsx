@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAdminStore } from '../../stores/adminStore';
-import { TierBadge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -44,7 +43,6 @@ export function AdminUsers() {
               <thead>
                 <tr className="border-b border-white/8 text-white/40 text-xs">
                   <th className="text-left p-4 font-semibold">Player</th>
-                  <th className="text-left p-4 font-semibold">Membership</th>
                   <th className="text-left p-4 font-semibold">Joined</th>
                   <th className="text-left p-4 font-semibold">Bookings</th>
                   <th className="text-left p-4 font-semibold">Status</th>
@@ -66,7 +64,6 @@ export function AdminUsers() {
                         </div>
                       </div>
                     </td>
-                    <td className="p-4"><TierBadge tier={u.membershipTier} /></td>
                     <td className="p-4 text-white/50">{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td className="p-4 text-white/70">{u.bookingsCount}</td>
                     <td className="p-4">

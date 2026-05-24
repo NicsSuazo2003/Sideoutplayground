@@ -8,8 +8,6 @@ import { Button } from '../ui/Button';
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Book a Slot', href: '/book' },
-  { label: 'Tournaments', href: '/tournaments' },
-  { label: 'Membership', href: '/dashboard/membership' },
 ];
 
 export function Navbar() {

@@ -23,7 +23,6 @@ export async function register(data: { name: string; email: string; phone: strin
     email: data.email,
     phone: data.phone,
     role: 'user',
-    membershipTier: 'free',
     avatar: null,
     createdAt: new Date().toISOString(),
     bookingsCount: 0,

@@ -1,10 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle, Check, Star, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { StarRating } from '../components/ui/StarRating';
-import { mockMembershipPlans } from '../mocks/membershipPlans';
 
 const amenityIcons: Record<string, typeof Zap> = {
   'LED Lighting': Zap,
@@ -18,9 +17,9 @@ const amenityIcons: Record<string, typeof Zap> = {
 };
 
 const testimonials = [
-  { name: 'Alex Rivera', title: 'Gold Member', quote: "The court surface is absolutely pristine. I've played at dozens of facilities and Side Out Arena is by far the best indoor pickleball court in the region.", rating: 5 },
-  { name: 'Jordan Kim', title: 'Silver Member', quote: "Booking is seamless, the facility is immaculate, and the staff is incredibly helpful. I play here 3x a week and couldn't imagine going anywhere else.", rating: 5 },
-  { name: 'Riley Chen', title: 'Gold Member', quote: "The lighting and climate control make it perfect year-round. My game has improved significantly since I joined — the court conditions are always tournament-quality.", rating: 5 },
+  { name: 'Alex Rivera', title: 'Regular Player', quote: "The court surface is absolutely pristine. I've played at dozens of facilities and Side Out Arena is by far the best indoor pickleball court in the region.", rating: 5 },
+  { name: 'Jordan Kim', title: 'Weekly Player', quote: "Booking is seamless, the facility is immaculate, and the staff is incredibly helpful. I play here 3x a week and couldn't imagine going anywhere else.", rating: 5 },
+  { name: 'Riley Chen', title: 'Tournament Player', quote: "The lighting and climate control make it perfect year-round. My game has improved significantly — the court conditions are always tournament-quality.", rating: 5 },
 ];
 
 export function LandingPage() {
@@ -95,10 +94,6 @@ export function LandingPage() {
               <Zap size={18} />
               Book a Slot
             </Button>
-            <Button variant="pink" size="lg" onClick={() => navigate('/dashboard/membership')}>
-              View Membership
-              <ArrowRight size={18} />
-            </Button>
           </motion.div>
 
           <motion.div
@@ -167,12 +162,12 @@ export function LandingPage() {
             >
               <StarRating rating={4.9} />
               <h3 className="text-2xl font-bold text-white mt-3 mb-2">Side Out Arena</h3>
-              <p className="text-white/50 text-sm mb-1">60ft × 30ft · Acrylic Hard Court</p>
+              <p className="text-white/50 text-sm mb-1">60ft x 30ft - Acrylic Hard Court</p>
               <div className="text-3xl font-black text-[#7CFC00] mb-6">$20<span className="text-lg font-normal text-white/50">/hour</span></div>
 
               <div className="grid grid-cols-2 gap-2 mb-6">
                 {['LED Lighting', 'Air Conditioning', 'Professional Nets', 'Seating Area', 'Water Station', 'Locker Rooms', 'Pro Shop', 'Parking'].map((amenity) => {
-                  const Icon = amenityIcons[amenity] || Check;
+                  const Icon = amenityIcons[amenity] || Zap;
                   return (
                     <div key={amenity} className="flex items-center gap-2 text-white/70 text-sm">
                       <Icon size={14} className="text-[#7CFC00] shrink-0" />
@@ -185,61 +180,6 @@ export function LandingPage() {
                 Check Availability
               </Button>
             </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="py-20 px-4">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <div className="text-[#FF1493] text-sm font-bold tracking-widest uppercase mb-2">Membership</div>
-            <h2 className="text-4xl font-black text-white">Choose Your Level</h2>
-            <p className="text-white/50 mt-3">Unlock exclusive benefits and discounts with a membership plan</p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {mockMembershipPlans.map((plan, i) => (
-              <motion.div
-                key={plan.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                whileHover={{ scale: 1.02, y: -4 }}
-                className={`glass-card p-6 relative ${plan.tier === 'gold' ? 'border-[#FF1493]/40 glow-pink' : ''}`}
-              >
-                {plan.tier === 'gold' && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#FF1493] text-white text-xs font-bold px-4 py-1 rounded-full">
-                    MOST POPULAR
-                  </div>
-                )}
-                <div className="mb-4">
-                  <div className="text-sm font-bold uppercase tracking-wider mb-1" style={{ color: plan.color }}>{plan.name}</div>
-                  <div className="text-4xl font-black text-white">${plan.price}<span className="text-base font-normal text-white/40">/mo</span></div>
-                </div>
-                <ul className="space-y-2.5 mb-6">
-                  {plan.benefits.map((b) => (
-                    <li key={b} className="flex items-start gap-2 text-sm text-white/70">
-                      <Check size={14} className="text-[#7CFC00] shrink-0 mt-0.5" />
-                      {b}
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  variant={plan.tier === 'gold' ? 'pink' : 'outline'}
-                  className="w-full"
-                  onClick={() => navigate('/register')}
-                >
-                  Get {plan.name}
-                </Button>
-              </motion.div>
-            ))}
           </div>
         </div>
       </section>
@@ -314,7 +254,7 @@ export function LandingPage() {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#7CFC00] to-[#FF1493]" />
             <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#7CFC00]/5 rounded-full blur-2xl" />
             <h2 className="text-4xl font-black text-white mb-3">Ready to Play?</h2>
-            <p className="text-white/50 mb-8">Slots fill fast — secure your court time today.</p>
+            <p className="text-white/50 mb-8">Slots fill fast - secure your court time today.</p>
             <Button variant="neon" size="lg" onClick={() => navigate('/book')}>
               <Zap size={18} />
               Book Your Slot Now

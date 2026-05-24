@@ -23,11 +23,8 @@ export function CheckoutPage() {
 
   if (selectedSlots.length === 0) { navigate('/book'); return null; }
 
-  const discount = user?.membershipTier === 'gold' ? 0.10 : user?.membershipTier === 'silver' ? 0.08 : user?.membershipTier === 'bronze' ? 0.05 : 0;
   const pricePerHour = court?.pricePerHour || 20;
-  const subtotal = selectedSlots.length * pricePerHour;
-  const discountAmt = Math.round(subtotal * discount * 100) / 100;
-  const total = subtotal - discountAmt;
+  const total = selectedSlots.length * pricePerHour;
 
   const formatCard = (v: string) => v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
   const formatExpiry = (v: string) => {
@@ -35,7 +32,8 @@ export function CheckoutPage() {
     return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (method === 'card' && cardNum.replace(/\s/g, '').length < 16) { toast.error('Enter a valid card number'); return; }
     if (method === 'gcash' && gcashNum.length < 10) { toast.error('Enter a valid GCash number'); return; }
     setLoading(true);
@@ -88,10 +86,11 @@ export function CheckoutPage() {
                   {selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(s => s.startTime).join(', ')} ({selectedSlots.length}h)
                 </div>
               </div>
-              <div className="border-t border-white/8 pt-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-white/50">Subtotal</span><span className="text-white">${subtotal}</span></div>
-                {discount > 0 && <div className="flex justify-between"><span className="text-[#7CFC00]">Member Discount</span><span className="text-[#7CFC00]">-${discountAmt.toFixed(2)}</span></div>}
-                <div className="flex justify-between font-black text-base border-t border-white/8 pt-2"><span className="text-white">Total</span><span className="text-[#7CFC00]">${total.toFixed(2)}</span></div>
+              <div className="border-t border-white/8 pt-4">
+                <div className="flex justify-between font-black text-base">
+                  <span className="text-white">{selectedSlots.length} {selectedSlots.length === 1 ? 'hour' : 'hours'}</span>
+                  <span className="text-[#7CFC00]">${total}</span>
+                </div>
               </div>
             </motion.div>
 

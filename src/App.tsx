@@ -12,16 +12,12 @@ import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 
 import { DashboardOverview } from './pages/dashboard/DashboardOverview';
 import { MyBookingsPage } from './pages/dashboard/MyBookingsPage';
-import { MembershipPage } from './pages/dashboard/MembershipPage';
 import { ProfilePage } from './pages/dashboard/ProfilePage';
 import { NotificationsPage } from './pages/dashboard/NotificationsPage';
 
 import { BookingPage } from './pages/booking/BookingPage';
 import { CheckoutPage } from './pages/booking/CheckoutPage';
 import { BookingSuccessPage } from './pages/booking/BookingSuccessPage';
-
-import { TournamentsPage } from './pages/tournaments/TournamentsPage';
-import { TournamentDetailPage } from './pages/tournaments/TournamentDetailPage';
 
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminBookings } from './pages/admin/AdminBookings';
@@ -47,11 +43,9 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/tournaments" element={<TournamentsPage />} />
-          <Route path="/tournaments/:id" element={<TournamentDetailPage />} />
         </Route>
 
-        {/* Booking (protected, uses public layout) */}
+        {/* Booking (protected) */}
         <Route element={<PublicLayout />}>
           <Route path="/book" element={<ProtectedRoute><BookingPage /></ProtectedRoute>} />
           <Route path="/book/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
@@ -62,7 +56,6 @@ export default function App() {
         <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
           <Route index element={<DashboardOverview />} />
           <Route path="my-bookings" element={<MyBookingsPage />} />
-          <Route path="membership" element={<MembershipPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>

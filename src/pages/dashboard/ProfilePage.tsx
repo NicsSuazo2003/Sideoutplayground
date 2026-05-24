@@ -5,7 +5,6 @@ import { toast } from 'react-hot-toast';
 import { useAuthStore } from '../../stores/authStore';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { TierBadge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 
 export function ProfilePage() {
@@ -44,13 +43,13 @@ export function ProfilePage() {
           </div>
           <div>
             <div className="text-white font-bold text-lg">{user?.name}</div>
-            <TierBadge tier={user?.membershipTier || 'free'} />
+            <div className="text-white/50 text-sm">{user?.email}</div>
           </div>
         </div>
 
         <form onSubmit={handleSave} className="space-y-4">
           <Input label="Full Name" value={form.name} onChange={set('name')} leftIcon={<User size={16} />} />
-          <Input label="Email Address" type="email" value={form.email} onChange={set('email')} leftIcon={<Mail size={16} />} />
+          <Input label="Email Address" type="email" value={form.email} onChange={set('email')} leftIcon={<Mail size={16} />} disabled />
           <Input label="Phone Number" type="tel" value={form.phone} onChange={set('phone')} leftIcon={<Phone size={16} />} />
 
           <div className="pt-2">

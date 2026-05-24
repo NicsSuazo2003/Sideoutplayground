@@ -1,11 +1,9 @@
 export type UserRole = 'user' | 'admin';
-export type MembershipTier = 'free' | 'bronze' | 'silver' | 'gold';
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
 export type CourtStatus = 'active' | 'inactive' | 'maintenance';
 export type CourtType = 'indoor' | 'outdoor';
 export type PaymentMethod = 'gcash' | 'card' | 'cash';
-export type NotificationType = 'booking' | 'membership' | 'tournament' | 'system';
-export type TournamentType = 'singles' | 'doubles' | 'mixed';
+export type NotificationType = 'booking' | 'system';
 
 export interface User {
   id: string;
@@ -13,7 +11,6 @@ export interface User {
   email: string;
   phone: string;
   role: UserRole;
-  membershipTier: MembershipTier;
   avatar: string | null;
   createdAt: string;
   bookingsCount: number;
@@ -58,33 +55,6 @@ export interface Booking {
   notes?: string;
 }
 
-export interface MembershipPlan {
-  id: string;
-  name: string;
-  tier: MembershipTier;
-  price: number;
-  color: string;
-  benefits: string[];
-  discountPercent: number;
-  guestPasses: number;
-  priorityBooking: boolean;
-}
-
-export interface Tournament {
-  id: string;
-  name: string;
-  type: TournamentType;
-  date: string;
-  time: string;
-  entryFee: number;
-  maxPlayers: number;
-  registeredPlayers: string[];
-  description: string;
-  rules: string[];
-  prizes: string[];
-  imageUrl: string;
-}
-
 export interface Notification {
   id: string;
   userId: string;
@@ -107,5 +77,5 @@ export interface Analytics {
 }
 
 export interface AdminBooking extends Booking {
-  membershipTier: MembershipTier;
+  // Admin-specific extensions if needed
 }
