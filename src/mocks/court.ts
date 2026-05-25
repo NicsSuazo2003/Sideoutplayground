@@ -9,6 +9,7 @@ export const mockCourt: Court = {
   amenities: ['LED Lighting', 'Air Conditioning', 'Professional Nets', 'Seating Area', 'Water Station', 'Locker Rooms', 'Pro Shop', 'Parking'],
   rating: 4.9,
   imageUrl: 'https://images.pexels.com/photos/1103829/pexels-photo-1103829.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  images: [],
   status: 'active',
   openTime: '06:00',
   closeTime: '22:00',

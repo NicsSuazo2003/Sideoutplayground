@@ -1,9 +1,19 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { StarRating } from '../components/ui/StarRating';
+import { getCourt } from '../services/courtService';
+import type { Court } from '../types';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5154';
+
+function getImageUrl(path: string): string {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${API_BASE}${path}`;
+}
 
 const amenityIcons: Record<string, typeof Zap> = {
   'LED Lighting': Zap,
@@ -25,11 +35,33 @@ const testimonials = [
 export function LandingPage() {
   const navigate = useNavigate();
   const [testimonialIdx, setTestimonialIdx] = useState(0);
+  const [court, setCourt] = useState<Court | null>(null);
+  const [currentImg, setCurrentImg] = useState(0);
 
+  const allImages = court?.images?.length
+    ? court.images
+    : court?.imageUrl ? [court.imageUrl] : [];
+
+  // Auto-rotate images
+  useEffect(() => {
+    if (allImages.length <= 1) return;
+    const timer = setInterval(() => setCurrentImg(i => (i + 1) % allImages.length), 4000);
+    return () => clearInterval(timer);
+  }, [allImages.length]);
+
+  // Auto-rotate testimonials
   useEffect(() => {
     const timer = setInterval(() => setTestimonialIdx(i => (i + 1) % testimonials.length), 5000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    getCourt().then(setCourt).catch(() => {});
+  }, []);
+
+  const hoursCount = court
+    ? (parseInt(court.closeTime.split(':')[0]) - parseInt(court.openTime.split(':')[0]))
+    : 16;
 
   return (
     <div className="pt-16">
@@ -45,45 +77,41 @@ export function LandingPage() {
           transition={{ duration: 0.8, ease: 'easeOut' }}
           className="text-center max-w-4xl mx-auto relative z-10"
         >
+          {/* Logo + Brand Name */}
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.5 }}
-            className="flex justify-center mb-6"
+            className="flex flex-col items-center mb-8"
           >
-            <div className="w-20 h-20 rounded-2xl bg-[#7CFC00] flex items-center justify-center glow-green">
-              <Zap size={40} className="text-black fill-black" />
+            <div className="w-80 h-80 rounded-2xl flex items-center justify-center overflow-hidden mb-4">
+              <img src="/logo.png" alt="Side Out Playground" className="w-full h-full object-contain" />
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-[#7CFC00] text-sm font-bold tracking-widest uppercase mb-4"
-          >
-            Side Out Playground
-          </motion.div>
-
-          <motion.h1
+          {/* Slogan */}
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="text-5xl sm:text-7xl font-black text-white tracking-tight mb-4 leading-none"
+            className="text-3xl sm:text-5xl font-bold text-white/80 mb-4 leading-tight"
           >
             One Court.{' '}
-            <span className="text-[#7CFC00] text-glow-green">Infinite Games.</span>
-          </motion.h1>
+            <span className="text-[#7CFC00] text-glow-green">Infinite </span>
+            <span className="text-[#FF1493]" style={{ textShadow: '0 0 8px #FF1493' }}>Games.</span>
+          </motion.h2>
 
+          {/* Subheadline */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 }}
             className="text-white/60 text-lg sm:text-xl max-w-xl mx-auto mb-10 leading-relaxed"
           >
-            Book your slot on our premium pickleball court. Indoor, air-conditioned, ready for play.
+            Book your slot at our simple yet exciting outdoor pickleball court — fresh air, open space, and ready for play.
           </motion.p>
 
+          {/* CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -96,6 +124,7 @@ export function LandingPage() {
             </Button>
           </motion.div>
 
+          {/* Stats */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -108,12 +137,12 @@ export function LandingPage() {
             </div>
             <div className="w-px h-10 bg-white/10" />
             <div className="text-center">
-              <div className="text-2xl font-black text-[#7CFC00]">4.9</div>
+              <div className="text-2xl font-black text-[#7CFC00]">{court?.rating || '4.9'}</div>
               <div>Court Rating</div>
             </div>
             <div className="w-px h-10 bg-white/10" />
             <div className="text-center">
-              <div className="text-2xl font-black text-white">16h</div>
+              <div className="text-2xl font-black text-white">{hoursCount}h</div>
               <div>Daily Access</div>
             </div>
           </motion.div>
@@ -131,7 +160,7 @@ export function LandingPage() {
             className="text-center mb-12"
           >
             <div className="text-[#7CFC00] text-sm font-bold tracking-widest uppercase mb-2">Our Facility</div>
-            <h2 className="text-4xl font-black text-white">Side Out Arena</h2>
+            <h2 className="text-4xl font-black text-white">{court?.name || 'Side Out Arena'}</h2>
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-8 items-center">
@@ -142,16 +171,41 @@ export function LandingPage() {
               transition={{ duration: 0.6 }}
               className="relative rounded-2xl overflow-hidden aspect-video"
             >
-              <img
-                src="https://images.pexels.com/photos/1103829/pexels-photo-1103829.jpeg?auto=compress&cs=tinysrgb&w=800"
-                alt="Court"
-                className="w-full h-full object-cover"
-              />
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentImg}
+                  src={allImages.length > 0
+                    ? getImageUrl(allImages[currentImg])
+                    : 'https://images.pexels.com/photos/1103829/pexels-photo-1103829.jpeg?auto=compress&cs=tinysrgb&w=800'}
+                  alt="Court"
+                  className="w-full h-full object-cover absolute inset-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.6 }}
+                />
+              </AnimatePresence>
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 flex gap-2">
-                <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-semibold">Indoor</span>
-                <span className="px-3 py-1 rounded-full bg-[#7CFC00]/20 text-[#7CFC00] border border-[#7CFC00]/30 text-xs font-semibold">Active</span>
+                <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-semibold">
+                  {court?.type === 'indoor' ? 'Indoor' : 'Outdoor'}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-[#7CFC00]/20 text-[#7CFC00] border border-[#7CFC00]/30 text-xs font-semibold capitalize">
+                  {court?.status || 'Active'}
+                </span>
               </div>
+              {/* Dot indicators */}
+              {allImages.length > 1 && (
+                <div className="absolute bottom-4 right-4 flex gap-1.5">
+                  {allImages.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentImg(i)}
+                      className={`w-2 h-2 rounded-full transition-all ${i === currentImg ? 'bg-[#7CFC00] w-4' : 'bg-white/40'}`}
+                    />
+                  ))}
+                </div>
+              )}
             </motion.div>
 
             <motion.div
@@ -160,13 +214,15 @@ export function LandingPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <StarRating rating={4.9} />
-              <h3 className="text-2xl font-bold text-white mt-3 mb-2">Side Out Arena</h3>
-              <p className="text-white/50 text-sm mb-1">60ft x 30ft - Acrylic Hard Court</p>
-              <div className="text-3xl font-black text-[#7CFC00] mb-6">$20<span className="text-lg font-normal text-white/50">/hour</span></div>
+              <StarRating rating={court?.rating || 4.9} />
+              <h3 className="text-2xl font-bold text-white mt-3 mb-2">{court?.name || 'Side Out Arena'}</h3>
+              <p className="text-white/50 text-sm mb-1">{court?.dimensions || '60ft x 30ft'} - {court?.surface || 'Acrylic Hard Court'}</p>
+              <div className="text-3xl font-black text-[#7CFC00] mb-6">
+                ₱{court?.pricePerHour || 20}<span className="text-lg font-normal text-white/50">/hour</span>
+              </div>
 
               <div className="grid grid-cols-2 gap-2 mb-6">
-                {['LED Lighting', 'Air Conditioning', 'Professional Nets', 'Seating Area', 'Water Station', 'Locker Rooms', 'Pro Shop', 'Parking'].map((amenity) => {
+                {(court?.amenities || ['LED Lighting', 'Air Conditioning', 'Professional Nets', 'Seating Area', 'Water Station', 'Locker Rooms', 'Pro Shop', 'Parking']).map((amenity) => {
                   const Icon = amenityIcons[amenity] || Zap;
                   return (
                     <div key={amenity} className="flex items-center gap-2 text-white/70 text-sm">

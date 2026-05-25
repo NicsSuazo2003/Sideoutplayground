@@ -1,53 +1,32 @@
-import { delay } from './api';
+import { api } from './api';
 import type { Booking } from '../types';
-import { mockBookings } from '../mocks/bookings';
 
-// Replace with real API call: axios.post('/api/bookings', data)
-export async function createBooking(data: Omit<Booking, 'id' | 'createdAt'>): Promise<Booking> {
-  await delay();
-  const booking: Booking = {
-    ...data,
-    id: `bk-${Date.now()}`,
-    createdAt: new Date().toISOString(),
-  };
-  mockBookings.push(booking);
-  return booking;
+export async function createBooking(body: Omit<Booking, 'id' | 'createdAt'>): Promise<Booking> {
+  const { data } = await api.post<Booking>('/bookings', body);
+  return data;
 }
 
-// Replace with real API call: axios.get('/api/bookings/user')
-export async function getUserBookings(userId: string): Promise<Booking[]> {
-  await delay(300);
-  return mockBookings.filter(b => b.userId === userId);
+export async function getUserBookings(): Promise<Booking[]> {
+  const { data } = await api.get<Booking[]>('/bookings/user');
+  return data;
 }
 
-// Replace with real API call: axios.get(`/api/bookings/${id}`)
 export async function getBookingById(id: string): Promise<Booking> {
-  await delay(300);
-  const b = mockBookings.find(bk => bk.id === id);
-  if (!b) throw new Error('Booking not found');
-  return b;
+  const { data } = await api.get<Booking>(`/bookings/${id}`);
+  return data;
 }
 
-// Replace with real API call: axios.put(`/api/bookings/${id}/cancel`)
 export async function cancelBooking(id: string): Promise<Booking> {
-  await delay();
-  const idx = mockBookings.findIndex(b => b.id === id);
-  if (idx === -1) throw new Error('Booking not found');
-  mockBookings[idx] = { ...mockBookings[idx], status: 'cancelled' };
-  return mockBookings[idx];
+  const { data } = await api.put<Booking>(`/bookings/${id}/cancel`);
+  return data;
 }
 
-// Replace with real API call: axios.get('/api/bookings/admin')
 export async function getAllBookings(): Promise<Booking[]> {
-  await delay(300);
-  return [...mockBookings];
+  const { data } = await api.get<Booking[]>('/admin/bookings');
+  return data;
 }
 
-// Replace with real API call: axios.put(`/api/bookings/admin/${id}`, { status })
 export async function adminUpdateBooking(id: string, status: Booking['status']): Promise<Booking> {
-  await delay();
-  const idx = mockBookings.findIndex(b => b.id === id);
-  if (idx === -1) throw new Error('Booking not found');
-  mockBookings[idx] = { ...mockBookings[idx], status };
-  return mockBookings[idx];
+  const { data } = await api.put<Booking>(`/admin/bookings/${id}`, { status });
+  return data;
 }

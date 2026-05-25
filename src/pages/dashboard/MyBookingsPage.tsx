@@ -11,6 +11,13 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import type { Booking } from '../../types';
 
+function format12h(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
 export function MyBookingsPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -20,9 +27,9 @@ export function MyBookingsPage() {
   const [cancelling, setCancelling] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-    getUserBookings(user.id).then(bks => { setBookings(bks); setLoading(false); });
-  }, [user]);
+  if (!user) return;
+  getUserBookings().then(bks => { setBookings(bks); setLoading(false); });
+}, [user]);
 
   const today = new Date().toISOString().split('T')[0];
   const upcoming = bookings.filter(b => b.date >= today && b.status !== 'cancelled');
@@ -89,12 +96,12 @@ export function MyBookingsPage() {
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-white/50 text-sm">
                       <span className="flex items-center gap-1">
-                        <Clock size={13} /> {booking.slots[0]?.startTime} – {booking.slots[booking.slots.length - 1]?.endTime}
+                        <Clock size={13} /> {format12h(booking.slots[0]?.startTime)} – {format12h(booking.slots[booking.slots.length - 1]?.endTime)}
                       </span>
                       <span>·</span>
                       <span>{booking.slots.length} {booking.slots.length === 1 ? 'hour' : 'hours'}</span>
                       <span>·</span>
-                      <span>${booking.totalAmount}</span>
+                      <span>₱{booking.totalAmount.toFixed(2)}</span>
                     </div>
                     <div className="text-white/30 text-xs mt-1">#{booking.id} · {booking.paymentMethod.toUpperCase()}</div>
                   </div>

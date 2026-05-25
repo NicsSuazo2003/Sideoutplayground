@@ -26,17 +26,24 @@ export function LoginPage() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-    try {
-      await login(email, password);
-      toast.success('Welcome back!');
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!validate()) return;
+  try {
+    await login(email, password);
+    toast.success('Welcome back!');
+    
+    // Check role after login
+    const user = useAuthStore.getState().user;
+    if (user?.role === 'admin') {
+      navigate('/admin', { replace: true });
+    } else {
       navigate(from, { replace: true });
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Login failed');
     }
-  };
+  } catch (err: unknown) {
+    toast.error(err instanceof Error ? err.message : 'Login failed');
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 pt-20 pb-10">

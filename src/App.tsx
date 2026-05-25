@@ -45,12 +45,12 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Route>
 
-        {/* Booking (protected) */}
-        <Route element={<PublicLayout />}>
-          <Route path="/book" element={<ProtectedRoute><BookingPage /></ProtectedRoute>} />
-          <Route path="/book/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
-          <Route path="/book/success" element={<ProtectedRoute><BookingSuccessPage /></ProtectedRoute>} />
-        </Route>
+        {/* Booking — public view, login required only at checkout */}
+<Route element={<PublicLayout />}>
+  <Route path="/book" element={<BookingPage />} />
+  <Route path="/book/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+  <Route path="/book/success" element={<ProtectedRoute><BookingSuccessPage /></ProtectedRoute>} />
+</Route>
 
         {/* Dashboard */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>

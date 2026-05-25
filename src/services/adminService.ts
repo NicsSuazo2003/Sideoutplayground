@@ -1,32 +1,27 @@
-import { delay } from './api';
-import type { Analytics, User } from '../types';
-import { mockAnalytics } from '../mocks/analytics';
-import { mockUsers } from '../mocks/users';
-import { getAllBookings, adminUpdateBooking } from './bookingService';
+import { api } from './api';
+import type { Analytics, User, Booking } from '../types';
 
-// Replace with real API call: axios.get('/api/admin/analytics')
 export async function getAnalytics(): Promise<Analytics> {
-  await delay(400);
-  return { ...mockAnalytics };
+  const { data } = await api.get<Analytics>('/admin/analytics');
+  return data;
 }
 
-// Replace with real API call: axios.get('/api/admin/bookings')
-export { getAllBookings };
+export async function getAllBookings(): Promise<Booking[]> {
+  const { data } = await api.get<Booking[]>('/admin/bookings');
+  return data;
+}
 
-// Replace with real API call: axios.put(`/api/admin/bookings/${id}`, { status })
-export { adminUpdateBooking };
+export async function adminUpdateBooking(id: string, status: Booking['status']): Promise<Booking> {
+  const { data } = await api.put<Booking>(`/admin/bookings/${id}`, { status });
+  return data;
+}
 
-// Replace with real API call: axios.get('/api/admin/users')
 export async function getUsers(): Promise<User[]> {
-  await delay(300);
-  return [...mockUsers];
+  const { data } = await api.get<User[]>('/admin/users');
+  return data;
 }
 
-// Replace with real API call: axios.put(`/api/admin/users/${id}`, data)
-export async function updateUser(id: string, data: Partial<User>): Promise<User> {
-  await delay();
-  const idx = mockUsers.findIndex(u => u.id === id);
-  if (idx === -1) throw new Error('User not found');
-  mockUsers[idx] = { ...mockUsers[idx], ...data };
-  return mockUsers[idx];
+export async function updateUser(id: string, body: Partial<User>): Promise<User> {
+  const { data } = await api.put<User>(`/admin/users/${id}`, body);
+  return data;
 }

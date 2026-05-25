@@ -47,7 +47,7 @@ export function BookingSuccessPage() {
             </div>
             <div className="flex items-center gap-3 text-sm">
               <DollarSign size={16} className="text-[#7CFC00] shrink-0" />
-              <span className="text-white/70">${booking.totalAmount.toFixed(2)} via {booking.paymentMethod.toUpperCase()}</span>
+              <span className="text-white/70">₱{booking.totalAmount.toFixed(2)} via {booking.paymentMethod.toUpperCase()}</span>
             </div>
             <div className="border-t border-white/8 pt-3">
               <span className="text-xs text-white/30">Booking ID: {booking.id}</span>

@@ -27,7 +27,7 @@ export function AdminDashboard() {
   const todayBookings = bookings.filter(b => b.date === todayStr);
 
   const cards = [
-    { label: 'Total Revenue', value: `$${analytics?.totalRevenue.toLocaleString() || 0}`, icon: DollarSign, growth: analytics?.revenueGrowth || 0, color: '#7CFC00' },
+    { label: 'Total Revenue', value: `₱${analytics?.totalRevenue.toLocaleString() || 0}`, icon: DollarSign, growth: analytics?.revenueGrowth || 0, color: '#7CFC00' },
     { label: 'Total Bookings', value: analytics?.totalBookings || 0, icon: Calendar, growth: analytics?.bookingsGrowth || 0, color: '#FF1493' },
     { label: 'Active Users', value: analytics?.activeUsers || 0, icon: Users, growth: analytics?.usersGrowth || 0, color: '#FFD700' },
   ];

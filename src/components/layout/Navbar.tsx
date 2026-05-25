@@ -32,15 +32,15 @@ export function Navbar() {
     <>
       <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled ? 'glass border-b border-white/8' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#7CFC00] flex items-center justify-center glow-green">
-              <Zap size={20} className="text-black fill-black" />
-            </div>
-            <div className="leading-none">
-              <div className="font-black text-white text-sm tracking-tight">SIDE OUT</div>
-              <div className="text-[10px] text-[#7CFC00] tracking-widest font-semibold">PLAYGROUND</div>
-            </div>
-          </Link>
+         <Link to="/" className="flex items-center gap-2.5">
+  <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
+    <img src="/logo.png" alt="Side Out Playground" className="w-full h-full object-contain" />
+  </div>
+  <div className="leading-none">
+    <div className="font-black text-white text-sm tracking-tight">SIDE OUT</div>
+    <div className="text-[10px] text-[#7CFC00] tracking-widest font-semibold">PLAYGROUND</div>
+  </div>
+</Link>
 
           <div className="hidden md:flex items-center gap-6">
             {navLinks.map(link => (

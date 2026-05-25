@@ -26,6 +26,7 @@ export interface Court {
   amenities: string[];
   rating: number;
   imageUrl: string;
+  images: string[];  // NEW
   status: CourtStatus;
   openTime: string;
   closeTime: string;

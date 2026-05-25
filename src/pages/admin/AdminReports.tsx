@@ -62,7 +62,7 @@ export function AdminReports() {
         <>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, color: '#7CFC00' },
+              { label: 'Total Revenue', value: `₱${totalRevenue.toLocaleString()}`, color: '#7CFC00' },
               { label: 'Days in Range', value: totalDays, color: '#FF1493' },
               { label: 'Avg. Daily Revenue', value: `$${totalDays > 0 ? Math.round(totalRevenue / totalDays) : 0}`, color: '#FFD700' },
             ].map(c => (
@@ -88,7 +88,7 @@ export function AdminReports() {
                   {Object.entries(monthlyData).sort(([a], [b]) => b.localeCompare(a)).map(([month, rev]) => (
                     <tr key={month} className="border-b border-white/5">
                       <td className="p-3 text-white/70">{new Date(month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
-                      <td className="p-3 text-[#7CFC00] font-semibold">${rev.toLocaleString()}</td>
+                      <td className="p-3 text-[#7CFC00] font-semibold">₱{rev.toLocaleString()}</td>
                       <td className="p-3 text-white/50">{analytics ? Math.round((rev / analytics.totalRevenue) * 100) : 0}%</td>
                     </tr>
                   ))}

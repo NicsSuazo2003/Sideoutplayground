@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CreditCard, Smartphone, Banknote, Calendar, Clock, ArrowLeft } from 'lucide-react';
@@ -6,40 +6,38 @@ import { toast } from 'react-hot-toast';
 import { useBookingStore } from '../../stores/bookingStore';
 import { useAuthStore } from '../../stores/authStore';
 import { processPayment } from '../../services/paymentService';
-import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import type { PaymentMethod } from '../../types';
+
+function format12h(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+}
 
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { court, selectedDate, selectedSlots, createBooking, clearSelection } = useBookingStore();
   const { user } = useAuthStore();
-  const [method, setMethod] = useState<PaymentMethod>('card');
+  const [method, setMethod] = useState<PaymentMethod>('cash');
   const [loading, setLoading] = useState(false);
-  const [cardNum, setCardNum] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-  const [gcashNum, setGcashNum] = useState('');
 
-  if (selectedSlots.length === 0) { navigate('/book'); return null; }
+  useEffect(() => {
+    if (selectedSlots.length === 0) navigate('/book');
+  }, [selectedSlots.length, navigate]);
+
+  if (selectedSlots.length === 0) return null;
 
   const pricePerHour = court?.pricePerHour || 20;
   const total = selectedSlots.length * pricePerHour;
 
-  const formatCard = (v: string) => v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
-  const formatExpiry = (v: string) => {
-    const d = v.replace(/\D/g, '').slice(0, 4);
-    return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
-  };
-
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (method === 'card' && cardNum.replace(/\s/g, '').length < 16) { toast.error('Enter a valid card number'); return; }
-    if (method === 'gcash' && gcashNum.length < 10) { toast.error('Enter a valid GCash number'); return; }
     setLoading(true);
     try {
       const bookingId = `bk-${Date.now()}`;
-      await processPayment({ method, amount: total, bookingId, cardNumber: cardNum, cardExpiry, cardCvv, gcashNumber: gcashNum });
+      await processPayment({ method, amount: total, bookingId });
       const booking = await createBooking({
         userId: user!.id,
         userName: user!.name,
@@ -59,10 +57,10 @@ export function CheckoutPage() {
     }
   };
 
-  const methods: { id: PaymentMethod; icon: typeof CreditCard; label: string; desc: string }[] = [
-    { id: 'card', icon: CreditCard, label: 'Credit / Debit Card', desc: 'Visa, Mastercard, etc.' },
-    { id: 'gcash', icon: Smartphone, label: 'GCash', desc: 'Pay via GCash e-wallet' },
-    { id: 'cash', icon: Banknote, label: 'Cash', desc: 'Pay at the venue' },
+  const methods: { id: PaymentMethod; icon: typeof CreditCard; label: string; desc: string; available: boolean }[] = [
+    { id: 'cash', icon: Banknote, label: 'Cash', desc: 'Pay at the venue', available: true },
+    { id: 'gcash', icon: Smartphone, label: 'GCash', desc: 'Coming soon', available: false },
+    { id: 'card', icon: CreditCard, label: 'Credit / Debit Card', desc: 'Coming soon', available: false },
   ];
 
   return (
@@ -83,13 +81,12 @@ export function CheckoutPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-white/60">
                   <Clock size={14} className="text-[#7CFC00]" />
-                  {selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(s => s.startTime).join(', ')} ({selectedSlots.length}h)
-                </div>
+{selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(s => format12h(s.startTime)).join(', ')} ({selectedSlots.length}h)                </div>
               </div>
               <div className="border-t border-white/8 pt-4">
                 <div className="flex justify-between font-black text-base">
                   <span className="text-white">{selectedSlots.length} {selectedSlots.length === 1 ? 'hour' : 'hours'}</span>
-                  <span className="text-[#7CFC00]">${total}</span>
+                  <span className="text-[#7CFC00]">₱{total}</span>
                 </div>
               </div>
             </motion.div>
@@ -98,11 +95,34 @@ export function CheckoutPage() {
               <h2 className="text-white font-bold mb-4">Payment Method</h2>
               <div className="space-y-2">
                 {methods.map(m => (
-                  <label key={m.id} className={`flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all border ${method === m.id ? 'border-[#7CFC00]/40 bg-[#7CFC00]/8' : 'border-white/8 hover:border-white/15'}`}>
-                    <input type="radio" value={m.id} checked={method === m.id} onChange={() => setMethod(m.id)} className="accent-[#7CFC00]" />
-                    <m.icon size={18} className={method === m.id ? 'text-[#7CFC00]' : 'text-white/40'} />
-                    <div>
-                      <div className="text-sm font-semibold text-white">{m.label}</div>
+                  <label
+                    key={m.id}
+                    className={`flex items-center gap-4 p-3 rounded-xl transition-all border ${
+                      !m.available
+                        ? 'border-white/5 opacity-50 cursor-not-allowed'
+                        : method === m.id
+                        ? 'border-[#7CFC00]/40 bg-[#7CFC00]/8 cursor-pointer'
+                        : 'border-white/8 hover:border-white/15 cursor-pointer'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      value={m.id}
+                      checked={method === m.id}
+                      onChange={() => m.available && setMethod(m.id)}
+                      disabled={!m.available}
+                      className="accent-[#7CFC00]"
+                    />
+                    <m.icon size={18} className={method === m.id && m.available ? 'text-[#7CFC00]' : 'text-white/40'} />
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-white flex items-center gap-2">
+                        {m.label}
+                        {!m.available && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FF1493]/15 text-[#FF1493] border border-[#FF1493]/30 font-bold">
+                            COMING SOON
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-white/40">{m.desc}</div>
                     </div>
                   </label>
@@ -114,29 +134,16 @@ export function CheckoutPage() {
           <div>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-5 space-y-4">
               <h2 className="text-white font-bold">Payment Details</h2>
-              {method === 'card' && (
-                <>
-                  <Input label="Card Number" placeholder="1234 5678 9012 3456" value={cardNum} onChange={e => setCardNum(formatCard(e.target.value))} leftIcon={<CreditCard size={16} />} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input label="Expiry" placeholder="MM/YY" value={cardExpiry} onChange={e => setCardExpiry(formatExpiry(e.target.value))} />
-                    <Input label="CVV" placeholder="123" type="password" value={cardCvv} onChange={e => setCardCvv(e.target.value.slice(0, 3))} />
-                  </div>
-                </>
-              )}
-              {method === 'gcash' && (
-                <Input label="GCash Number" placeholder="+63 9XX XXX XXXX" value={gcashNum} onChange={e => setGcashNum(e.target.value)} leftIcon={<Smartphone size={16} />} />
-              )}
-              {method === 'cash' && (
-                <div className="glass rounded-xl p-4 text-white/60 text-sm">
-                  <Banknote size={20} className="text-[#7CFC00] mb-2" />
-                  <p>Please pay <strong className="text-white">${total.toFixed(2)}</strong> at the venue front desk before your session starts. Your booking will be confirmed upon payment.</p>
-                </div>
-              )}
+
+              <div className="glass rounded-xl p-4 text-white/60 text-sm">
+                <Banknote size={20} className="text-[#7CFC00] mb-2" />
+                <p>Please pay <strong className="text-white">₱{total.toFixed(2)}</strong> at the venue front desk before your session starts.</p>
+              </div>
 
               <Button variant="neon" size="lg" className="w-full" loading={loading} onClick={handleConfirm}>
-                Confirm Payment · ${total.toFixed(2)}
+                Confirm Booking · ₱{total.toFixed(2)}
               </Button>
-              <p className="text-xs text-white/30 text-center">Your slot will be reserved immediately upon payment confirmation.</p>
+              <p className="text-xs text-white/30 text-center">Pay at the venue. Your slot is reserved upon confirmation.</p>
             </motion.div>
           </div>
         </div>

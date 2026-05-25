@@ -10,6 +10,13 @@ import { Modal } from '../../components/ui/Modal';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import type { Booking, BookingStatus } from '../../types';
 
+function format12h(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
 const PAGE_SIZE = 10;
 
 export function AdminBookings() {
@@ -81,8 +88,8 @@ export function AdminBookings() {
                     <td className="p-4 text-white/40 text-xs">{b.id}</td>
                     <td className="p-4 text-white/80">{b.userName}</td>
                     <td className="p-4 text-white/60">{b.date}</td>
-                    <td className="p-4 text-white/60">{b.slots[0]?.startTime}–{b.slots[b.slots.length-1]?.endTime}</td>
-                    <td className="p-4 text-[#7CFC00] font-semibold">${b.totalAmount}</td>
+                    <td className="p-4 text-white/60">{format12h(b.slots[0]?.startTime)} – {format12h(b.slots[b.slots.length-1]?.endTime)}</td>
+                    <td className="p-4 text-[#7CFC00] font-semibold">₱{b.totalAmount}</td>
                     <td className="p-4"><StatusBadge status={b.status} /></td>
                     <td className="p-4">
                       <div className="flex gap-1">
@@ -119,9 +126,9 @@ export function AdminBookings() {
                 ['Player', selected.userName],
                 ['Email', selected.userEmail],
                 ['Date', selected.date],
-                ['Time', `${selected.slots[0]?.startTime} – ${selected.slots[selected.slots.length-1]?.endTime}`],
+               ['Time', `${format12h(selected.slots[0]?.startTime)} – ${format12h(selected.slots[selected.slots.length-1]?.endTime)}`],
                 ['Duration', `${selected.slots.length} hour(s)`],
-                ['Amount', `$${selected.totalAmount}`],
+                ['Amount', `₱${selected.totalAmount.toFixed(2)}`],
                 ['Payment', selected.paymentMethod.toUpperCase()],
               ].map(([k, v]) => (
                 <div key={k} className="glass rounded-xl p-3">

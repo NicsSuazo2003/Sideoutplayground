@@ -18,7 +18,7 @@ export function DashboardOverview() {
 
   useEffect(() => {
     if (!user) return;
-    getUserBookings(user.id).then(bks => {
+    getUserBookings().then(bks => {
       setUserBookings(bks);
       setLoading(false);
     });

@@ -8,6 +8,21 @@ import { StarRating } from '../../components/ui/StarRating';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import type { TimeSlot } from '../../types';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5154';
+
+function getImageUrl(path: string): string {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${API_BASE}${path}`;
+}
+
+function format12h(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
 const AMENITY_ICONS: Record<string, React.ElementType> = {
   'LED Lighting': Zap, 'Air Conditioning': Wind, 'Professional Nets': Shield,
   'Seating Area': Users, 'Water Station': Droplets, 'Locker Rooms': Shield,
@@ -52,7 +67,7 @@ export function BookingPage() {
         {court && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 mb-6 flex flex-col sm:flex-row gap-4">
             <div className="relative w-full sm:w-48 h-28 rounded-xl overflow-hidden shrink-0">
-              <img src={court.imageUrl} alt={court.name} className="w-full h-full object-cover" />
+<img src={getImageUrl(court.imageUrl)} alt={court.name} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/30" />
             </div>
             <div className="flex-1">
@@ -66,7 +81,7 @@ export function BookingPage() {
                   <p className="text-white/40 text-sm">{court.dimensions} · {court.surface}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-black text-[#7CFC00]">${court.pricePerHour}<span className="text-sm font-normal text-white/40">/hr</span></div>
+                  <div className="text-2xl font-black text-[#7CFC00]">₱{court.pricePerHour}<span className="text-sm font-normal text-white/40">/hr</span></div>
                   <StarRating rating={court.rating} />
                 </div>
               </div>
@@ -145,8 +160,8 @@ export function BookingPage() {
                         }`}
                       >
                         <div className="text-center">
-                          <div className="font-bold">{slot.startTime}</div>
-                          <div className={`text-[10px] ${isSelected ? 'text-black/70' : 'text-white/40'}`}>to {slot.endTime}</div>
+                          <div className="font-bold">{format12h(slot.startTime)}</div>
+                          <div className={`text-[10px] ${isSelected ? 'text-black/70' : 'text-white/40'}`}>to {format12h(slot.endTime)}</div>
                         </div>
                         {isSelected && <Check size={14} className="absolute top-1.5 right-1.5 text-black" />}
                         {!slot.isAvailable && <Lock size={12} className="absolute top-1.5 right-1.5 text-white/20" />}
@@ -185,9 +200,9 @@ export function BookingPage() {
                   <div className="space-y-2 mb-4">
                     {selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slot => (
                       <div key={slot.id} className="flex items-center justify-between text-sm">
-                        <span className="text-white/70">{slot.startTime} – {slot.endTime}</span>
+                        <span className="text-white/70">{format12h(slot.startTime)} – {format12h(slot.endTime)}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-white/50">${pricePerHour}</span>
+                          <span className="text-white/50">₱{pricePerHour}</span>
                           <button onClick={() => deselectSlot(slot.id)} className="text-white/30 hover:text-red-400 transition-colors">×</button>
                         </div>
                       </div>
@@ -196,7 +211,7 @@ export function BookingPage() {
                   <div className="border-t border-white/8 pt-4">
                     <div className="flex justify-between font-black text-lg">
                       <span className="text-white">{selectedSlots.length} {selectedSlots.length === 1 ? 'hour' : 'hours'}</span>
-                      <span className="text-[#7CFC00]">${subtotal}</span>
+                      <span className="text-[#7CFC00]">₱{subtotal}</span>
                     </div>
                   </div>
                   <Button
