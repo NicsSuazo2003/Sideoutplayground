@@ -65,10 +65,7 @@ export function LoginPage() {
           <p className="text-white/50 text-sm mt-1">Sign in to your Side Out account</p>
         </div>
 
-        <div className="glass rounded-xl p-3 mb-6 text-xs text-white/50">
-          <span className="text-[#7CFC00] font-semibold">Demo: </span>
-          admin@sideout.com (admin) or alex@example.com (user) — any 6+ char password
-        </div>
+        
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
