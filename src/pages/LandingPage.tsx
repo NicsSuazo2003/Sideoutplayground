@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useCallback } from 'react';
-import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { StarRating } from '../components/ui/StarRating';
 import { getCourt } from '../services/courtService';
@@ -15,26 +15,21 @@ function getImageUrl(path: string): string {
   return `${API_BASE}${path}`;
 }
 
-const amenityIcons: Record<string, typeof Zap> = {
-  'LED Lighting': Zap,
-  'Air Conditioning': Wind,
-  'Professional Nets': Shield,
-  'Seating Area': Tv2,
-  'Water Station': Droplets,
-  'Locker Rooms': Shield,
-  'Pro Shop': Tv2,
-  'Parking': ParkingCircle,
-};
+function format12h(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+}
 
-const testimonials = [
-  { name: 'Alex Rivera', title: 'Regular Player', quote: "The court surface is absolutely pristine. I've played at dozens of facilities and Side Out Arena is by far the best indoor pickleball court in the region.", rating: 5 },
-  { name: 'Jordan Kim', title: 'Weekly Player', quote: "Booking is seamless, the facility is immaculate, and the staff is incredibly helpful. I play here 3x a week and couldn't imagine going anywhere else.", rating: 5 },
-  { name: 'Riley Chen', title: 'Tournament Player', quote: "The lighting and climate control make it perfect year-round. My game has improved significantly — the court conditions are always tournament-quality.", rating: 5 },
-];
+const amenityIcons: Record<string, typeof Zap> = {
+  'LED Lighting': Zap, 'Air Conditioning': Wind, 'Professional Nets': Shield,
+  'Seating Area': Tv2, 'Water Station': Droplets, 'Locker Rooms': Shield,
+  'Pro Shop': Tv2, 'Parking': ParkingCircle,
+};
 
 export function LandingPage() {
   const navigate = useNavigate();
-  const [testimonialIdx, setTestimonialIdx] = useState(0);
   const [court, setCourt] = useState<Court | null>(null);
   const [currentImg, setCurrentImg] = useState(0);
 
@@ -42,18 +37,11 @@ export function LandingPage() {
     ? court.images
     : court?.imageUrl ? [court.imageUrl] : [];
 
-  // Auto-rotate images
   useEffect(() => {
     if (allImages.length <= 1) return;
     const timer = setInterval(() => setCurrentImg(i => (i + 1) % allImages.length), 4000);
     return () => clearInterval(timer);
   }, [allImages.length]);
-
-  // Auto-rotate testimonials
-  useEffect(() => {
-    const timer = setInterval(() => setTestimonialIdx(i => (i + 1) % testimonials.length), 5000);
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     getCourt().then(setCourt).catch(() => {});
@@ -66,7 +54,7 @@ export function LandingPage() {
   return (
     <div className="pt-16">
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden px-4">
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#7CFC00]/5 rounded-full blur-3xl" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#FF1493]/5 rounded-full blur-3xl" />
@@ -77,14 +65,14 @@ export function LandingPage() {
           transition={{ duration: 0.8, ease: 'easeOut' }}
           className="text-center max-w-4xl mx-auto relative z-10"
         >
-          {/* Logo + Brand Name */}
+          {/* Logo */}
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.5 }}
-            className="flex flex-col items-center mb-8"
+            className="flex justify-center mb-6"
           >
-            <div className="w-80 h-80 rounded-2xl flex items-center justify-center overflow-hidden mb-4">
+            <div className="w-40 h-40 rounded-2xl flex items-center justify-center overflow-hidden">
               <img src="/logo.png" alt="Side Out Playground" className="w-full h-full object-contain" />
             </div>
           </motion.div>
@@ -106,22 +94,25 @@ export function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 }}
-            className="text-white/60 text-lg sm:text-xl max-w-xl mx-auto mb-10 leading-relaxed"
+            className="text-white/60 text-lg sm:text-xl max-w-xl mx-auto mb-8 leading-relaxed"
           >
-            Book your slot at our simple yet exciting outdoor pickleball court — fresh air, open space, and ready for play.
+            Book your slot at our premium pickleball court — fresh air, open space, and ready for play.
           </motion.p>
 
-          {/* CTA */}
+          {/* CTA + Price */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            className="flex flex-col items-center gap-3"
           >
             <Button variant="neon" size="lg" onClick={() => navigate('/book')}>
               <Zap size={18} />
               Book a Slot
             </Button>
+            <span className="text-white/40 text-sm">
+              Starting at <span className="text-[#7CFC00] font-bold">₱{court?.pricePerHour || 20}/hr</span>
+            </span>
           </motion.div>
 
           {/* Stats */}
@@ -132,18 +123,18 @@ export function LandingPage() {
             className="flex items-center justify-center gap-8 mt-12 text-white/40 text-sm"
           >
             <div className="text-center">
-              <div className="text-2xl font-black text-white">500+</div>
-              <div>Happy Players</div>
-            </div>
-            <div className="w-px h-10 bg-white/10" />
-            <div className="text-center">
-              <div className="text-2xl font-black text-[#7CFC00]">{court?.rating || '4.9'}</div>
+              <div className="text-2xl font-black text-white">{court?.rating || '4.9'}</div>
               <div>Court Rating</div>
             </div>
             <div className="w-px h-10 bg-white/10" />
             <div className="text-center">
               <div className="text-2xl font-black text-white">{hoursCount}h</div>
               <div>Daily Access</div>
+            </div>
+            <div className="w-px h-10 bg-white/10" />
+            <div className="text-center">
+              <div className="text-2xl font-black text-[#7CFC00]">Tandag</div>
+              <div>Location</div>
             </div>
           </motion.div>
         </motion.div>
@@ -169,7 +160,8 @@ export function LandingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="relative rounded-2xl overflow-hidden aspect-video"
+              className="relative rounded-2xl overflow-hidden aspect-video cursor-pointer"
+              onClick={() => navigate('/book')}
             >
               <AnimatePresence mode="wait">
                 <motion.img
@@ -194,13 +186,12 @@ export function LandingPage() {
                   {court?.status || 'Active'}
                 </span>
               </div>
-              {/* Dot indicators */}
               {allImages.length > 1 && (
                 <div className="absolute bottom-4 right-4 flex gap-1.5">
                   {allImages.map((_, i) => (
                     <button
                       key={i}
-                      onClick={() => setCurrentImg(i)}
+                      onClick={(e) => { e.stopPropagation(); setCurrentImg(i); }}
                       className={`w-2 h-2 rounded-full transition-all ${i === currentImg ? 'bg-[#7CFC00] w-4' : 'bg-white/40'}`}
                     />
                   ))}
@@ -232,68 +223,39 @@ export function LandingPage() {
                   );
                 })}
               </div>
-              <Button variant="neon" size="lg" onClick={() => navigate('/book')}>
-                Check Availability
-              </Button>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-20 px-4">
-        <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <div className="text-[#7CFC00] text-sm font-bold tracking-widest uppercase mb-2">Testimonials</div>
-            <h2 className="text-4xl font-black text-white">Players Love It</h2>
-          </motion.div>
-
-          <div className="relative">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={testimonialIdx}
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ duration: 0.4 }}
-                className="glass-card p-8 text-center"
-              >
-                <div className="flex justify-center mb-4">
-                  {[...Array(testimonials[testimonialIdx].rating)].map((_, i) => (
-                    <Star key={i} size={20} className="text-yellow-400 fill-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-white/80 text-lg leading-relaxed mb-6 italic">"{testimonials[testimonialIdx].quote}"</p>
-                <div className="w-12 h-12 rounded-full bg-[#7CFC00]/20 flex items-center justify-center text-[#7CFC00] font-bold text-lg mx-auto mb-2">
-                  {testimonials[testimonialIdx].name.charAt(0)}
-                </div>
-                <div className="text-white font-semibold">{testimonials[testimonialIdx].name}</div>
-                <div className="text-white/40 text-sm">{testimonials[testimonialIdx].title}</div>
-              </motion.div>
-            </AnimatePresence>
-
-            <div className="flex justify-center gap-3 mt-6">
-              <button onClick={() => setTestimonialIdx(i => (i - 1 + testimonials.length) % testimonials.length)}
-                className="p-2 rounded-xl glass hover:border-[#7CFC00]/30 transition-colors text-white/50 hover:text-[#7CFC00]">
-                <ChevronLeft size={18} />
-              </button>
-              {testimonials.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setTestimonialIdx(i)}
-                  className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === testimonialIdx ? 'bg-[#7CFC00] w-6' : 'bg-white/20'}`}
-                />
-              ))}
-              <button onClick={() => setTestimonialIdx(i => (i + 1) % testimonials.length)}
-                className="p-2 rounded-xl glass hover:border-[#7CFC00]/30 transition-colors text-white/50 hover:text-[#7CFC00]">
-                <ChevronRight size={18} />
-              </button>
-            </div>
+      {/* Hours & Location */}
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid sm:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="glass-card p-6"
+            >
+              <h3 className="text-white font-bold mb-3">🕐 Operating Hours</h3>
+              <p className="text-white/60 text-sm">
+                Open Daily: {court ? `${format12h(court.openTime)} – ${format12h(court.closeTime)}` : '6:00 AM – 10:00 PM'}
+              </p>
+              <p className="text-white/40 text-xs mt-2">Last booking slot is 1 hour before closing.</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="glass-card p-6"
+            >
+              <h3 className="text-white font-bold mb-3">📍 Location</h3>
+              <p className="text-white/60 text-sm">Purok Million, Barangay San Agustin Sur</p>
+              <p className="text-white/60 text-sm">Tandag City, Surigao del Sur 8300</p>
+              <p className="text-[#7CFC00] text-sm mt-2">📞 09058100973</p>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -310,11 +272,16 @@ export function LandingPage() {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#7CFC00] to-[#FF1493]" />
             <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#7CFC00]/5 rounded-full blur-2xl" />
             <h2 className="text-4xl font-black text-white mb-3">Ready to Play?</h2>
-            <p className="text-white/50 mb-8">Slots fill fast - secure your court time today.</p>
-            <Button variant="neon" size="lg" onClick={() => navigate('/book')}>
-              <Zap size={18} />
-              Book Your Slot Now
-            </Button>
+            <p className="text-white/50 mb-8">Slots fill fast — secure your court time today.</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button variant="neon" size="lg" onClick={() => navigate('/book')}>
+                <Zap size={18} />
+                Book a Slot
+              </Button>
+              <Button variant="pink" size="lg" onClick={() => navigate('/track')}>
+                Track Booking
+              </Button>
+            </div>
           </motion.div>
         </div>
       </section>
