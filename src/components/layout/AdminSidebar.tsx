@@ -13,7 +13,7 @@ export function AdminSidebar() {
   const location = useLocation();
 
   return (
-    <aside className="w-56 shrink-0 glass border-r border-white/8 min-h-screen p-4 hidden lg:block">
+<aside className="w-56 shrink-0 glass border-r border-white/8 min-h-screen p-4">
       <div className="mb-8 px-2">
         <div className="font-black text-white text-sm">SIDE OUT</div>
         <div className="text-[10px] text-[#7CFC00] tracking-widest font-semibold">ADMIN</div>
