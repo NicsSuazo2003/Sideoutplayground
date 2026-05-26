@@ -12,21 +12,22 @@ const links = [
 export function AdminSidebar() {
   const location = useLocation();
 
+  const isActive = (href: string) =>
+    href === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(href);
+
   return (
-<aside className="w-56 shrink-0 glass border-r border-white/8 min-h-screen p-4">
-      <div className="mb-8 px-2">
+    <div className="flex flex-col gap-1">
+      <div className="mb-4 px-2">
         <div className="font-black text-white text-sm">SIDE OUT</div>
         <div className="text-[10px] text-[#7CFC00] tracking-widest font-semibold">ADMIN</div>
       </div>
-      <nav className="flex flex-col gap-1">
-        {links.map(link => (
-          <Link key={link.href} to={link.href}
-            className={`sidebar-link ${(link.href === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(link.href)) ? 'active' : ''}`}>
-            <link.icon size={18} />
-            {link.label}
-          </Link>
-        ))}
-      </nav>
-    </aside>
+      {links.map(link => (
+        <Link key={link.href} to={link.href}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(link.href) ? 'text-[#7CFC00] bg-[#7CFC00]/10 border-l-3 border-[#7CFC00]' : 'text-white/60 hover:text-white hover:bg-white/5'}`}>
+          <link.icon size={18} />
+          {link.label}
+        </Link>
+      ))}
+    </div>
   );
 }
