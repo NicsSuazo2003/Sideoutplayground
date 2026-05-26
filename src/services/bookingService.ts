@@ -1,23 +1,23 @@
 import { api } from './api';
 import type { Booking } from '../types';
 
-export async function createBooking(body: Omit<Booking, 'id' | 'createdAt'>): Promise<Booking> {
+export interface CreateBookingPayload {
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  date: string;
+  slots: { startTime: string; endTime: string }[];
+  totalAmount: number;
+  notes?: string;
+}
+
+export async function createBooking(body: CreateBookingPayload): Promise<Booking> {
   const { data } = await api.post<Booking>('/bookings', body);
   return data;
 }
 
-export async function getUserBookings(): Promise<Booking[]> {
-  const { data } = await api.get<Booking[]>('/bookings/user');
-  return data;
-}
-
-export async function getBookingById(id: string): Promise<Booking> {
-  const { data } = await api.get<Booking>(`/bookings/${id}`);
-  return data;
-}
-
-export async function cancelBooking(id: string): Promise<Booking> {
-  const { data } = await api.put<Booking>(`/bookings/${id}/cancel`);
+export async function trackBooking(referenceCode: string, email: string): Promise<Booking> {
+  const { data } = await api.get<Booking>(`/bookings/track/${referenceCode}`, { params: { email } });
   return data;
 }
 

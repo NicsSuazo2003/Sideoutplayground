@@ -29,7 +29,9 @@ export function AdminBookings() {
   useEffect(() => { fetchAllBookings(); }, []);
 
   const filtered = bookings.filter(b => {
-    const matchSearch = b.userName.toLowerCase().includes(search.toLowerCase()) || b.id.includes(search);
+    const matchSearch = b.customerName.toLowerCase().includes(search.toLowerCase()) ||
+                        b.referenceCode.toLowerCase().includes(search.toLowerCase()) ||
+                        b.id.includes(search);
     const matchStatus = statusFilter === 'all' || b.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -55,9 +57,9 @@ export function AdminBookings() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
-        <Input placeholder="Search by name or ID..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} leftIcon={<Search size={16} />} className="sm:w-64" />
+        <Input placeholder="Search by name, reference, or ID..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} leftIcon={<Search size={16} />} className="sm:w-72" />
         <div className="flex gap-1 p-1 glass rounded-xl">
-          {(['all', 'confirmed', 'pending', 'cancelled', 'completed'] as const).map(s => (
+          {(['all', 'pending', 'confirmed', 'cancelled', 'completed'] as const).map(s => (
             <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all capitalize ${statusFilter === s ? 'bg-[#7CFC00] text-black' : 'text-white/50 hover:text-white'}`}>
               {s}
@@ -72,8 +74,8 @@ export function AdminBookings() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/8 text-white/40 text-xs">
-                  <th className="text-left p-4 font-semibold">ID</th>
-                  <th className="text-left p-4 font-semibold">Player</th>
+                  <th className="text-left p-4 font-semibold">Reference</th>
+                  <th className="text-left p-4 font-semibold">Customer</th>
                   <th className="text-left p-4 font-semibold">Date</th>
                   <th className="text-left p-4 font-semibold">Time</th>
                   <th className="text-left p-4 font-semibold">Amount</th>
@@ -85,8 +87,11 @@ export function AdminBookings() {
                 {paginated.map((b, i) => (
                   <motion.tr key={b.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
                     className="border-b border-white/5 hover:bg-white/3 transition-colors">
-                    <td className="p-4 text-white/40 text-xs">{b.id}</td>
-                    <td className="p-4 text-white/80">{b.userName}</td>
+                    <td className="p-4 text-[#7CFC00] text-xs font-mono">{b.referenceCode}</td>
+                    <td className="p-4">
+                      <div className="text-white/80 font-medium">{b.customerName}</div>
+                      <div className="text-white/40 text-xs">{b.customerEmail}</div>
+                    </td>
                     <td className="p-4 text-white/60">{b.date}</td>
                     <td className="p-4 text-white/60">{format12h(b.slots[0]?.startTime)} – {format12h(b.slots[b.slots.length-1]?.endTime)}</td>
                     <td className="p-4 text-[#7CFC00] font-semibold">₱{b.totalAmount}</td>
@@ -122,14 +127,15 @@ export function AdminBookings() {
           <div className="space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-3">
               {[
-                ['Booking ID', selected.id],
-                ['Player', selected.userName],
-                ['Email', selected.userEmail],
+                ['Reference', selected.referenceCode],
+                ['Customer', selected.customerName],
+                ['Email', selected.customerEmail],
+                ['Phone', selected.customerPhone || '—'],
                 ['Date', selected.date],
-               ['Time', `${format12h(selected.slots[0]?.startTime)} – ${format12h(selected.slots[selected.slots.length-1]?.endTime)}`],
+                ['Time', `${format12h(selected.slots[0]?.startTime)} – ${format12h(selected.slots[selected.slots.length-1]?.endTime)}`],
                 ['Duration', `${selected.slots.length} hour(s)`],
                 ['Amount', `₱${selected.totalAmount.toFixed(2)}`],
-                ['Payment', selected.paymentMethod.toUpperCase()],
+                ['Notes', selected.notes || '—'],
               ].map(([k, v]) => (
                 <div key={k} className="glass rounded-xl p-3">
                   <div className="text-white/40 text-xs mb-0.5">{k}</div>

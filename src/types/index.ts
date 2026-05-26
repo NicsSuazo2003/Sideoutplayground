@@ -1,20 +1,15 @@
-export type UserRole = 'user' | 'admin';
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
 export type CourtStatus = 'active' | 'inactive' | 'maintenance';
 export type CourtType = 'indoor' | 'outdoor';
-export type PaymentMethod = 'gcash' | 'card' | 'cash';
-export type NotificationType = 'booking' | 'system';
+export type PaymentMethod = 'cash';
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  role: UserRole;
+  role: 'admin';
   avatar: string | null;
   createdAt: string;
-  bookingsCount: number;
-  status: 'active' | 'suspended';
 }
 
 export interface Court {
@@ -26,7 +21,7 @@ export interface Court {
   amenities: string[];
   rating: number;
   imageUrl: string;
-  images: string[];  // NEW
+  images: string[];
   status: CourtStatus;
   openTime: string;
   closeTime: string;
@@ -44,9 +39,9 @@ export interface TimeSlot {
 
 export interface Booking {
   id: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
   date: string;
   slots: TimeSlot[];
   totalAmount: number;
@@ -54,29 +49,15 @@ export interface Booking {
   paymentMethod: PaymentMethod;
   createdAt: string;
   notes?: string;
-}
-
-export interface Notification {
-  id: string;
-  userId: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
+  referenceCode: string;
 }
 
 export interface Analytics {
   totalRevenue: number;
   totalBookings: number;
-  activeUsers: number;
   revenueByDay: { date: string; revenue: number }[];
   bookingsByDay: { date: string; bookings: number }[];
   revenueGrowth: number;
   bookingsGrowth: number;
   usersGrowth: number;
-}
-
-export interface AdminBooking extends Booking {
-  // Admin-specific extensions if needed
 }

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { Court, TimeSlot, Booking } from '../types';
 import * as courtService from '../services/courtService';
 import * as bookingService from '../services/bookingService';
+import type { CreateBookingPayload } from '../services/bookingService';
 
 interface BookingState {
   court: Court | null;
@@ -9,13 +10,23 @@ interface BookingState {
   selectedSlots: TimeSlot[];
   availability: TimeSlot[];
   isLoading: boolean;
+  // Customer form
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  notes: string;
+  setCustomerName: (v: string) => void;
+  setCustomerEmail: (v: string) => void;
+  setCustomerPhone: (v: string) => void;
+  setNotes: (v: string) => void;
+  // Actions
   fetchCourt: () => Promise<void>;
   fetchAvailability: (date: string) => Promise<void>;
   setSelectedDate: (date: string) => void;
   selectSlot: (slot: TimeSlot) => void;
   deselectSlot: (slotId: string) => void;
   clearSelection: () => void;
-  createBooking: (data: Omit<Booking, 'id' | 'createdAt'>) => Promise<Booking>;
+  createBooking: (data: CreateBookingPayload) => Promise<Booking>;
 }
 
 export const useBookingStore = create<BookingState>((set) => ({
@@ -24,6 +35,15 @@ export const useBookingStore = create<BookingState>((set) => ({
   selectedSlots: [],
   availability: [],
   isLoading: false,
+  customerName: '',
+  customerEmail: '',
+  customerPhone: '',
+  notes: '',
+
+  setCustomerName: (v) => set({ customerName: v }),
+  setCustomerEmail: (v) => set({ customerEmail: v }),
+  setCustomerPhone: (v) => set({ customerPhone: v }),
+  setNotes: (v) => set({ notes: v }),
 
   fetchCourt: async () => {
     set({ isLoading: true });

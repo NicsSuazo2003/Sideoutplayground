@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Zap } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../ui/Button';
 
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Book a Slot', href: '/book' },
+  { label: 'Track Booking', href: '/track' },
 ];
 
 export function Navbar() {
@@ -32,15 +33,15 @@ export function Navbar() {
     <>
       <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled ? 'glass border-b border-white/8' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-         <Link to="/" className="flex items-center gap-2.5">
-  <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
-    <img src="/logo.png" alt="Side Out Playground" className="w-full h-full object-contain" />
-  </div>
-  <div className="leading-none">
-    <div className="font-black text-white text-sm tracking-tight">SIDE OUT</div>
-    <div className="text-[10px] text-[#7CFC00] tracking-widest font-semibold">PLAYGROUND</div>
-  </div>
-</Link>
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
+              <img src="/logo.png" alt="Side Out Playground" className="w-full h-full object-contain" />
+            </div>
+            <div className="leading-none">
+              <div className="font-black text-white text-sm tracking-tight">SIDE OUT</div>
+              <div className="text-[10px] text-[#7CFC00] tracking-widest font-semibold">PLAYGROUND</div>
+            </div>
+          </Link>
 
           <div className="hidden md:flex items-center gap-6">
             {navLinks.map(link => (
@@ -55,19 +56,13 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            {isAuthenticated ? (
+            {isAuthenticated && user?.role === 'admin' ? (
               <>
-                {user?.role === 'admin' && (
-                  <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>Admin</Button>
-                )}
-                <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>Dashboard</Button>
+                <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>Admin</Button>
                 <Button variant="ghost" size="sm" onClick={handleLogout}>Sign Out</Button>
               </>
             ) : (
-              <>
-                <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>Sign In</Button>
-                <Button variant="neon" size="sm" onClick={() => navigate('/register')}>Get Started</Button>
-              </>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>Admin</Button>
             )}
           </div>
 
@@ -116,19 +111,13 @@ export function Navbar() {
                 ))}
               </div>
               <div className="mt-auto flex flex-col gap-2">
-                {isAuthenticated ? (
+                {isAuthenticated && user?.role === 'admin' ? (
                   <>
-                    {user?.role === 'admin' && (
-                      <Button variant="outline" onClick={() => { navigate('/admin'); setMenuOpen(false); }}>Admin Panel</Button>
-                    )}
-                    <Button variant="outline" onClick={() => { navigate('/dashboard'); setMenuOpen(false); }}>Dashboard</Button>
+                    <Button variant="outline" onClick={() => { navigate('/admin'); setMenuOpen(false); }}>Admin Panel</Button>
                     <Button variant="ghost" onClick={() => { handleLogout(); setMenuOpen(false); }}>Sign Out</Button>
                   </>
                 ) : (
-                  <>
-                    <Button variant="outline" onClick={() => { navigate('/login'); setMenuOpen(false); }}>Sign In</Button>
-                    <Button variant="neon" onClick={() => { navigate('/register'); setMenuOpen(false); }}>Get Started</Button>
-                  </>
+                  <Button variant="outline" onClick={() => { navigate('/login'); setMenuOpen(false); }}>Admin Sign In</Button>
                 )}
               </div>
             </motion.div>

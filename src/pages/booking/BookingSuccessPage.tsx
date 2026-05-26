@@ -1,9 +1,16 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Calendar, Clock, DollarSign, CalendarPlus } from 'lucide-react';
+import { CheckCircle2, Calendar, Clock, Hash, Copy } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Button } from '../../components/ui/Button';
 import type { Booking } from '../../types';
+
+function format12h(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+}
 
 export function BookingSuccessPage() {
   const navigate = useNavigate();
@@ -11,6 +18,11 @@ export function BookingSuccessPage() {
   const booking = (location.state as { booking?: Booking })?.booking;
 
   if (!booking) { navigate('/book'); return null; }
+
+  const copyReference = () => {
+    navigator.clipboard.writeText(booking.referenceCode);
+    toast.success('Reference copied!');
+  };
 
   return (
     <div className="pt-16 min-h-screen flex items-center justify-center px-4">
@@ -28,38 +40,43 @@ export function BookingSuccessPage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <div className="text-[#7CFC00] text-sm font-bold tracking-widest uppercase mb-2">Booking Confirmed</div>
-          <h1 className="text-4xl font-black text-white mb-2">Court Reserved!</h1>
-          <p className="text-white/50 mb-8">You're all set. See you on the court!</p>
+          <div className="text-[#7CFC00] text-sm font-bold tracking-widest uppercase mb-2">Booking Submitted</div>
+          <h1 className="text-4xl font-black text-white mb-2">Reservation Received!</h1>
+          <p className="text-white/50 mb-2">Your booking is pending admin confirmation.</p>
+
+          {/* Reference Code */}
+          <div className="glass-card p-4 mb-4 inline-block">
+            <div className="text-white/40 text-xs mb-1">Booking Reference</div>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl font-black text-[#7CFC00] tracking-wider">{booking.referenceCode}</span>
+              <button onClick={copyReference} className="p-2 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+                <Copy size={16} />
+              </button>
+            </div>
+          </div>
+          <p className="text-white/30 text-xs mb-6">Save this reference to track your booking status</p>
 
           <div className="glass-card p-5 text-left mb-6 space-y-3">
             <div className="flex items-center gap-3 text-sm">
               <Calendar size={16} className="text-[#7CFC00] shrink-0" />
-              <span className="text-white/70">
-                {new Date(booking.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-              </span>
+              <span className="text-white/70">{new Date(booking.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <Clock size={16} className="text-[#7CFC00] shrink-0" />
-              <span className="text-white/70">
-                {booking.slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(s => s.startTime).join(', ')} ({booking.slots.length}h)
-              </span>
+              <span className="text-white/70">{booking.slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(s => format12h(s.startTime)).join(', ')} ({booking.slots.length}h)</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <DollarSign size={16} className="text-[#7CFC00] shrink-0" />
-              <span className="text-white/70">₱{booking.totalAmount.toFixed(2)} via {booking.paymentMethod.toUpperCase()}</span>
-            </div>
-            <div className="border-t border-white/8 pt-3">
-              <span className="text-xs text-white/30">Booking ID: {booking.id}</span>
+              <Hash size={16} className="text-[#7CFC00] shrink-0" />
+              <span className="text-white/70">₱{booking.totalAmount.toFixed(2)} · Pay at venue</span>
             </div>
           </div>
 
           <div className="flex flex-col gap-3">
-            <Button variant="outline" size="lg" className="w-full" onClick={() => toast.success('Calendar invite sent!')}>
-              <CalendarPlus size={16} /> Add to Calendar
+            <Button variant="neon" size="lg" className="w-full" onClick={() => navigate('/track')}>
+              Track My Booking
             </Button>
-            <Button variant="neon" size="lg" className="w-full" onClick={() => navigate('/dashboard/my-bookings')}>
-              View My Bookings
+            <Button variant="outline" size="lg" className="w-full" onClick={() => navigate('/')}>
+              Back to Home
             </Button>
           </div>
         </motion.div>
