@@ -73,12 +73,13 @@ export function BookingPage() {
     setShowDetailsForm(true);
   };
 
-  const handleDetailsSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customerName.trim()) { toast.error('Name is required'); return; }
-    if (!customerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) { toast.error('Valid email is required'); return; }
-    navigate('/book/checkout');
-  };
+ const handleDetailsSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!customerName.trim()) { toast.error('Name is required'); return; }
+  if (!customerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) { toast.error('Valid email is required'); return; }
+  if (!customerPhone.trim()) { toast.error('Phone number is required'); return; }
+  navigate('/book/checkout');
+};
 
   const pricePerHour = court?.pricePerHour || 20;
   const subtotal = selectedSlots.length * pricePerHour;
@@ -251,7 +252,7 @@ export function BookingPage() {
               <form onSubmit={handleDetailsSubmit} className="space-y-4">
                 <Input label="Full Name *" placeholder="Juan Dela Cruz" value={customerName} onChange={e => setCustomerName(e.target.value)} leftIcon={<User size={16} />} />
                 <Input label="Email *" type="email" placeholder="you@email.com" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} leftIcon={<Mail size={16} />} />
-                <Input label="Phone" placeholder="09xx-xxx-xxxx" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} leftIcon={<Phone size={16} />} />
+<Input label="Phone *" placeholder="09xx-xxx-xxxx" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} leftIcon={<Phone size={16} />} />
                 <Input label="Notes (optional)" placeholder="Any special requests..." value={notes} onChange={e => setNotes(e.target.value)} leftIcon={<FileText size={16} />} />
                 <Button variant="neon" size="lg" className="w-full" type="submit">Proceed to Checkout</Button>
               </form>
