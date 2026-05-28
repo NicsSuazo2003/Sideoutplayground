@@ -64,7 +64,7 @@ export function AdminReports() {
             {[
               { label: 'Total Revenue', value: `₱${totalRevenue.toLocaleString()}`, color: '#7CFC00' },
               { label: 'Days in Range', value: totalDays, color: '#FF1493' },
-              { label: 'Avg. Daily Revenue', value: `$${totalDays > 0 ? Math.round(totalRevenue / totalDays) : 0}`, color: '#FFD700' },
+              { label: 'Avg. Daily Revenue', value: `₱${totalDays > 0 ? Math.round(totalRevenue / totalDays) : 0}`, color: '#FFD700' },
             ].map(c => (
               <motion.div key={c.label} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4">
                 <div className="text-2xl font-black mb-1" style={{ color: c.color }}>{c.value}</div>

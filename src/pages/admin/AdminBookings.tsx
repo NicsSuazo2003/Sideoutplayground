@@ -17,6 +17,13 @@ function format12h(time: string): string {
   return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
+function isPastBooking(booking: Booking): boolean {
+  if (!booking.slots.length) return false;
+  const lastSlot = booking.slots[booking.slots.length - 1];
+  const bookingEnd = new Date(booking.date + 'T' + lastSlot.endTime);
+  return bookingEnd < new Date();
+}
+
 const PAGE_SIZE = 10;
 
 export function AdminBookings() {
@@ -106,8 +113,15 @@ export function AdminBookings() {
                         <button onClick={() => setSelected(b)} className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors">
                           <Eye size={14} />
                         </button>
-                        {b.status === 'pending' && <button onClick={() => handleAction(b.id, 'confirmed')} className="px-2 py-1 rounded-lg bg-green-900/30 text-green-400 text-xs font-semibold hover:bg-green-900/50 transition-colors">Confirm</button>}
-                        {(b.status === 'pending' || b.status === 'confirmed') && <button onClick={() => handleAction(b.id, 'cancelled')} className="px-2 py-1 rounded-lg bg-red-900/30 text-red-400 text-xs font-semibold hover:bg-red-900/50 transition-colors">Cancel</button>}
+                        {b.status === 'pending' && (
+                          <button onClick={() => handleAction(b.id, 'confirmed')} className="px-2 py-1 rounded-lg bg-green-900/30 text-green-400 text-xs font-semibold hover:bg-green-900/50 transition-colors">Confirm</button>
+                        )}
+                        {b.status === 'confirmed' && isPastBooking(b) && (
+                          <button onClick={() => handleAction(b.id, 'completed')} className="px-2 py-1 rounded-lg bg-blue-900/30 text-blue-400 text-xs font-semibold hover:bg-blue-900/50 transition-colors">Complete</button>
+                        )}
+                        {(b.status === 'pending' || b.status === 'confirmed') && (
+                          <button onClick={() => handleAction(b.id, 'cancelled')} className="px-2 py-1 rounded-lg bg-red-900/30 text-red-400 text-xs font-semibold hover:bg-red-900/50 transition-colors">Cancel</button>
+                        )}
                       </div>
                     </td>
                   </motion.tr>
@@ -152,8 +166,15 @@ export function AdminBookings() {
             </div>
             <div className="flex items-center gap-2 pt-2">
               <StatusBadge status={selected.status} />
-              {selected.status === 'pending' && <Button variant="neon" size="sm" onClick={() => handleAction(selected.id, 'confirmed')}>Confirm</Button>}
-              {(selected.status === 'pending' || selected.status === 'confirmed') && <Button variant="destructive" size="sm" onClick={() => handleAction(selected.id, 'cancelled')}>Cancel</Button>}
+              {selected.status === 'pending' && (
+                <Button variant="neon" size="sm" onClick={() => handleAction(selected.id, 'confirmed')}>Confirm</Button>
+              )}
+              {selected.status === 'confirmed' && isPastBooking(selected) && (
+                <Button variant="outline" size="sm" onClick={() => handleAction(selected.id, 'completed')}>Mark Complete</Button>
+              )}
+              {(selected.status === 'pending' || selected.status === 'confirmed') && (
+                <Button variant="destructive" size="sm" onClick={() => handleAction(selected.id, 'cancelled')}>Cancel</Button>
+              )}
             </div>
           </div>
         )}
