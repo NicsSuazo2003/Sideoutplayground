@@ -52,7 +52,7 @@ export function AdminCourt() {
     setUploading(true);
     try {
       const url = await uploadImage(file);
-      const fullUrl = `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5154'}${url}`;
+      const fullUrl = url; // Supabase returns full URL already
       setImages(prev => [...prev, fullUrl]);
       toast.success('Image uploaded!');
     } catch {
