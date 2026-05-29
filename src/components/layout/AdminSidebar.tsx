@@ -1,5 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Calendar, Users, MapPin, BarChart3 } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
+
 
 const links = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -7,6 +9,7 @@ const links = [
   { label: 'Customers', href: '/admin/customers', icon: Users },
   { label: 'Court', href: '/admin/court', icon: MapPin },
   { label: 'Reports', href: '/admin/reports', icon: BarChart3 },
+  { label: 'Pricing', href: '/admin/pricing', icon: DollarSign },
 ];
 
 export function AdminSidebar() {

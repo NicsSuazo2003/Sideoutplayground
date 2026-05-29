@@ -6,6 +6,8 @@ import { AdminRoute } from './components/auth/ProtectedRoute';
 
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/auth/LoginPage';
+import { AdminPriceRules } from './pages/admin/AdminPriceRules';
+
 
 import { BookingPage } from './pages/booking/BookingPage';
 import { CheckoutPage } from './pages/booking/CheckoutPage';
@@ -38,6 +40,7 @@ export default function App() {
           <Route path="/book/checkout" element={<CheckoutPage />} />
           <Route path="/book/success" element={<BookingSuccessPage />} />
           <Route path="/track" element={<TrackBookingPage />} />
+          <Route path="pricing" element={<AdminPriceRules />} />
         </Route>
 
         {/* Admin */}

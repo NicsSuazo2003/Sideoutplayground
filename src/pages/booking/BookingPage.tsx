@@ -82,7 +82,7 @@ export function BookingPage() {
 };
 
   const pricePerHour = court?.pricePerHour || 20;
-  const subtotal = selectedSlots.length * pricePerHour;
+  const subtotal = selectedSlots.reduce((sum, slot) => sum + (slot.price || pricePerHour), 0);
 
   return (
     <div className="pt-16 min-h-screen">
@@ -187,10 +187,10 @@ export function BookingPage() {
                             isSelected ? 'bg-[#7CFC00] text-black border-[#7CFC00] glow-green'
                             : !slot.isAvailable ? 'bg-white/3 border-white/5 text-white/20 cursor-not-allowed'
                             : 'border-white/15 text-white/80 hover:border-[#7CFC00]/50 hover:bg-[#7CFC00]/8 hover:text-white'}`}>
-                          <div className="text-center">
-                            <div className="font-bold">{format12h(slot.startTime)}</div>
-                            <div className={`text-[10px] ${isSelected ? 'text-black/70' : 'text-white/40'}`}>to {format12h(slot.endTime)}</div>
-                          </div>
+                         <div className="text-center">
+  <div className="font-bold">{format12h(slot.startTime)}</div>
+  <div className="text-[10px] text-white/50">₱{slot.price || pricePerHour}</div>
+</div>
                           {isSelected && <Check size={14} className="absolute top-1.5 right-1.5 text-black" />}
                           {!slot.isAvailable && <Lock size={12} className="absolute top-1.5 right-1.5 text-white/20" />}
                         </motion.button>
@@ -214,15 +214,15 @@ export function BookingPage() {
                 ) : (
                   <>
                     <div className="space-y-2 mb-4">
-                      {selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slot => (
-                        <div key={slot.id} className="flex items-center justify-between text-sm">
-                          <span className="text-white/70">{format12h(slot.startTime)} – {format12h(slot.endTime)}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white/50">₱{pricePerHour}</span>
-                            <button onClick={() => deselectSlot(slot.id)} className="text-white/30 hover:text-red-400 transition-colors">×</button>
-                          </div>
-                        </div>
-                      ))}
+                     {selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slot => (
+  <div key={slot.id} className="flex items-center justify-between text-sm">
+    <span className="text-white/70">{format12h(slot.startTime)} – {format12h(slot.endTime)}</span>
+    <div className="flex items-center gap-2">
+      <span className="text-white/50">₱{slot.price || pricePerHour}</span>
+      <button onClick={() => deselectSlot(slot.id)} className="text-white/30 hover:text-red-400 transition-colors">×</button>
+    </div>
+  </div>
+))}
                     </div>
                     <div className="border-t border-white/8 pt-4">
                       <div className="flex justify-between font-black text-lg">
