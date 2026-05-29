@@ -40,18 +40,18 @@ export default function App() {
           <Route path="/book/checkout" element={<CheckoutPage />} />
           <Route path="/book/success" element={<BookingSuccessPage />} />
           <Route path="/track" element={<TrackBookingPage />} />
-          <Route path="pricing" element={<AdminPriceRules />} />
+          
         </Route>
 
         {/* Admin */}
-        <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="bookings" element={<AdminBookings />} />
-          <Route path="customers" element={<AdminCustomers />} />
-          <Route path="court" element={<AdminCourt />} />
-          <Route path="reports" element={<AdminReports />} />
-        </Route>
-
+<Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+  <Route index element={<AdminDashboard />} />
+  <Route path="bookings" element={<AdminBookings />} />
+  <Route path="customers" element={<AdminCustomers />} />
+  <Route path="court" element={<AdminCourt />} />
+  <Route path="pricing" element={<AdminPriceRules />} />
+  <Route path="reports" element={<AdminReports />} />
+</Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
