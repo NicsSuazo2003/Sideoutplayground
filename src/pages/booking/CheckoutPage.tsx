@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Smartphone, Calendar, Clock, ArrowLeft, User, Mail, Copy } from 'lucide-react';
+import { Smartphone, Calendar, Clock, ArrowLeft, User, Mail, Copy, Upload, CheckCircle2, Hash } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useBookingStore } from '../../stores/bookingStore';
 import { Button } from '../../components/ui/Button';
@@ -13,24 +13,34 @@ function format12h(time: string): string {
   return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
+const GCASH_NUMBER = '09058100973';
+const GCASH_NAME = 'Side Out Playground';
+const PAYMENT_MINUTES = 15;
+
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { court, selectedDate, selectedSlots, customerName, customerEmail, customerPhone, notes, createBooking, clearSelection } = useBookingStore();
+  const [step, setStep] = useState<'summary' | 'payment' | 'upload'>('summary');
   const [loading, setLoading] = useState(false);
   const [booking, setBooking] = useState<any>(null);
-  const [timeLeft, setTimeLeft] = useState(1800); // 30 min in seconds
- const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const [timeLeft, setTimeLeft] = useState(PAYMENT_MINUTES * 60);
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
+
   useEffect(() => {
     if (selectedSlots.length === 0 || !customerName || !customerEmail) navigate('/book');
   }, []);
 
   useEffect(() => {
-    if (booking) {
+    if (step === 'payment' && booking) {
       timerRef.current = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
             clearInterval(timerRef.current);
             toast.error('Payment time expired. Slot released.');
+            clearSelection();
             navigate('/book');
             return 0;
           }
@@ -39,7 +49,7 @@ export function CheckoutPage() {
       }, 1000);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [booking]);
+  }, [step, booking]);
 
   if (selectedSlots.length === 0) return null;
 
@@ -65,7 +75,8 @@ export function CheckoutPage() {
         notes: notes || undefined,
       });
       setBooking(result);
-      toast.success('Booking created! Pay within 30 minutes.');
+      setStep('payment');
+      toast.success('Booking created!');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Booking failed');
     } finally {
@@ -74,7 +85,7 @@ export function CheckoutPage() {
   };
 
   const copyGcash = () => {
-    navigator.clipboard.writeText('09058100973');
+    navigator.clipboard.writeText(GCASH_NUMBER);
     toast.success('GCash number copied!');
   };
 
@@ -85,48 +96,63 @@ export function CheckoutPage() {
     }
   };
 
-  if (booking) {
+  const handleUploadScreenshot = async () => {
+    if (!screenshot || !booking) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('screenshot', screenshot);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/bookings/${booking.id}/upload-payment`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        toast.success('Payment proof uploaded!');
+        clearSelection();
+        navigate('/book/success', { state: { booking: await res.json() } });
+      } else {
+        toast.error('Upload failed');
+      }
+    } catch {
+      toast.error('Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // STEP 1: Summary
+  if (step === 'summary') {
     return (
-      <div className="pt-16 min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
+      <div className="pt-16 min-h-screen">
+        <div className="max-w-lg mx-auto px-4 py-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 space-y-4">
-            <Smartphone size={40} className="text-[#7CFC00] mx-auto" />
-            <h2 className="text-xl font-black text-white">Pay via GCash</h2>
+            <h2 className="text-white font-bold text-lg">Booking Summary</h2>
             
-            <div className="glass rounded-xl p-4 text-sm space-y-2">
-              <div className="text-white/50">Send exactly</div>
-              <div className="text-3xl font-black text-[#7CFC00]">₱{total.toFixed(2)}</div>
-              <div className="text-white/50">to</div>
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-xl font-bold text-white">09058100973</span>
-                <button onClick={copyGcash} className="p-1.5 rounded-lg hover:bg-white/10 text-white/50 hover:text-white"><Copy size={14} /></button>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-white/50">Court</span><span className="text-white">{court?.name || 'Court'}</span></div>
+              <div className="flex justify-between">
+                <span className="text-white/50">Schedule</span>
+                <span className="text-white text-right">
+                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  , {selectedSlots.sort((a,b) => a.startTime.localeCompare(b.startTime)).map(s => format12h(s.startTime)).join(', ')}
+                </span>
               </div>
-              <div className="text-white/50">Reference</div>
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-lg font-bold text-[#FF1493]">{booking.referenceCode}</span>
-                <button onClick={copyReference} className="p-1.5 rounded-lg hover:bg-white/10 text-white/50 hover:text-white"><Copy size={14} /></button>
-              </div>
-              <p className="text-xs text-[#FF1493] mt-2">⚠️ Put this reference in your GCash message!</p>
-            </div>
-
-            {/* Countdown */}
-            <div className={`glass rounded-xl p-4 ${timeLeft <= 60 ? 'border-[#FF1493]/40' : timeLeft <= 300 ? 'border-yellow-500/40' : ''}`}>
-              <div className="text-white/50 text-xs mb-1">Time Remaining</div>
-              <div className={`text-2xl font-black ${timeLeft <= 60 ? 'text-[#FF1493]' : 'text-[#7CFC00]'}`}>
-                {formatTime(timeLeft)}
-              </div>
-              <div className="w-full bg-white/5 rounded-full h-1.5 mt-2">
-                <div className={`h-1.5 rounded-full transition-all ${timeLeft <= 60 ? 'bg-[#FF1493]' : 'bg-[#7CFC00]'}`}
-                  style={{ width: `${(timeLeft / 1800) * 100}%` }} />
+              <div className="flex justify-between"><span className="text-white/50">Guest</span><span className="text-white">{customerName}</span></div>
+              <div className="flex justify-between"><span className="text-white/50">Email</span><span className="text-white">{customerEmail}</span></div>
+              <div className="flex justify-between pt-2 border-t border-white/8">
+                <span className="text-white/50">Total Amount</span>
+                <span className="text-[#7CFC00] font-bold text-lg">₱{total.toFixed(2)}</span>
               </div>
             </div>
 
-            <p className="text-white/40 text-xs">
-              After paying, upload your screenshot on the Track Booking page using your reference code.
-            </p>
+            <div className="glass rounded-xl p-3 text-center">
+              <div className="text-yellow-400 text-sm font-semibold">⏳ Awaiting Payment</div>
+              <p className="text-white/50 text-xs mt-1">Complete payment to confirm your booking.</p>
+              <p className="text-white/40 text-xs mt-2">Pay within <strong className="text-white">{PAYMENT_MINUTES} minutes</strong></p>
+            </div>
 
-            <Button variant="neon" size="lg" className="w-full" onClick={() => { clearSelection(); navigate('/book/success', { state: { booking } }); }}>
-              Done
+            <Button variant="neon" size="lg" className="w-full" loading={loading} onClick={handleCreateBooking}>
+              Pay Now · ₱{total.toFixed(2)}
             </Button>
           </motion.div>
         </div>
@@ -134,49 +160,119 @@ export function CheckoutPage() {
     );
   }
 
-  return (
-    <div className="pt-16 min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <button onClick={() => navigate('/book')} className="flex items-center gap-2 text-white/50 hover:text-white mb-6 transition-colors text-sm">
-          <ArrowLeft size={16} /> Back
-        </button>
+  // STEP 2: Payment Method
+  if (step === 'payment') {
+    return (
+      <div className="pt-16 min-h-screen">
+        <div className="max-w-lg mx-auto px-4 py-8">
+          {/* Steps indicator */}
+          <div className="flex items-center gap-2 mb-6 text-xs">
+            <span className="w-5 h-5 rounded-full bg-[#7CFC00] text-black flex items-center justify-center font-bold">1</span>
+            <span className="text-[#7CFC00] font-semibold">Payment Method</span>
+            <span className="text-white/20">→</span>
+            <span className="w-5 h-5 rounded-full bg-white/10 text-white/50 flex items-center justify-center">2</span>
+            <span className="text-white/50">Pay</span>
+            <span className="text-white/20">→</span>
+            <span className="w-5 h-5 rounded-full bg-white/10 text-white/50 flex items-center justify-center">3</span>
+            <span className="text-white/50">Upload Proof</span>
+          </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 space-y-4">
-            <h2 className="text-white font-bold mb-4">Booking Summary</h2>
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center gap-2 text-sm text-white/60"><User size={14} className="text-[#7CFC00]" /> {customerName}</div>
-              <div className="flex items-center gap-2 text-sm text-white/60"><Mail size={14} className="text-[#7CFC00]" /> {customerEmail}</div>
-              {customerPhone && <div className="text-sm text-white/60 pl-6">📱 {customerPhone}</div>}
-              <div className="flex items-center gap-2 text-sm text-white/60">
-                <Calendar size={14} className="text-[#7CFC00]" />
-                {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-white/60">
-                <Clock size={14} className="text-[#7CFC00]" />
-                {selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(s => format12h(s.startTime)).join(', ')} ({selectedSlots.length}h)
-              </div>
+          {/* Countdown */}
+          <div className={`glass rounded-xl p-3 mb-4 text-center ${timeLeft <= 60 ? 'border-[#FF1493]/40' : ''}`}>
+            <div className="text-white/50 text-xs">Pay within</div>
+            <div className={`text-2xl font-black ${timeLeft <= 60 ? 'text-[#FF1493]' : 'text-[#7CFC00]'}`}>
+              {formatTime(timeLeft)}
             </div>
-            <div className="border-t border-white/8 pt-4">
-              <div className="flex justify-between font-black text-base">
-                <span className="text-white">{selectedSlots.length}h</span>
-                <span className="text-[#7CFC00]">₱{total}</span>
-              </div>
-            </div>
-          </motion.div>
+          </div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5 space-y-4">
-            <h2 className="text-white font-bold">GCash Payment</h2>
-            <div className="glass rounded-xl p-4 text-white/60 text-sm">
-              <Smartphone size={20} className="text-[#7CFC00] mb-2" />
-              <p>Pay <strong className="text-white">₱{total.toFixed(2)}</strong> via GCash to proceed with your booking.</p>
-              <p className="mt-2 text-xs text-white/40">You'll have 30 minutes to complete the payment.</p>
-            </div>
-            <Button variant="neon" size="lg" className="w-full" loading={loading} onClick={handleCreateBooking}>
-              Confirm & Pay via GCash · ₱{total.toFixed(2)}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 space-y-4">
+            <h2 className="text-white font-bold">Choose a payment method</h2>
+            <p className="text-white/50 text-sm">Select how you'd like to pay the <strong className="text-white">₱{total.toFixed(2)}</strong> total.</p>
+
+            {/* GCash Option */}
+            <label className="flex items-center gap-4 p-4 rounded-xl border border-[#7CFC00]/40 bg-[#7CFC00]/8 cursor-pointer">
+              <input type="radio" checked readOnly className="accent-[#7CFC00]" />
+              <Smartphone size={20} className="text-[#7CFC00]" />
+              <div>
+                <div className="text-white font-semibold text-sm">GCash</div>
+                <div className="text-white/50 text-xs">{GCASH_NUMBER}</div>
+                <div className="text-white/40 text-xs">{GCASH_NAME}</div>
+              </div>
+            </label>
+
+            <Button variant="neon" size="lg" className="w-full" onClick={() => setStep('upload')}>
+              Continue
             </Button>
+
+            <button onClick={() => setStep('summary')} className="w-full text-center text-white/40 text-xs hover:text-white">
+              ← Back
+            </button>
           </motion.div>
         </div>
+      </div>
+    );
+  }
+
+  // STEP 3: Upload Proof
+  return (
+    <div className="pt-16 min-h-screen">
+      <div className="max-w-lg mx-auto px-4 py-8">
+        {/* Steps indicator */}
+        <div className="flex items-center gap-2 mb-6 text-xs">
+          <span className="w-5 h-5 rounded-full bg-[#7CFC00] text-black flex items-center justify-center font-bold">✓</span>
+          <span className="text-[#7CFC00] font-semibold">Payment Method</span>
+          <span className="text-white/20">→</span>
+          <span className="w-5 h-5 rounded-full bg-[#7CFC00] text-black flex items-center justify-center font-bold">✓</span>
+          <span className="text-[#7CFC00] font-semibold">Pay</span>
+          <span className="text-white/20">→</span>
+          <span className="w-5 h-5 rounded-full bg-[#7CFC00] text-black flex items-center justify-center font-bold">3</span>
+          <span className="text-[#7CFC00] font-semibold">Upload Proof</span>
+        </div>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 space-y-4">
+          <h2 className="text-white font-bold">Upload Payment Proof</h2>
+
+          <div className="glass rounded-xl p-4 text-sm space-y-2">
+            <div className="flex justify-between"><span className="text-white/50">Amount:</span><span className="text-white">₱{total.toFixed(2)}</span></div>
+            <div className="flex justify-between">
+              <span className="text-white/50">GCash:</span>
+              <span className="text-white">{GCASH_NUMBER} <button onClick={copyGcash} className="text-[#7CFC00] text-xs ml-1">Copy</button></span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/50">Reference:</span>
+              <span className="text-[#FF1493]">{booking?.referenceCode} <button onClick={copyReference} className="text-[#7CFC00] text-xs ml-1">Copy</button></span>
+            </div>
+          </div>
+
+          {/* Upload */}
+          <div className="glass rounded-xl p-6 text-center space-y-3">
+            {screenshot ? (
+              <div>
+                <CheckCircle2 size={32} className="text-[#7CFC00] mx-auto mb-2" />
+                <p className="text-white text-sm">{screenshot.name}</p>
+                <button onClick={() => setScreenshot(null)} className="text-xs text-white/40 hover:text-white mt-1">Remove</button>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-white/15 rounded-xl p-6 cursor-pointer hover:border-[#7CFC00]/50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}>
+                <Upload size={28} className="text-white/30 mx-auto mb-2" />
+                <p className="text-white/50 text-sm">Tap to upload screenshot</p>
+                <p className="text-white/30 text-xs mt-1">GCash receipt or payment confirmation</p>
+              </div>
+            )}
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+              onChange={e => { if (e.target.files?.[0]) setScreenshot(e.target.files[0]); }} />
+          </div>
+
+          <Button variant="neon" size="lg" className="w-full" loading={uploading}
+            disabled={!screenshot} onClick={handleUploadScreenshot}>
+            Submit Payment Proof
+          </Button>
+
+          <button onClick={() => setStep('payment')} className="w-full text-center text-white/40 text-xs hover:text-white">
+            ← Back
+          </button>
+        </motion.div>
       </div>
     </div>
   );
