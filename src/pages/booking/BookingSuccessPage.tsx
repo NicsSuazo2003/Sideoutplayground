@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Calendar, Clock, Hash, Copy } from 'lucide-react';
+import { CheckCircle2, Calendar, Clock, Hash, Copy, Smartphone } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Button } from '../../components/ui/Button';
 import type { Booking } from '../../types';
@@ -24,6 +24,11 @@ export function BookingSuccessPage() {
     toast.success('Reference copied!');
   };
 
+  const copyGcash = () => {
+    navigator.clipboard.writeText('09058100973');
+    toast.success('GCash number copied!');
+  };
+
   return (
     <div className="pt-16 min-h-screen flex items-center justify-center px-4">
       <div className="absolute inset-0">
@@ -40,9 +45,9 @@ export function BookingSuccessPage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <div className="text-[#7CFC00] text-sm font-bold tracking-widest uppercase mb-2">Booking Submitted</div>
+          <div className="text-[#7CFC00] text-sm font-bold tracking-widest uppercase mb-2">Booking Created</div>
           <h1 className="text-4xl font-black text-white mb-2">Reservation Received!</h1>
-          <p className="text-white/50 mb-2">Your booking is pending admin confirmation.</p>
+          <p className="text-white/50 mb-6">Complete your GCash payment to confirm your slot.</p>
 
           {/* Reference Code */}
           <div className="glass-card p-4 mb-4 inline-block">
@@ -54,7 +59,24 @@ export function BookingSuccessPage() {
               </button>
             </div>
           </div>
-          <p className="text-white/30 text-xs mb-6">Save this reference to track your booking status</p>
+
+          {/* GCash Payment Info */}
+          <div className="glass-card p-4 mb-4 text-left space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Smartphone size={16} className="text-[#7CFC00]" />
+              <span className="text-white font-semibold">Pay via GCash</span>
+            </div>
+            <div className="text-white/50 text-sm">
+              Send <strong className="text-white">₱{booking.totalAmount.toFixed(2)}</strong> to:
+            </div>
+            <div className="flex items-center justify-between glass rounded-lg p-2">
+              <span className="text-white font-bold">09058100973</span>
+              <button onClick={copyGcash} className="text-xs text-[#7CFC00] hover:underline">Copy</button>
+            </div>
+            <p className="text-xs text-[#FF1493]">
+              ⚠️ Put reference <strong>{booking.referenceCode}</strong> in your GCash message!
+            </p>
+          </div>
 
           <div className="glass-card p-5 text-left mb-6 space-y-3">
             <div className="flex items-center gap-3 text-sm">
@@ -67,13 +89,13 @@ export function BookingSuccessPage() {
             </div>
             <div className="flex items-center gap-3 text-sm">
               <Hash size={16} className="text-[#7CFC00] shrink-0" />
-              <span className="text-white/70">₱{booking.totalAmount.toFixed(2)} · Pay at venue</span>
+              <span className="text-white/70">₱{booking.totalAmount.toFixed(2)}</span>
             </div>
           </div>
 
           <div className="flex flex-col gap-3">
             <Button variant="neon" size="lg" className="w-full" onClick={() => navigate('/track')}>
-              Track My Booking
+              Upload Payment Screenshot
             </Button>
             <Button variant="outline" size="lg" className="w-full" onClick={() => navigate('/')}>
               Back to Home

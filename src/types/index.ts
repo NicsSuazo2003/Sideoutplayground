@@ -1,4 +1,4 @@
-export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
+export type BookingStatus = 'pending_payment' | 'payment_submitted' | 'confirmed' | 'cancelled' | 'completed' | 'expired';
 export type CourtStatus = 'active' | 'inactive' | 'maintenance';
 export type CourtType = 'indoor' | 'outdoor';
 export type PaymentMethod = 'cash';
@@ -52,7 +52,10 @@ export interface Booking {
   createdAt: string;
   notes?: string;
   referenceCode: string;
+  paymentScreenshot?: string;
+  paymentExpiresAt?: string;
 }
+
 
 export interface Analytics {
   totalRevenue: number;

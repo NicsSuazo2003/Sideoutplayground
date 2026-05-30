@@ -30,3 +30,11 @@ export async function adminUpdateBooking(id: string, status: Booking['status']):
   const { data } = await api.put<Booking>(`/admin/bookings/${id}`, { status });
   return data;
 }
+export async function uploadPaymentScreenshot(bookingId: string, file: File): Promise<Booking> {
+  const formData = new FormData();
+  formData.append('screenshot', file);
+  const { data } = await api.post<Booking>(`/bookings/${bookingId}/upload-payment`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
