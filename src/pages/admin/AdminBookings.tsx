@@ -66,10 +66,10 @@ export function AdminBookings() {
       <div className="flex flex-col sm:flex-row gap-3">
         <Input placeholder="Search by name, reference, or ID..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} leftIcon={<Search size={16} />} className="sm:w-72" />
         <div className="flex gap-1 p-1 glass rounded-xl">
-          {(['all', 'pending', 'confirmed', 'cancelled', 'completed'] as const).map(s => (
-            <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all capitalize ${statusFilter === s ? 'bg-[#7CFC00] text-black' : 'text-white/50 hover:text-white'}`}>
-              {s}
+          {(['all', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
+            <button key={s} onClick={() => { setStatusFilter(s as BookingStatus); setPage(1); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${statusFilter === s ? 'bg-[#7CFC00] text-black' : 'text-white/50 hover:text-white'}`}>
+              {s === 'all' ? 'All' : s.replace('_', ' ')}
             </button>
           ))}
         </div>
@@ -113,13 +113,19 @@ export function AdminBookings() {
                         <button onClick={() => setSelected(b)} className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors">
                           <Eye size={14} />
                         </button>
-                        {b.status === 'pending' && (
-                          <button onClick={() => handleAction(b.id, 'confirmed')} className="px-2 py-1 rounded-lg bg-green-900/30 text-green-400 text-xs font-semibold hover:bg-green-900/50 transition-colors">Confirm</button>
+                        {b.status === 'pending_payment' && (
+                          <button onClick={() => handleAction(b.id, 'expired')} className="px-2 py-1 rounded-lg bg-red-900/30 text-red-400 text-xs font-semibold hover:bg-red-900/50 transition-colors">Cancel</button>
+                        )}
+                        {b.status === 'payment_submitted' && (
+                          <>
+                            <button onClick={() => handleAction(b.id, 'confirmed')} className="px-2 py-1 rounded-lg bg-green-900/30 text-green-400 text-xs font-semibold hover:bg-green-900/50 transition-colors">Confirm</button>
+                            <button onClick={() => handleAction(b.id, 'cancelled')} className="px-2 py-1 rounded-lg bg-red-900/30 text-red-400 text-xs font-semibold hover:bg-red-900/50 transition-colors">Reject</button>
+                          </>
                         )}
                         {b.status === 'confirmed' && isPastBooking(b) && (
                           <button onClick={() => handleAction(b.id, 'completed')} className="px-2 py-1 rounded-lg bg-blue-900/30 text-blue-400 text-xs font-semibold hover:bg-blue-900/50 transition-colors">Complete</button>
                         )}
-                        {(b.status === 'pending' || b.status === 'confirmed') && (
+                        {b.status === 'confirmed' && (
                           <button onClick={() => handleAction(b.id, 'cancelled')} className="px-2 py-1 rounded-lg bg-red-900/30 text-red-400 text-xs font-semibold hover:bg-red-900/50 transition-colors">Cancel</button>
                         )}
                       </div>
@@ -144,6 +150,13 @@ export function AdminBookings() {
       <Modal open={!!selected} onClose={() => setSelected(null)} title="Booking Details" size="md">
         {selected && (
           <div className="space-y-3 text-sm">
+            {selected.paymentScreenshot && (
+              <div className="glass rounded-xl p-3">
+                <div className="text-white/40 text-xs mb-2">Payment Screenshot</div>
+                <img src={selected.paymentScreenshot} alt="Payment proof" className="rounded-lg max-h-48 w-full object-cover" />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               {[
                 ['Reference', selected.referenceCode],
@@ -166,13 +179,19 @@ export function AdminBookings() {
             </div>
             <div className="flex items-center gap-2 pt-2">
               <StatusBadge status={selected.status} />
-              {selected.status === 'pending' && (
-                <Button variant="neon" size="sm" onClick={() => handleAction(selected.id, 'confirmed')}>Confirm</Button>
+              {selected.status === 'pending_payment' && (
+                <Button variant="destructive" size="sm" onClick={() => handleAction(selected.id, 'expired')}>Cancel</Button>
+              )}
+              {selected.status === 'payment_submitted' && (
+                <>
+                  <Button variant="neon" size="sm" onClick={() => handleAction(selected.id, 'confirmed')}>Confirm Payment</Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleAction(selected.id, 'cancelled')}>Reject</Button>
+                </>
               )}
               {selected.status === 'confirmed' && isPastBooking(selected) && (
                 <Button variant="outline" size="sm" onClick={() => handleAction(selected.id, 'completed')}>Mark Complete</Button>
               )}
-              {(selected.status === 'pending' || selected.status === 'confirmed') && (
+              {selected.status === 'confirmed' && (
                 <Button variant="destructive" size="sm" onClick={() => handleAction(selected.id, 'cancelled')}>Cancel</Button>
               )}
             </div>
