@@ -63,17 +63,14 @@ export function AdminBookings() {
         <p className="text-white/50 text-sm mt-1">{filtered.length} bookings</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Input placeholder="Search by name, reference, or ID..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} leftIcon={<Search size={16} />} className="sm:w-72" />
-        <div className="flex gap-1 p-1 glass rounded-xl">
-          {(['all', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
-            <button key={s} onClick={() => { setStatusFilter(s as BookingStatus); setPage(1); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${statusFilter === s ? 'bg-[#7CFC00] text-black' : 'text-white/50 hover:text-white'}`}>
-              {s === 'all' ? 'All' : s.replace('_', ' ')}
-            </button>
-          ))}
-        </div>
-      </div>
+      <div className="flex gap-1 p-1 glass rounded-xl overflow-x-auto">
+  {(['all', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
+    <button key={s} onClick={() => { setStatusFilter(s as BookingStatus); setPage(1); }}
+      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${statusFilter === s ? 'bg-[#7CFC00] text-black' : 'text-white/50 hover:text-white'}`}>
+      {s === 'all' ? 'All' : s === 'pending_payment' ? 'Pending' : s === 'payment_submitted' ? 'Submitted' : s.charAt(0).toUpperCase() + s.slice(1)}
+    </button>
+  ))}
+</div>
 
       {isLoading ? <LoadingSpinner /> : (
         <div className="glass-card overflow-hidden">
