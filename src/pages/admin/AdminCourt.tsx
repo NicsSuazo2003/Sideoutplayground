@@ -4,9 +4,11 @@ import { Plus, X, ImagePlus, Trash2, Star, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAdminStore } from '../../stores/adminStore';
 import { uploadImage, deleteImage } from '../../services/fileService';
+import { getBlockedDates, addBlockedDate, deleteBlockedDate } from '../../services/courtService';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import type { BlockedDate } from '../../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5154';
 
@@ -26,7 +28,14 @@ export function AdminCourt() {
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { fetchCourtSettings(); }, []);
+  // Blocked dates
+  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
+  const [newBlockDate, setNewBlockDate] = useState('');
+  const [newBlockStart, setNewBlockStart] = useState('');
+  const [newBlockEnd, setNewBlockEnd] = useState('');
+  const [newBlockReason, setNewBlockReason] = useState('');
+
+  useEffect(() => { fetchCourtSettings(); getBlockedDates().then(setBlockedDates).catch(() => {}); }, []);
 
   useEffect(() => {
     if (courtSettings) {
@@ -52,8 +61,7 @@ export function AdminCourt() {
     setUploading(true);
     try {
       const url = await uploadImage(file);
-      const fullUrl = url; // Supabase returns full URL already
-      setImages(prev => [...prev, fullUrl]);
+      setImages(prev => [...prev, url]);
       toast.success('Image uploaded!');
     } catch {
       toast.error('Upload failed');
@@ -64,13 +72,10 @@ export function AdminCourt() {
   };
 
   const handleDeleteImage = async (url: string) => {
-    if (url.includes('/images/courts/')) {
+    if (url.includes('/images/courts/') || url.includes('supabase')) {
       try {
-        const relativeUrl = url.replace(import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5154', '');
-        await deleteImage(relativeUrl);
-      } catch {
-        // Silently fail
-      }
+        await deleteImage(url);
+      } catch { /* silently fail */ }
     }
     setImages(prev => prev.filter(i => i !== url));
   };
@@ -99,6 +104,29 @@ export function AdminCourt() {
     }
   };
 
+  const handleAddBlockedDate = async () => {
+    if (!newBlockDate) { toast.error('Pick a date'); return; }
+    try {
+      const bd = await addBlockedDate({
+        date: newBlockDate,
+        startTime: newBlockStart || undefined,
+        endTime: newBlockEnd || undefined,
+        reason: newBlockReason || undefined,
+      });
+      setBlockedDates(prev => [...prev, bd]);
+      setNewBlockDate(''); setNewBlockStart(''); setNewBlockEnd(''); setNewBlockReason('');
+      toast.success('Date blocked');
+    } catch { toast.error('Failed to block date'); }
+  };
+
+  const handleDeleteBlockedDate = async (id: string) => {
+    try {
+      await deleteBlockedDate(id);
+      setBlockedDates(prev => prev.filter(b => b.id !== id));
+      toast.success('Block removed');
+    } catch { toast.error('Failed to remove block'); }
+  };
+
   if (isLoading && !courtSettings) return <LoadingSpinner />;
 
   return (
@@ -118,11 +146,8 @@ export function AdminCourt() {
                 <div key={url} className="relative group rounded-xl overflow-hidden aspect-video">
                   <img src={getImageUrl(url)} alt={`Court ${idx + 1}`} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteImage(url)}
-                      className="opacity-0 group-hover:opacity-100 p-2 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-all"
-                    >
+                    <button type="button" onClick={() => handleDeleteImage(url)}
+                      className="opacity-0 group-hover:opacity-100 p-2 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-all">
                       <Trash2 size={14} />
                     </button>
                     {idx === 0 && (
@@ -140,15 +165,36 @@ export function AdminCourt() {
               No images added yet
             </div>
           )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
           <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} loading={uploading}>
             <Upload size={14} /> Upload Image
+          </Button>
+        </div>
+
+        {/* Blocked Dates */}
+        <div className="mb-6">
+          <label className="text-sm font-medium text-white/80 block mb-2">Blocked Dates</label>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {blockedDates.length === 0 && (
+              <span className="text-white/40 text-xs">No blocked dates</span>
+            )}
+            {blockedDates.map(bd => (
+              <span key={bd.id} className="flex items-center gap-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-full px-3 py-1">
+                {new Date(bd.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {bd.startTime ? ` ${bd.startTime}-${bd.endTime}` : ' All Day'}
+                {bd.reason && ` (${bd.reason})`}
+                <button type="button" onClick={() => handleDeleteBlockedDate(bd.id)} className="text-red-400 hover:text-red-300"><X size={11} /></button>
+              </span>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <input type="date" value={newBlockDate} onChange={e => setNewBlockDate(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm" />
+            <input type="time" value={newBlockStart} onChange={e => setNewBlockStart(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm" />
+            <input type="time" value={newBlockEnd} onChange={e => setNewBlockEnd(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm" />
+            <input placeholder="Reason" value={newBlockReason} onChange={e => setNewBlockReason(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={handleAddBlockedDate}>
+            <Plus size={14} /> Block Date
           </Button>
         </div>
 
@@ -186,20 +232,14 @@ export function AdminCourt() {
               {amenities.map(a => (
                 <span key={a} className="flex items-center gap-1.5 text-xs bg-[#7CFC00]/10 text-[#7CFC00] border border-[#7CFC00]/20 rounded-full px-3 py-1">
                   {a}
-                  <button type="button" onClick={() => setAmenities(prev => prev.filter(x => x !== a))} className="text-[#7CFC00]/60 hover:text-red-400 transition-colors">
-                    <X size={11} />
-                  </button>
+                  <button type="button" onClick={() => setAmenities(prev => prev.filter(x => x !== a))} className="text-[#7CFC00]/60 hover:text-red-400 transition-colors"><X size={11} /></button>
                 </span>
               ))}
             </div>
             <div className="flex gap-2">
-              <input
-                value={newAmenity}
-                onChange={e => setNewAmenity(e.target.value)}
+              <input value={newAmenity} onChange={e => setNewAmenity(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newAmenity.trim()) { setAmenities(p => [...p, newAmenity.trim()]); setNewAmenity(''); } } }}
-                placeholder="Add amenity..."
-                className="input-glass flex-1 rounded-xl px-4 py-2 text-sm"
-              />
+                placeholder="Add amenity..." className="input-glass flex-1 rounded-xl px-4 py-2 text-sm" />
               <Button type="button" variant="outline" size="sm" onClick={() => { if (newAmenity.trim()) { setAmenities(p => [...p, newAmenity.trim()]); setNewAmenity(''); } }}>
                 <Plus size={14} />
               </Button>

@@ -1,5 +1,7 @@
 import { api } from './api';
 import type { Court, TimeSlot } from '../types';
+import type { BlockedDate } from '../types';
+
 
 export interface PriceRule {
   id: string;
@@ -45,4 +47,18 @@ export async function updatePriceRule(id: string, body: Partial<PriceRule>): Pro
 
 export async function deletePriceRule(id: string): Promise<void> {
   await api.delete(`/price-rules/${id}`);
+}
+
+export async function getBlockedDates(): Promise<BlockedDate[]> {
+  const { data } = await api.get<BlockedDate[]>('/court/blocked-dates');
+  return data;
+}
+
+export async function addBlockedDate(body: { date: string; startTime?: string; endTime?: string; reason?: string }): Promise<BlockedDate> {
+  const { data } = await api.post<BlockedDate>('/court/blocked-dates', body);
+  return data;
+}
+
+export async function deleteBlockedDate(id: string): Promise<void> {
+  await api.delete(`/court/blocked-dates/${id}`);
 }

@@ -66,3 +66,11 @@ export interface Analytics {
   bookingsGrowth: number;
   usersGrowth: number;
 }
+
+export interface BlockedDate {
+  id: string;
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  reason?: string;
+}
