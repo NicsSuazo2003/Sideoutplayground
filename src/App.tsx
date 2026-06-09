@@ -6,10 +6,6 @@ import { AdminRoute } from './components/auth/ProtectedRoute';
 
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/auth/LoginPage';
-import { AdminPriceRules } from './pages/admin/AdminPriceRules';
-
-
-import { BookingPage } from './pages/booking/BookingPage';
 import { CheckoutPage } from './pages/booking/CheckoutPage';
 import { BookingSuccessPage } from './pages/booking/BookingSuccessPage';
 import { TrackBookingPage } from './pages/booking/TrackBookingPage';
@@ -19,6 +15,7 @@ import { AdminBookings } from './pages/admin/AdminBookings';
 import { AdminCustomers } from './pages/admin/AdminCustomers';
 import { AdminCourt } from './pages/admin/AdminCourt';
 import { AdminReports } from './pages/admin/AdminReports';
+import { AdminPriceRules } from './pages/admin/AdminPriceRules';
 
 export default function App() {
   return (
@@ -32,26 +29,23 @@ export default function App() {
         }}
       />
       <Routes>
-        {/* Public */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/book" element={<BookingPage />} />
           <Route path="/book/checkout" element={<CheckoutPage />} />
           <Route path="/book/success" element={<BookingSuccessPage />} />
           <Route path="/track" element={<TrackBookingPage />} />
-          
         </Route>
 
-        {/* Admin */}
-<Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-  <Route index element={<AdminDashboard />} />
-  <Route path="bookings" element={<AdminBookings />} />
-  <Route path="customers" element={<AdminCustomers />} />
-  <Route path="court" element={<AdminCourt />} />
-  <Route path="pricing" element={<AdminPriceRules />} />
-  <Route path="reports" element={<AdminReports />} />
-</Route>
+        <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="bookings" element={<AdminBookings />} />
+          <Route path="customers" element={<AdminCustomers />} />
+          <Route path="court" element={<AdminCourt />} />
+          <Route path="pricing" element={<AdminPriceRules />} />
+          <Route path="reports" element={<AdminReports />} />
+        </Route>
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

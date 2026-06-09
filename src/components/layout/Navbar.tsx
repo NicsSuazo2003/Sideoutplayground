@@ -6,8 +6,6 @@ import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../ui/Button';
 
 const navLinks = [
-  { label: 'Home', href: '/' },
-  { label: 'Book a Slot', href: '/book' },
   { label: 'Track Booking', href: '/track' },
 ];
 
