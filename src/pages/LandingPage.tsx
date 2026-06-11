@@ -246,36 +246,83 @@ export function LandingPage() {
 
               {/* Legend */}
               <div className="flex gap-4 text-xs text-white/40">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border border-white/20 inline-block" />Vacant</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#7CFC00] inline-block" />Selected</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-white/5 inline-block" />Booked</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/30 inline-block" />Vacant</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#7CFC00] inline-block" />Selected</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-white/10 inline-block" />Booked</span>
               </div>
 
-              {/* Time Slots */}
-              <div className="glass-card p-4">
+              {/* Schedule Table */}
+              <div className="glass-card p-4 overflow-hidden">
                 <h2 className="text-white font-bold mb-3">
                   {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </h2>
                 {isLoading ? <LoadingSpinner size={24} /> : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {availability.map(slot => {
-                      const isSelected = selectedSlots.some(s => s.id === slot.id);
-                      return (
-                        <motion.button key={slot.id} whileHover={slot.isAvailable ? { scale: 1.04 } : {}} whileTap={slot.isAvailable ? { scale: 0.97 } : {}}
-                          onClick={() => handleSlotClick(slot)}
-                          className={`relative p-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${
-                            isSelected ? 'bg-[#7CFC00] text-black border-[#7CFC00] glow-green'
-                            : !slot.isAvailable ? 'bg-white/3 border-white/5 text-white/20 cursor-not-allowed'
-                            : 'border-white/15 text-white/80 hover:border-[#7CFC00]/50 hover:bg-[#7CFC00]/8 hover:text-white'}`}>
-                          <div className="text-center">
-                            <div className="font-bold">{format12h(slot.startTime)}</div>
-                            <div className="text-[10px] text-white/50">₱{slot.price || pricePerHour}</div>
-                          </div>
-                          {isSelected && <Check size={14} className="absolute top-1.5 right-1.5 text-black" />}
-                          {!slot.isAvailable && <Lock size={12} className="absolute top-1.5 right-1.5 text-white/20" />}
-                        </motion.button>
-                      );
-                    })}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-white/40 text-xs border-b border-white/8">
+                          <th className="text-left py-2 px-3 font-semibold">Time</th>
+                          <th className="text-left py-2 px-3 font-semibold">Status</th>
+                          <th className="text-right py-2 px-3 font-semibold">Price</th>
+                          <th className="text-right py-2 px-3 font-semibold"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {availability.map(slot => {
+                          const isSelected = selectedSlots.some(s => s.id === slot.id);
+                          return (
+                            <motion.tr
+                              key={slot.id}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className={`border-b border-white/5 transition-colors ${
+                                isSelected ? 'bg-[#7CFC00]/10' 
+                                : slot.isAvailable ? 'hover:bg-white/3' 
+                                : 'opacity-50'
+                              }`}
+                            >
+                              <td className="py-2.5 px-3">
+                                <span className="text-white font-semibold">{format12h(slot.startTime)}</span>
+                                <span className="text-white/30"> – {format12h(slot.endTime)}</span>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                {isSelected ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#7CFC00]/20 text-[#7CFC00]">
+                                    <Check size={10} /> Selected
+                                  </span>
+                                ) : slot.isAvailable ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-500/10 text-green-400">
+                                    Vacant
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-white/5 text-white/30">
+                                    <Lock size={10} /> Booked
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                <span className={`font-semibold ${isSelected ? 'text-[#7CFC00]' : slot.isAvailable ? 'text-white/60' : 'text-white/20'}`}>
+                                  ₱{slot.price || pricePerHour}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                {isSelected ? (
+                                  <button onClick={() => deselectSlot(slot.id)} className="text-xs text-red-400 hover:text-red-300 font-semibold">
+                                    Remove
+                                  </button>
+                                ) : slot.isAvailable ? (
+                                  <button onClick={() => handleSlotClick(slot)} className="px-3 py-1 rounded-lg bg-[#7CFC00] text-black text-xs font-bold hover:bg-[#7CFC00]/80 transition-colors">
+                                    Book
+                                  </button>
+                                ) : (
+                                  <span className="text-xs text-white/20">—</span>
+                                )}
+                              </td>
+                            </motion.tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
