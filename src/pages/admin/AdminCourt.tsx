@@ -161,34 +161,69 @@ export function AdminCourt() {
       </motion.div>
 
       {/* ===== BLOCKED DATES ===== */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-card p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar size={18} className="text-[#FF1493]" />
-          <h2 className="text-white font-bold">Blocked Dates</h2>
-        </div>
+<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-card p-5">
+  <div className="flex items-center gap-2 mb-4">
+    <Calendar size={18} className="text-[#FF1493]" />
+    <h2 className="text-white font-bold">Blocked Dates</h2>
+  </div>
 
-        <div className="flex flex-wrap gap-2 mb-4">
-          {blockedDates.length === 0 && <span className="text-white/40 text-xs">No blocked dates</span>}
-          {blockedDates.map(bd => (
-            <span key={bd.id} className="flex items-center gap-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-full px-3 py-1">
-              {new Date(bd.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              {bd.startTime ? ` ${bd.startTime}-${bd.endTime}` : ' All Day'}
-              {bd.reason && ` (${bd.reason})`}
-              <button type="button" onClick={() => handleDeleteBlockedDate(bd.id)} className="text-red-400 hover:text-red-300"><X size={11} /></button>
-            </span>
-          ))}
-        </div>
+  <p className="text-white/40 text-xs mb-4">Block specific dates or time ranges from being booked.</p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
-          <div><label className="text-[10px] text-white/40 block mb-0.5">Date *</label><input type="date" value={newBlockDate} onChange={e => setNewBlockDate(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm w-full" /></div>
-          <div><label className="text-[10px] text-white/40 block mb-0.5">Start (opt)</label><input type="time" value={newBlockStart} onChange={e => setNewBlockStart(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm w-full" /></div>
-          <div><label className="text-[10px] text-white/40 block mb-0.5">End (opt)</label><input type="time" value={newBlockEnd} onChange={e => setNewBlockEnd(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm w-full" /></div>
-          <div><label className="text-[10px] text-white/40 block mb-0.5">Reason</label><input placeholder="e.g. Holiday" value={newBlockReason} onChange={e => setNewBlockReason(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm w-full" /></div>
+  {/* Existing blocked dates list */}
+  <div className="flex flex-wrap gap-2 mb-4">
+    {blockedDates.length === 0 && <span className="text-white/40 text-xs">No blocked dates</span>}
+    {blockedDates.map(bd => (
+      <span key={bd.id} className="flex items-center gap-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-full px-3 py-1">
+        {new Date(bd.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        {bd.startTime ? ` ${bd.startTime}–${bd.endTime}` : ' All Day'}
+        {bd.reason && ` — ${bd.reason}`}
+        <button type="button" onClick={() => handleDeleteBlockedDate(bd.id)} className="text-red-400 hover:text-red-300"><X size={11} /></button>
+      </span>
+    ))}
+  </div>
+
+  {/* Add new blocked date */}
+  <div className="space-y-3">
+    <div className="flex items-center gap-4">
+      <div className="flex-1">
+        <label className="text-[10px] text-white/40 block mb-0.5">Date *</label>
+        <input type="date" value={newBlockDate} onChange={e => setNewBlockDate(e.target.value)}
+          className="input-glass rounded-xl px-3 py-2 text-sm w-full" />
+      </div>
+      <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer pt-4">
+        <input type="checkbox" checked={!newBlockStart && !newBlockEnd}
+          onChange={e => { if (e.target.checked) { setNewBlockStart(''); setNewBlockEnd(''); } }}
+          className="accent-[#7CFC00]" />
+        All Day
+      </label>
+    </div>
+
+    {!(newBlockStart === '' && newBlockEnd === '' && !newBlockDate) && newBlockStart === '' && newBlockEnd === '' ? null : (
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-[10px] text-white/40 block mb-0.5">From</label>
+          <input type="time" value={newBlockStart} onChange={e => setNewBlockStart(e.target.value)}
+            className="input-glass rounded-xl px-3 py-2 text-sm w-full" />
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={handleAddBlockedDate}>
-          <Plus size={14} /> Block Date
-        </Button>
-      </motion.div>
+        <div>
+          <label className="text-[10px] text-white/40 block mb-0.5">To</label>
+          <input type="time" value={newBlockEnd} onChange={e => setNewBlockEnd(e.target.value)}
+            className="input-glass rounded-xl px-3 py-2 text-sm w-full" />
+        </div>
+      </div>
+    )}
+
+    <div>
+      <label className="text-[10px] text-white/40 block mb-0.5">Reason (optional)</label>
+      <input placeholder="e.g. Maintenance, Holiday" value={newBlockReason} onChange={e => setNewBlockReason(e.target.value)}
+        className="input-glass rounded-xl px-3 py-2 text-sm w-full" />
+    </div>
+
+    <Button type="button" variant="outline" size="sm" onClick={handleAddBlockedDate}>
+      <Plus size={14} /> Block Date
+    </Button>
+  </div>
+</motion.div>
 
       {/* ===== COURT DETAILS ===== */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5">
