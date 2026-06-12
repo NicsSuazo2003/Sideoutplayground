@@ -60,6 +60,7 @@ export interface Booking {
 export interface Analytics {
   totalRevenue: number;
   totalBookings: number;
+  activeUsers: number; 
   revenueByDay: { date: string; revenue: number }[];
   bookingsByDay: { date: string; bookings: number }[];
   revenueGrowth: number;

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, X, ImagePlus, Trash2, Star, Upload } from 'lucide-react';
+import { Plus, X, ImagePlus, Trash2, Star, Upload, Calendar, Settings } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAdminStore } from '../../stores/adminStore';
 import { uploadImage, deleteImage } from '../../services/fileService';
@@ -28,7 +28,6 @@ export function AdminCourt() {
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Blocked dates
   const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
   const [newBlockDate, setNewBlockDate] = useState('');
   const [newBlockStart, setNewBlockStart] = useState('');
@@ -73,9 +72,7 @@ export function AdminCourt() {
 
   const handleDeleteImage = async (url: string) => {
     if (url.includes('/images/courts/') || url.includes('supabase')) {
-      try {
-        await deleteImage(url);
-      } catch { /* silently fail */ }
+      try { await deleteImage(url); } catch { /* ignore */ }
     }
     setImages(prev => prev.filter(i => i !== url));
   };
@@ -85,23 +82,14 @@ export function AdminCourt() {
     setSaving(true);
     try {
       await updateCourtSettings({
-        name: form.name,
-        pricePerHour: parseFloat(form.pricePerHour),
-        openTime: form.openTime,
-        closeTime: form.closeTime,
-        status: form.status,
-        type: form.type,
-        indoor: form.type === 'indoor',
-        amenities,
-        imageUrl: images[0] || '',
-        images: images,
+        name: form.name, pricePerHour: parseFloat(form.pricePerHour),
+        openTime: form.openTime, closeTime: form.closeTime,
+        status: form.status, type: form.type, indoor: form.type === 'indoor',
+        amenities, imageUrl: images[0] || '', images: images,
       });
       toast.success('Court settings updated!');
-    } catch {
-      toast.error('Failed to update settings');
-    } finally {
-      setSaving(false);
-    }
+    } catch { toast.error('Failed to update settings'); }
+    finally { setSaving(false); }
   };
 
   const handleAddBlockedDate = async () => {
@@ -130,72 +118,83 @@ export function AdminCourt() {
   if (isLoading && !courtSettings) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-5 max-w-2xl">
+    <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-2xl font-black text-white">Court Settings</h1>
-        <p className="text-white/50 text-sm mt-1">Manage Side Out Arena configuration</p>
+        <p className="text-white/50 text-sm mt-1">Manage images, blocked dates, and court details</p>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6">
-        {/* Image Gallery */}
-        <div className="mb-6">
-          <label className="text-sm font-medium text-white/80 block mb-2">Court Images</label>
-          {images.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
-              {images.map((url, idx) => (
-                <div key={url} className="relative group rounded-xl overflow-hidden aspect-video">
-                  <img src={getImageUrl(url)} alt={`Court ${idx + 1}`} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                    <button type="button" onClick={() => handleDeleteImage(url)}
-                      className="opacity-0 group-hover:opacity-100 p-2 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-all">
-                      <Trash2 size={14} />
-                    </button>
-                    {idx === 0 && (
-                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-[#7CFC00] text-black text-[10px] font-bold flex items-center gap-1">
-                        <Star size={10} /> Main
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="glass rounded-xl p-8 text-center text-white/40 text-sm mb-3">
-              <ImagePlus size={32} className="mx-auto mb-2 text-white/20" />
-              No images added yet
-            </div>
-          )}
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-          <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} loading={uploading}>
-            <Upload size={14} /> Upload Image
-          </Button>
+      {/* ===== IMAGES ===== */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <ImagePlus size={18} className="text-[#7CFC00]" />
+          <h2 className="text-white font-bold">Court Images</h2>
         </div>
 
-        {/* Blocked Dates */}
-        <div className="mb-6">
-          <label className="text-sm font-medium text-white/80 block mb-2">Blocked Dates</label>
-          <div className="flex flex-wrap gap-2 mb-3">
-            {blockedDates.length === 0 && (
-              <span className="text-white/40 text-xs">No blocked dates</span>
-            )}
-            {blockedDates.map(bd => (
-              <span key={bd.id} className="flex items-center gap-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-full px-3 py-1">
-                {new Date(bd.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                {bd.startTime ? ` ${bd.startTime}-${bd.endTime}` : ' All Day'}
-                {bd.reason && ` (${bd.reason})`}
-                <button type="button" onClick={() => handleDeleteBlockedDate(bd.id)} className="text-red-400 hover:text-red-300"><X size={11} /></button>
-              </span>
+        {images.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+            {images.map((url, idx) => (
+              <div key={url} className="relative group rounded-xl overflow-hidden aspect-video">
+                <img src={getImageUrl(url)} alt={`Court ${idx + 1}`} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                  <button type="button" onClick={() => handleDeleteImage(url)}
+                    className="opacity-0 group-hover:opacity-100 p-2 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-all">
+                    <Trash2 size={14} />
+                  </button>
+                  {idx === 0 && (
+                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-[#7CFC00] text-black text-[10px] font-bold flex items-center gap-1">
+                      <Star size={10} /> Main
+                    </span>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <input type="date" value={newBlockDate} onChange={e => setNewBlockDate(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm" />
-            <input type="time" value={newBlockStart} onChange={e => setNewBlockStart(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm" />
-            <input type="time" value={newBlockEnd} onChange={e => setNewBlockEnd(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm" />
-            <input placeholder="Reason" value={newBlockReason} onChange={e => setNewBlockReason(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm" />
-          </div>
-          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={handleAddBlockedDate}>
-            <Plus size={14} /> Block Date
-          </Button>
+        ) : (
+          <div className="glass rounded-xl p-6 text-center text-white/40 text-sm mb-3">No images added yet</div>
+        )}
+
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} loading={uploading}>
+          <Upload size={14} /> Upload Image
+        </Button>
+      </motion.div>
+
+      {/* ===== BLOCKED DATES ===== */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Calendar size={18} className="text-[#FF1493]" />
+          <h2 className="text-white font-bold">Blocked Dates</h2>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          {blockedDates.length === 0 && <span className="text-white/40 text-xs">No blocked dates</span>}
+          {blockedDates.map(bd => (
+            <span key={bd.id} className="flex items-center gap-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-full px-3 py-1">
+              {new Date(bd.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {bd.startTime ? ` ${bd.startTime}-${bd.endTime}` : ' All Day'}
+              {bd.reason && ` (${bd.reason})`}
+              <button type="button" onClick={() => handleDeleteBlockedDate(bd.id)} className="text-red-400 hover:text-red-300"><X size={11} /></button>
+            </span>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+          <div><label className="text-[10px] text-white/40 block mb-0.5">Date *</label><input type="date" value={newBlockDate} onChange={e => setNewBlockDate(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm w-full" /></div>
+          <div><label className="text-[10px] text-white/40 block mb-0.5">Start (opt)</label><input type="time" value={newBlockStart} onChange={e => setNewBlockStart(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm w-full" /></div>
+          <div><label className="text-[10px] text-white/40 block mb-0.5">End (opt)</label><input type="time" value={newBlockEnd} onChange={e => setNewBlockEnd(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm w-full" /></div>
+          <div><label className="text-[10px] text-white/40 block mb-0.5">Reason</label><input placeholder="e.g. Holiday" value={newBlockReason} onChange={e => setNewBlockReason(e.target.value)} className="input-glass rounded-xl px-3 py-2 text-sm w-full" /></div>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={handleAddBlockedDate}>
+          <Plus size={14} /> Block Date
+        </Button>
+      </motion.div>
+
+      {/* ===== COURT DETAILS ===== */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Settings size={18} className="text-[#7CFC00]" />
+          <h2 className="text-white font-bold">Court Details</h2>
         </div>
 
         <form onSubmit={handleSave} className="space-y-5">
@@ -205,7 +204,6 @@ export function AdminCourt() {
             <Input label="Open Time" type="time" value={form.openTime} onChange={e => setForm(f => ({ ...f, openTime: e.target.value }))} />
             <Input label="Close Time" type="time" value={form.closeTime} onChange={e => setForm(f => ({ ...f, closeTime: e.target.value }))} />
           </div>
-
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-white/80 block mb-1.5">Court Type</label>
@@ -225,7 +223,6 @@ export function AdminCourt() {
               </select>
             </div>
           </div>
-
           <div>
             <label className="text-sm font-medium text-white/80 block mb-2">Amenities</label>
             <div className="flex flex-wrap gap-2 mb-3">
@@ -245,7 +242,6 @@ export function AdminCourt() {
               </Button>
             </div>
           </div>
-
           <Button variant="neon" type="submit" loading={saving}>Save Changes</Button>
         </form>
       </motion.div>

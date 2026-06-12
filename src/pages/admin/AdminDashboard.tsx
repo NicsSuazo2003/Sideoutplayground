@@ -106,7 +106,7 @@ export function AdminDashboard() {
                     {todayBookings.map(b => (
                       <tr key={b.id} className="border-b border-white/5">
                         <td className="py-2 text-white/70">{b.slots[0]?.startTime}</td>
-                        <td className="py-2 text-white/80">{b.userName}</td>
+                        <td className="py-2 text-white/80">{b.customerName}</td>
                         <td className="py-2 text-white/50">{b.slots.length}h</td>
                         <td className="py-2"><StatusBadge status={b.status} /></td>
                       </tr>
