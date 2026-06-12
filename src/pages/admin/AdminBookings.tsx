@@ -97,12 +97,15 @@ export function AdminBookings() {
                       <div className="text-white/40 text-xs">{b.customerEmail}</div>
                     </td>
                     <td className="p-4 text-white/60">{b.date}</td>
-                    <td className="p-4 text-white/60">
-                      {b.slots.length > 0
-                        ? `${format12h(b.slots[0]?.startTime)} – ${format12h(b.slots[b.slots.length-1]?.endTime)}`
-                        : '—'}
-                      <div className="text-white/30 text-xs">{b.slots.length}h</div>
-                    </td>
+                  <td className="p-4 text-white/60">
+  {b.slots.length > 0
+    ? (() => {
+        const sorted = [...b.slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+        return `${format12h(sorted[0]?.startTime)} – ${format12h(sorted[sorted.length-1]?.endTime)}`;
+      })()
+    : '—'}
+  <div className="text-white/30 text-xs">{b.slots.length}h</div>
+</td>
                     <td className="p-4 text-[#7CFC00] font-semibold">₱{b.totalAmount}</td>
                     <td className="p-4"><StatusBadge status={b.status} /></td>
                     <td className="p-4">
@@ -161,9 +164,12 @@ export function AdminBookings() {
                 ['Email', selected.customerEmail],
                 ['Phone', selected.customerPhone || '—'],
                 ['Date', selected.date],
-                ['Time', selected.slots.length > 0
-                  ? `${format12h(selected.slots[0]?.startTime)} – ${format12h(selected.slots[selected.slots.length-1]?.endTime)}`
-                  : '—'],
+              ['Time', selected.slots.length > 0
+  ? (() => {
+      const sorted = [...selected.slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+      return `${format12h(sorted[0]?.startTime)} – ${format12h(sorted[sorted.length-1]?.endTime)}`;
+    })()
+  : '—'],
                 ['Duration', `${selected.slots.length} hour(s)`],
                 ['Amount', `₱${selected.totalAmount.toFixed(2)}`],
                 ['Notes', selected.notes || '—'],
