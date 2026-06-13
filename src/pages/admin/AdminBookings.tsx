@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Eye } from 'lucide-react';
+import { Search, Eye, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAdminStore } from '../../stores/adminStore';
 import { StatusBadge } from '../../components/ui/Badge';
@@ -9,6 +9,8 @@ import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import type { Booking, BookingStatus } from '../../types';
+import { AdminCreateBooking } from './AdminCreateBooking';
+
 
 function format12h(time: string): string {
   const [h, m] = time.split(':').map(Number);
@@ -32,6 +34,8 @@ export function AdminBookings() {
   const [statusFilter, setStatusFilter] = useState<'all' | BookingStatus>('all');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Booking | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
 
   useEffect(() => { fetchAllBookings(); }, []);
 
@@ -58,19 +62,24 @@ export function AdminBookings() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-black text-white">Booking Management</h1>
-        <p className="text-white/50 text-sm mt-1">{filtered.length} bookings</p>
-      </div>
+     <div className="flex items-center justify-between">
+    <div>
+    <h1 className="text-2xl font-black text-white">Booking Management</h1>
+    <p className="text-white/50 text-sm mt-1">{filtered.length} bookings</p>
+    </div>
+   <Button variant="neon" size="sm" onClick={() => setShowCreateModal(true)}>
+    <Plus size={14} /> New Booking
+    </Button>
+    </div>
 
       <div className="flex gap-1 p-1 glass rounded-xl overflow-x-auto">
-  {(['all', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
+   {(['all', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
     <button key={s} onClick={() => { setStatusFilter(s as BookingStatus); setPage(1); }}
       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${statusFilter === s ? 'bg-[#7CFC00] text-black' : 'text-white/50 hover:text-white'}`}>
       {s === 'all' ? 'All' : s === 'pending_payment' ? 'Pending' : s === 'payment_submitted' ? 'Submitted' : s.charAt(0).toUpperCase() + s.slice(1)}
     </button>
-  ))}
-</div>
+    ))}
+    </div>
 
       {isLoading ? <LoadingSpinner /> : (
         <div className="glass-card overflow-hidden">
@@ -98,14 +107,14 @@ export function AdminBookings() {
                     </td>
                     <td className="p-4 text-white/60">{b.date}</td>
                   <td className="p-4 text-white/60">
-  {b.slots.length > 0
+    {b.slots.length > 0
     ? (() => {
         const sorted = [...b.slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
         return `${format12h(sorted[0]?.startTime)} – ${format12h(sorted[sorted.length-1]?.endTime)}`;
       })()
     : '—'}
-  <div className="text-white/30 text-xs">{b.slots.length}h</div>
-</td>
+       <div className="text-white/30 text-xs">{b.slots.length}h</div>
+      </td>
                     <td className="p-4 text-[#7CFC00] font-semibold">₱{b.totalAmount}</td>
                     <td className="p-4"><StatusBadge status={b.status} /></td>
                     <td className="p-4">
@@ -165,11 +174,11 @@ export function AdminBookings() {
                 ['Phone', selected.customerPhone || '—'],
                 ['Date', selected.date],
               ['Time', selected.slots.length > 0
-  ? (() => {
+       ? (() => {
       const sorted = [...selected.slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
       return `${format12h(sorted[0]?.startTime)} – ${format12h(sorted[sorted.length-1]?.endTime)}`;
     })()
-  : '—'],
+   : '—'],
                 ['Duration', `${selected.slots.length} hour(s)`],
                 ['Amount', `₱${selected.totalAmount.toFixed(2)}`],
                 ['Notes', selected.notes || '—'],
@@ -201,6 +210,11 @@ export function AdminBookings() {
           </div>
         )}
       </Modal>
+     <AdminCreateBooking 
+        open={showCreateModal} 
+        onClose={() => setShowCreateModal(false)} 
+        onCreated={fetchAllBookings} 
+      />
     </div>
   );
 }
