@@ -73,13 +73,13 @@ export function BookingPage() {
     setShowDetailsForm(true);
   };
 
- const handleDetailsSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!customerName.trim()) { toast.error('Name is required'); return; }
-  if (!customerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) { toast.error('Valid email is required'); return; }
-  if (!customerPhone.trim()) { toast.error('Phone number is required'); return; }
-  navigate('/book/checkout');
-};
+  const handleDetailsSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerName.trim()) { toast.error('Name is required'); return; }
+    if (!customerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) { toast.error('Valid email is required'); return; }
+    if (!customerPhone.trim()) { toast.error('Phone number is required'); return; }
+    navigate('/book/checkout');
+  };
 
   const pricePerHour = court?.pricePerHour || 20;
   const subtotal = selectedSlots.reduce((sum, slot) => sum + (slot.price || pricePerHour), 0);
@@ -138,6 +138,7 @@ export function BookingPage() {
 
         {!showDetailsForm ? (
           <div className="grid lg:grid-cols-3 gap-6">
+            {/* LEFT COLUMN — Date picker + Time slots */}
             <div className="lg:col-span-2 space-y-6">
               {/* Date Picker */}
               <div className="glass-card p-4">
@@ -171,10 +172,10 @@ export function BookingPage() {
                 </div>
               </div>
 
-              {/* Time Slots */}
+              {/* Time Slots Grid */}
               <div className="glass-card p-4">
                 <h2 className="text-white font-bold mb-3">
-                  Available Slots — {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </h2>
                 {isLoading ? <LoadingSpinner size={24} /> : (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -187,10 +188,10 @@ export function BookingPage() {
                             isSelected ? 'bg-[#7CFC00] text-black border-[#7CFC00] glow-green'
                             : !slot.isAvailable ? 'bg-white/3 border-white/5 text-white/20 cursor-not-allowed'
                             : 'border-white/15 text-white/80 hover:border-[#7CFC00]/50 hover:bg-[#7CFC00]/8 hover:text-white'}`}>
-                         <div className="text-center">
-  <div className="font-bold">{format12h(slot.startTime)}</div>
-  <div className="text-[10px] text-white/50">₱{slot.price || pricePerHour}</div>
-</div>
+                          <div className="text-center">
+                            <div className="font-bold">{format12h(slot.startTime)}</div>
+                            <div className="text-[10px] text-white/50">₱{slot.price || pricePerHour}</div>
+                          </div>
                           {isSelected && <Check size={14} className="absolute top-1.5 right-1.5 text-black" />}
                           {!slot.isAvailable && <Lock size={12} className="absolute top-1.5 right-1.5 text-white/20" />}
                         </motion.button>
@@ -198,10 +199,15 @@ export function BookingPage() {
                     })}
                   </div>
                 )}
+                <div className="flex gap-4 mt-4 text-xs text-white/40">
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border border-white/20 inline-block" />Available</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#7CFC00] inline-block" />Selected</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-white/5 inline-block" />Unavailable</span>
+                </div>
               </div>
             </div>
 
-            {/* Booking Summary */}
+            {/* RIGHT COLUMN — Booking Summary */}
             <div className="lg:sticky lg:top-24 lg:self-start">
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="glass-card p-5">
                 <h2 className="text-white font-bold mb-4">Booking Summary</h2>
@@ -214,15 +220,15 @@ export function BookingPage() {
                 ) : (
                   <>
                     <div className="space-y-2 mb-4">
-                     {selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slot => (
-  <div key={slot.id} className="flex items-center justify-between text-sm">
-    <span className="text-white/70">{format12h(slot.startTime)} – {format12h(slot.endTime)}</span>
-    <div className="flex items-center gap-2">
-      <span className="text-white/50">₱{slot.price || pricePerHour}</span>
-      <button onClick={() => deselectSlot(slot.id)} className="text-white/30 hover:text-red-400 transition-colors">×</button>
-    </div>
-  </div>
-))}
+                      {selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slot => (
+                        <div key={slot.id} className="flex items-center justify-between text-sm">
+                          <span className="text-white/70">{format12h(slot.startTime)} – {format12h(slot.endTime)}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white/50">₱{slot.price || pricePerHour}</span>
+                            <button onClick={() => deselectSlot(slot.id)} className="text-white/30 hover:text-red-400 transition-colors">×</button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                     <div className="border-t border-white/8 pt-4">
                       <div className="flex justify-between font-black text-lg">
@@ -252,7 +258,7 @@ export function BookingPage() {
               <form onSubmit={handleDetailsSubmit} className="space-y-4">
                 <Input label="Full Name *" placeholder="Juan Dela Cruz" value={customerName} onChange={e => setCustomerName(e.target.value)} leftIcon={<User size={16} />} />
                 <Input label="Email *" type="email" placeholder="you@email.com" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} leftIcon={<Mail size={16} />} />
-<Input label="Phone *" placeholder="09xx-xxx-xxxx" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} leftIcon={<Phone size={16} />} />
+                <Input label="Phone *" placeholder="09xx-xxx-xxxx" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} leftIcon={<Phone size={16} />} />
                 <Input label="Notes (optional)" placeholder="Any special requests..." value={notes} onChange={e => setNotes(e.target.value)} leftIcon={<FileText size={16} />} />
                 <Button variant="neon" size="lg" className="w-full" type="submit">Proceed to Checkout</Button>
               </form>
