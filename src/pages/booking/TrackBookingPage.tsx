@@ -26,22 +26,22 @@ export function TrackBookingPage() {
   const [uploading, setUploading] = useState(false);
 
   const handleTrack = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) {
-      toast.error('Enter your email address');
-      return;
-    }
-    setLoading(true);
-    try {
-      const result = await trackBooking(reference.trim(), email.trim());
-      setBooking(result);
-    } catch {
-      toast.error('Booking not found. Check your details and try again.');
-      setBooking(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+  if (!reference.trim() && !email.trim()) {
+    toast.error('Enter your booking reference or email');
+    return;
+  }
+  setLoading(true);
+  try {
+    const result = await trackBooking(reference.trim(), email.trim());
+    setBooking(result);
+  } catch {
+    toast.error('Booking not found. Check your details and try again.');
+    setBooking(null);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,15 +99,15 @@ export function TrackBookingPage() {
       <div className="max-w-lg mx-auto px-4 py-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <h1 className="text-3xl font-black text-white">Track Your Booking</h1>
-          <p className="text-white/50 text-sm mt-2">Enter your email to find your reservation.</p>
+         <p className="text-white/50 text-sm mt-2">Enter your reference or email to find your booking.</p>
         </motion.div>
 
         <motion.form initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           onSubmit={handleTrack} className="glass-card p-6 space-y-4 mb-6">
-          <Input label="Email Address *" type="email" placeholder="you@email.com" value={email}
-            onChange={e => setEmail(e.target.value)} leftIcon={<Mail size={16} />} />
-          <Input label="Booking Reference (optional)" placeholder="SOP-20260001 — check your email" value={reference}
-            onChange={e => setReference(e.target.value.toUpperCase())} leftIcon={<Hash size={16} />} />
+          <Input label="Booking Reference" placeholder="SOP-20260001" value={reference}
+  onChange={e => setReference(e.target.value.toUpperCase())} leftIcon={<Hash size={16} />} />
+<Input label="Email Address" type="email" placeholder="you@email.com" value={email}
+  onChange={e => setEmail(e.target.value)} leftIcon={<Mail size={16} />} />
           <Button variant="neon" size="lg" className="w-full" loading={loading} type="submit">
             <Search size={16} /> Track Booking
           </Button>
