@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Calendar, Clock, User, Mail, Phone, FileText, Plus, X } from 'lucide-react';
+import { Calendar, Clock, User, Mail, Phone, FileText, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getAvailability } from '../../services/courtService';
 import { api } from '../../services/api';
@@ -8,7 +7,6 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import type { TimeSlot } from '../../types';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 function format12h(time: string): string {
   const [h, m] = time.split(':').map(Number);
@@ -20,7 +18,8 @@ function format12h(time: string): string {
 function getDateStrip(): string[] {
   const dates: string[] = [];
   const now = new Date();
-  for (let i = 0; i < 14; i++) {
+  // Start from 7 days ago
+  for (let i = -7; i < 14; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() + i);
     dates.push(d.toISOString().split('T')[0]);
@@ -45,10 +44,10 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [notes, setNotes] = useState('');
-  const [dateOffset, setDateOffset] = useState(0);
-  
+  const [dateOffset, setDateOffset] = useState(7); // Start at today (index 7)
+
   const dates = getDateStrip();
-  const visibleDates = dates.slice(dateOffset, dateOffset + 7);
+  const visibleDates = dates.slice(dateOffset, Math.min(dateOffset + 7, dates.length));
 
   useEffect(() => {
     if (open) {
@@ -60,9 +59,9 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
 
   const toggleSlot = (slot: TimeSlot) => {
     if (!slot.isAvailable) return;
-    setSelectedSlots(prev => 
-      prev.find(s => s.id === slot.id) 
-        ? prev.filter(s => s.id !== slot.id) 
+    setSelectedSlots(prev =>
+      prev.find(s => s.id === slot.id)
+        ? prev.filter(s => s.id !== slot.id)
         : [...prev, slot]
     );
   };
@@ -122,16 +121,18 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
                 {visibleDates.map(d => {
                   const isSelected = d === selectedDate;
                   const dateObj = new Date(d + 'T12:00:00');
+                  const isToday = d === new Date().toISOString().split('T')[0];
                   return (
                     <button key={d} onClick={() => setSelectedDate(d)}
                       className={`flex-shrink-0 flex flex-col items-center py-1.5 px-2 rounded-lg text-xs transition-all ${isSelected ? 'bg-[#7CFC00] text-black' : 'hover:bg-white/8 text-white/70'}`}>
                       <span>{dateObj.toLocaleDateString('en-US', { weekday: 'short' })}</span>
                       <span className="font-bold">{dateObj.getDate()}</span>
+                      {isToday && <span className="text-[8px] text-[#7CFC00]">TODAY</span>}
                     </button>
                   );
                 })}
               </div>
-              <button onClick={() => setDateOffset(Math.min(7, dateOffset + 1))} disabled={dateOffset >= 7}
+              <button onClick={() => setDateOffset(Math.min(dates.length - 7, dateOffset + 1))} disabled={dateOffset >= dates.length - 7}
                 className="p-1.5 rounded-lg hover:bg-white/10 text-white/50 disabled:opacity-30">
                 <ChevronRight size={14} />
               </button>
@@ -160,6 +161,9 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
                 <div className="flex justify-between text-white/60">
                   <span>{selectedSlots.length} hour{selectedSlots.length > 1 ? 's' : ''}</span>
                   <span className="text-[#7CFC00] font-bold">₱{total}</span>
+                </div>
+                <div className="text-white/40 text-xs mt-1">
+                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </div>
               </div>
             )}
