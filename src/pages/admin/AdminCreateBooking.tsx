@@ -18,8 +18,8 @@ function format12h(time: string): string {
 function getDateStrip(): string[] {
   const dates: string[] = [];
   const now = new Date();
-  // Start from 7 days ago
-  for (let i = -7; i < 14; i++) {
+  // Start from 30 days ago
+  for (let i = -30; i < 14; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() + i);
     dates.push(d.toISOString().split('T')[0]);
@@ -44,7 +44,7 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [notes, setNotes] = useState('');
-  const [dateOffset, setDateOffset] = useState(7); // Start at today (index 7)
+  const [dateOffset, setDateOffset] = useState(30); // Start at today (index 7)
 
   const dates = getDateStrip();
   const visibleDates = dates.slice(dateOffset, Math.min(dateOffset + 7, dates.length));
