@@ -49,7 +49,7 @@ export function LandingPage() {
   const [court, setCourt] = useState<Court | null>(null);
   const [currentImg, setCurrentImg] = useState(0);
   const [showDetailsForm, setShowDetailsForm] = useState(false);
-  const [isHoveringImg, setIsHoveringImg] = useState(false); // Added for the updated carousel
+  const [isHoveringImg, setIsHoveringImg] = useState(false);
 
   const {
     selectedDate, selectedSlots, availability, isLoading,
@@ -64,7 +64,6 @@ export function LandingPage() {
 
   const allImages = court?.images?.length ? court.images : court?.imageUrl ? [court.imageUrl] : [];
 
-  // Updated useEffect for carousel to pause on hover
   useEffect(() => {
     if (allImages.length <= 1 || isHoveringImg) return;
     const timer = setInterval(() => setCurrentImg(i => (i + 1) % allImages.length), 4000);
@@ -103,7 +102,6 @@ export function LandingPage() {
     navigate('/book/checkout');
   };
 
-  // Carousel navigation functions
   const nextImg = (e: React.MouseEvent) => { e.stopPropagation(); setCurrentImg((i) => (i + 1) % allImages.length); };
   const prevImg = (e: React.MouseEvent) => { e.stopPropagation(); setCurrentImg((i) => (i === 0 ? allImages.length - 1 : i - 1)); };
 
@@ -127,7 +125,7 @@ export function LandingPage() {
       </div>
 
       {/* ========================================== */}
-      {/* ABOUT TAB (UPDATED UI) */}
+      {/* ABOUT TAB */}
       {/* ========================================== */}
       {activeTab === 'about' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -139,7 +137,7 @@ export function LandingPage() {
             </div>
             <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-center max-w-4xl mx-auto relative z-10">
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1 }} className="flex justify-center mb-6">
-                <div className="w-40 h-40 rounded-2xl flex items-center justify-center overflow-hidden">
+                <div className="w-24 h-24 sm:w-40 sm:h-40 rounded-2xl flex items-center justify-center overflow-hidden">
                   <img src="/logo.png" alt="Side Out Playground" className="w-full h-full object-contain" />
                 </div>
               </motion.div>
@@ -154,7 +152,7 @@ export function LandingPage() {
                 <Button variant="neon" size="lg" onClick={() => setActiveTab('book')}>
                   <Zap size={18} /> Book a Slot
                 </Button>
-                <span className="text-white/40 text-sm">Starting at <span className="text-[#7CFC00] font-bold">₱{pricePerHour}/hr</span></span>
+                <span className="text-white/60 text-sm">Starting at <span className="text-[#7CFC00] font-bold">₱{pricePerHour}/hr</span></span>
               </motion.div>
             </motion.div>
           </section>
@@ -167,7 +165,6 @@ export function LandingPage() {
                 <h2 className="text-4xl font-black text-white">{court?.name || 'Side Out Arena'}</h2>
               </div>
               <div className="grid md:grid-cols-2 gap-8 items-center">
-                {/* Carousel with interactive arrows */}
                 <div className="relative rounded-2xl overflow-hidden aspect-video cursor-pointer group border border-white/10" 
                      onClick={() => setActiveTab('book')}
                      onMouseEnter={() => setIsHoveringImg(true)}
@@ -180,16 +177,22 @@ export function LandingPage() {
                   
                   {allImages.length > 1 && (
                     <>
-                      <div className="absolute inset-y-0 left-0 flex items-center px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-y-0 left-0 flex items-center px-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button onClick={prevImg} className="p-2 rounded-full bg-black/50 text-white hover:bg-black/80 backdrop-blur-md"><ChevronLeft size={20} /></button>
                       </div>
-                      <div className="absolute inset-y-0 right-0 flex items-center px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-y-0 right-0 flex items-center px-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button onClick={nextImg} className="p-2 rounded-full bg-black/50 text-white hover:bg-black/80 backdrop-blur-md"><ChevronRight size={20} /></button>
                       </div>
-                      <div className="absolute bottom-4 right-0 left-0 flex justify-center gap-2">
+                      <div className="absolute bottom-4 right-0 left-0 flex justify-center gap-1">
                         {allImages.map((_, i) => (
-                          <button key={i} onClick={(e) => { e.stopPropagation(); setCurrentImg(i); }} 
-                                  className={`h-2 rounded-full transition-all ${i === currentImg ? 'bg-[#7CFC00] w-6' : 'bg-white/40 w-2 hover:bg-white/70'}`} />
+                          <button 
+                            key={i} 
+                            onClick={(e) => { e.stopPropagation(); setCurrentImg(i); }} 
+                            className="p-1 cursor-pointer" 
+                            aria-label={`Go to slide ${i + 1}`}
+                          >
+                            <div className={`h-2 rounded-full transition-all ${i === currentImg ? 'bg-[#7CFC00] w-6' : 'bg-white/40 w-2 hover:bg-white/70'}`} />
+                          </button>
                         ))}
                       </div>
                     </>
@@ -220,28 +223,41 @@ export function LandingPage() {
           <section className="py-16 px-4">
             <div className="max-w-4xl mx-auto">
               <div className="grid sm:grid-cols-2 gap-6">
-                <div className="glass-card p-6 border border-white/10">
+                <div className="glass-card p-6 border border-white/10 flex flex-col h-full">
                   <h3 className="text-white font-bold mb-3">🕐 Operating Hours</h3>
                   <p className="text-white/60 text-sm">Open Daily: {court ? `${format12h(court.openTime)} – ${format12h(court.closeTime)}` : '3:00 PM – 12:00 AM'}</p>
-                  <p className="text-white/40 text-xs mt-2">Book up to 7 days in advance.</p>
+                  <p className="text-white/60 text-xs mt-2">Book up to 7 days in advance.</p>
                 </div>
-                <div className="glass-card p-6 border border-white/10">
+                <div className="glass-card p-6 border border-white/10 flex flex-col h-full">
                   <h3 className="text-white font-bold mb-3">📍 Location</h3>
                   <p className="text-white/60 text-sm">Purok Million, Barangay San Agustin Sur</p>
-                  <p className="text-white/60 text-sm">Tandag City, Surigao del Sur 8300</p>
-                  <p className="text-[#7CFC00] text-sm mt-2">📞 09058100973</p>
+                  <p className="text-white/60 text-sm mb-4">Tandag City, Surigao del Sur 8300</p>
+                  
+                  <div className="mt-auto space-y-3">
+                    <a href="tel:+639058100973" className="flex items-center gap-2 text-[#7CFC00] hover:text-[#8fff1a] text-sm transition-colors w-fit">
+                      <Phone size={16} /> 0905 810 0973
+                    </a>
+                    <a 
+                      href="https://maps.google.com/?q=Purok+Million,+Barangay+San+Agustin+Sur,+Tandag+City" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors w-fit"
+                    >
+                      <ParkingCircle size={14} /> Get Directions
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Today's Availability Preview (Read-only Grid) */}
+          {/* Today's Availability Preview */}
           <section className="py-12 px-4">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
                 <div className="text-[#7CFC00] text-sm font-bold tracking-widest uppercase mb-2">Today's Schedule</div>
                 <h2 className="text-3xl font-black text-white">Court Availability</h2>
-                <p className="text-white/50 text-sm mt-2">See what's open today — switch to the Book tab to reserve.</p>
+                <p className="text-white/50 text-sm mt-2">Tap an open slot below to secure it.</p>
               </div>
               <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl p-6">
                 {isLoading ? <LoadingSpinner size={24} /> : (
@@ -249,10 +265,15 @@ export function LandingPage() {
                     {availability.map(slot => (
                       <div key={slot.id} className={`p-3 rounded-xl border flex flex-col items-center justify-center text-center transition-colors ${
                         slot.isAvailable ? 'border-[#7CFC00]/30 bg-[#7CFC00]/5 text-white cursor-pointer hover:bg-[#7CFC00]/10' : 'border-white/5 bg-white/3 text-white/30 cursor-not-allowed'
-                      }`} onClick={() => { if(slot.isAvailable) setActiveTab('book'); }}>
+                      }`} onClick={() => { 
+                        if(slot.isAvailable) {
+                          selectSlot(slot);
+                          setActiveTab('book'); 
+                        }
+                      }}>
                         <span className="font-bold text-sm">{format12h(slot.startTime)}</span>
                         {slot.isAvailable ? (
-                          <span className="text-[#7CFC00] text-[10px] font-semibold mt-1">₱{slot.price || pricePerHour}</span>
+                          <span className="text-[#7CFC00] text-xs font-semibold mt-1">₱{slot.price || pricePerHour}</span>
                         ) : (
                           <Lock size={12} className="mt-1 opacity-50" />
                         )}
