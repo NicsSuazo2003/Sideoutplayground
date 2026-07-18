@@ -49,6 +49,7 @@ export function LandingPage() {
   const [court, setCourt] = useState<Court | null>(null);
   const [currentImg, setCurrentImg] = useState(0);
   const [showDetailsForm, setShowDetailsForm] = useState(false);
+  const [isHoveringImg, setIsHoveringImg] = useState(false); // Added for the updated carousel
 
   const {
     selectedDate, selectedSlots, availability, isLoading,
@@ -63,11 +64,12 @@ export function LandingPage() {
 
   const allImages = court?.images?.length ? court.images : court?.imageUrl ? [court.imageUrl] : [];
 
+  // Updated useEffect for carousel to pause on hover
   useEffect(() => {
-    if (allImages.length <= 1) return;
+    if (allImages.length <= 1 || isHoveringImg) return;
     const timer = setInterval(() => setCurrentImg(i => (i + 1) % allImages.length), 4000);
     return () => clearInterval(timer);
-  }, [allImages.length]);
+  }, [allImages.length, isHoveringImg]);
 
   useEffect(() => { getCourt().then(setCourt).catch(() => {}); }, []);
   useEffect(() => { fetchCourt(); }, []);
@@ -101,6 +103,10 @@ export function LandingPage() {
     navigate('/book/checkout');
   };
 
+  // Carousel navigation functions
+  const nextImg = (e: React.MouseEvent) => { e.stopPropagation(); setCurrentImg((i) => (i + 1) % allImages.length); };
+  const prevImg = (e: React.MouseEvent) => { e.stopPropagation(); setCurrentImg((i) => (i === 0 ? allImages.length - 1 : i - 1)); };
+
   const pricePerHour = court?.pricePerHour || 20;
   const subtotal = selectedSlots.reduce((sum, slot) => sum + (slot.price || pricePerHour), 0);
 
@@ -120,14 +126,16 @@ export function LandingPage() {
         </div>
       </div>
 
-      {/* ABOUT TAB */}
+      {/* ========================================== */}
+      {/* ABOUT TAB (UPDATED UI) */}
+      {/* ========================================== */}
       {activeTab === 'about' && (
-        <>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           {/* Hero */}
-          <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden px-4">
-            <div className="absolute inset-0">
-              <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#7CFC00]/5 rounded-full blur-3xl" />
-              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#FF1493]/5 rounded-full blur-3xl" />
+          <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden px-4">
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#7CFC00]/10 rounded-full blur-[100px]" />
+              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#FF1493]/10 rounded-full blur-[100px]" />
             </div>
             <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-center max-w-4xl mx-auto relative z-10">
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1 }} className="flex justify-center mb-6">
@@ -135,9 +143,9 @@ export function LandingPage() {
                   <img src="/logo.png" alt="Side Out Playground" className="w-full h-full object-contain" />
                 </div>
               </motion.div>
-              <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-3xl sm:text-5xl font-bold text-white/80 mb-4 leading-tight">
-                One Court.{' '}<span className="text-[#7CFC00] text-glow-green">Infinite </span>
-                <span className="text-[#FF1493]" style={{ textShadow: '0 0 8px #FF1493' }}>Games.</span>
+              <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-4xl sm:text-6xl font-black text-white/90 mb-4 leading-tight">
+                One Court.{' '}<span className="text-[#7CFC00] drop-shadow-[0_0_15px_rgba(124,252,0,0.5)]">Infinite </span>
+                <span className="text-[#FF1493] drop-shadow-[0_0_15px_rgba(255,20,147,0.5)]">Games.</span>
               </motion.h2>
               <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="text-white/60 text-lg sm:text-xl max-w-xl mx-auto mb-8">
                 Book your slot at our premium pickleball court — fresh air, open space, and ready for play.
@@ -152,40 +160,55 @@ export function LandingPage() {
           </section>
 
           {/* Court Showcase */}
-          <section className="py-20 px-4">
+          <section className="py-12 px-4">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
                 <div className="text-[#7CFC00] text-sm font-bold tracking-widest uppercase mb-2">Our Facility</div>
                 <h2 className="text-4xl font-black text-white">{court?.name || 'Side Out Arena'}</h2>
               </div>
               <div className="grid md:grid-cols-2 gap-8 items-center">
-                <div className="relative rounded-2xl overflow-hidden aspect-video cursor-pointer" onClick={() => setActiveTab('book')}>
+                {/* Carousel with interactive arrows */}
+                <div className="relative rounded-2xl overflow-hidden aspect-video cursor-pointer group border border-white/10" 
+                     onClick={() => setActiveTab('book')}
+                     onMouseEnter={() => setIsHoveringImg(true)}
+                     onMouseLeave={() => setIsHoveringImg(false)}>
                   <AnimatePresence mode="wait">
-                    <motion.img key={currentImg} src={allImages.length > 0 ? getImageUrl(allImages[currentImg]) : 'https://images.pexels.com/photos/1103829/pexels-photo-1103829.jpeg?auto=compress&cs=tinysrgb&w=800'}
-                      alt="Court" className="w-full h-full object-cover absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }} />
+                    <motion.img key={currentImg} src={allImages.length > 0 ? getImageUrl(allImages[currentImg]) : 'https://images.pexels.com/photos/1103829/pexels-photo-1103829.jpeg'}
+                      alt="Court" className="w-full h-full object-cover absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} />
                   </AnimatePresence>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="absolute bottom-4 left-4 flex gap-2">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                  
+                  {allImages.length > 1 && (
+                    <>
+                      <div className="absolute inset-y-0 left-0 flex items-center px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={prevImg} className="p-2 rounded-full bg-black/50 text-white hover:bg-black/80 backdrop-blur-md"><ChevronLeft size={20} /></button>
+                      </div>
+                      <div className="absolute inset-y-0 right-0 flex items-center px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={nextImg} className="p-2 rounded-full bg-black/50 text-white hover:bg-black/80 backdrop-blur-md"><ChevronRight size={20} /></button>
+                      </div>
+                      <div className="absolute bottom-4 right-0 left-0 flex justify-center gap-2">
+                        {allImages.map((_, i) => (
+                          <button key={i} onClick={(e) => { e.stopPropagation(); setCurrentImg(i); }} 
+                                  className={`h-2 rounded-full transition-all ${i === currentImg ? 'bg-[#7CFC00] w-6' : 'bg-white/40 w-2 hover:bg-white/70'}`} />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  <div className="absolute bottom-4 left-4 flex gap-2 pointer-events-none">
                     <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-semibold">{court?.type === 'indoor' ? 'Indoor' : 'Outdoor'}</span>
                     <span className="px-3 py-1 rounded-full bg-[#7CFC00]/20 text-[#7CFC00] border border-[#7CFC00]/30 text-xs font-semibold capitalize">{court?.status || 'Active'}</span>
                   </div>
-                  {allImages.length > 1 && (
-                    <div className="absolute bottom-4 right-4 flex gap-1.5">
-                      {allImages.map((_, i) => (
-                        <button key={i} onClick={(e) => { e.stopPropagation(); setCurrentImg(i); }} className={`w-2 h-2 rounded-full transition-all ${i === currentImg ? 'bg-[#7CFC00] w-4' : 'bg-white/40'}`} />
-                      ))}
-                    </div>
-                  )}
                 </div>
+                
                 <div>
                   <StarRating rating={court?.rating || 4.9} />
-                  <h3 className="text-2xl font-bold text-white mt-3 mb-2">{court?.name || 'Side Out Arena'}</h3>
+                  <h3 className="text-3xl font-bold text-white mt-3 mb-2">{court?.name || 'Side Out Arena'}</h3>
                   <p className="text-white/50 text-sm mb-1">{court?.dimensions || '60ft x 30ft'} - {court?.surface || 'Acrylic Hard Court'}</p>
-                  <div className="text-3xl font-black text-[#7CFC00] mb-6">₱{pricePerHour}<span className="text-lg font-normal text-white/50">/hour</span></div>
-                  <div className="grid grid-cols-2 gap-2 mb-6">
+                  <div className="text-4xl font-black text-[#7CFC00] mb-6">₱{pricePerHour}<span className="text-xl font-normal text-white/50">/hr</span></div>
+                  <div className="grid grid-cols-2 gap-3 mb-6">
                     {(court?.amenities || ['LED Lighting', 'Air Conditioning', 'Professional Nets', 'Seating Area', 'Water Station', 'Locker Rooms', 'Pro Shop', 'Parking']).map(a => {
                       const Icon = amenityIcons[a] || Zap;
-                      return <div key={a} className="flex items-center gap-2 text-white/70 text-sm"><Icon size={14} className="text-[#7CFC00] shrink-0" />{a}</div>;
+                      return <div key={a} className="flex items-center gap-2 text-white/80 text-sm"><Icon size={16} className="text-[#7CFC00] shrink-0" />{a}</div>;
                     })}
                   </div>
                 </div>
@@ -197,12 +220,12 @@ export function LandingPage() {
           <section className="py-16 px-4">
             <div className="max-w-4xl mx-auto">
               <div className="grid sm:grid-cols-2 gap-6">
-                <div className="glass-card p-6">
+                <div className="glass-card p-6 border border-white/10">
                   <h3 className="text-white font-bold mb-3">🕐 Operating Hours</h3>
                   <p className="text-white/60 text-sm">Open Daily: {court ? `${format12h(court.openTime)} – ${format12h(court.closeTime)}` : '3:00 PM – 12:00 AM'}</p>
                   <p className="text-white/40 text-xs mt-2">Book up to 7 days in advance.</p>
                 </div>
-                <div className="glass-card p-6">
+                <div className="glass-card p-6 border border-white/10">
                   <h3 className="text-white font-bold mb-3">📍 Location</h3>
                   <p className="text-white/60 text-sm">Purok Million, Barangay San Agustin Sur</p>
                   <p className="text-white/60 text-sm">Tandag City, Surigao del Sur 8300</p>
@@ -212,60 +235,40 @@ export function LandingPage() {
             </div>
           </section>
 
-          {/* Today's Availability Preview */}
-          <section className="py-16 px-4">
-            <div className="max-w-2xl mx-auto">
+          {/* Today's Availability Preview (Read-only Grid) */}
+          <section className="py-12 px-4">
+            <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
                 <div className="text-[#7CFC00] text-sm font-bold tracking-widest uppercase mb-2">Today's Schedule</div>
                 <h2 className="text-3xl font-black text-white">Court Availability</h2>
-                <p className="text-white/40 text-sm mt-2">See what's open today — switch to Book tab to reserve.</p>
+                <p className="text-white/50 text-sm mt-2">See what's open today — switch to the Book tab to reserve.</p>
               </div>
-              <div className="glass-card p-4 overflow-hidden">
+              <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl p-6">
                 {isLoading ? <LoadingSpinner size={24} /> : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-white/40 text-xs border-b border-white/8">
-                          <th className="text-left py-2 px-3 font-semibold">Time</th>
-                          <th className="text-left py-2 px-3 font-semibold">Status</th>
-                          <th className="text-right py-2 px-3 font-semibold">Price</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {availability.map(slot => (
-                          <tr key={slot.id} className="border-b border-white/5">
-                            <td className="py-2 px-3">
-                              <span className="text-white font-medium">{format12h(slot.startTime)}</span>
-                              <span className="text-white/30"> – {format12h(slot.endTime)}</span>
-                            </td>
-                            <td className="py-2 px-3">
-                              {slot.isAvailable ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-500/10 text-green-400">Vacant</span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-white/5 text-white/30">Booked</span>
-                              )}
-                            </td>
-                            <td className="py-2 px-3 text-right">
-                              <span className={slot.isAvailable ? 'text-white/60 font-semibold' : 'text-white/20'}>₱{slot.price || pricePerHour}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                    {availability.map(slot => (
+                      <div key={slot.id} className={`p-3 rounded-xl border flex flex-col items-center justify-center text-center transition-colors ${
+                        slot.isAvailable ? 'border-[#7CFC00]/30 bg-[#7CFC00]/5 text-white cursor-pointer hover:bg-[#7CFC00]/10' : 'border-white/5 bg-white/3 text-white/30 cursor-not-allowed'
+                      }`} onClick={() => { if(slot.isAvailable) setActiveTab('book'); }}>
+                        <span className="font-bold text-sm">{format12h(slot.startTime)}</span>
+                        {slot.isAvailable ? (
+                          <span className="text-[#7CFC00] text-[10px] font-semibold mt-1">₱{slot.price || pricePerHour}</span>
+                        ) : (
+                          <Lock size={12} className="mt-1 opacity-50" />
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
-              <div className="text-center mt-6">
-                <Button variant="neon" size="lg" onClick={() => setActiveTab('book')}>
-                  <Zap size={18} /> Book a Slot
-                </Button>
-              </div>
             </div>
           </section>
-        </>
+        </motion.div>
       )}
 
-      {/* BOOK TAB */}
+      {/* ========================================== */}
+      {/* BOOK TAB (ORIGINAL UI) */}
+      {/* ========================================== */}
       {activeTab === 'book' && !showDetailsForm && (
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="text-center mb-6">
@@ -375,7 +378,7 @@ export function LandingPage() {
         </div>
       )}
 
-      {/* DETAILS FORM */}
+      {/* DETAILS FORM (ORIGINAL UI) */}
       {activeTab === 'book' && showDetailsForm && (
         <div className="max-w-lg mx-auto px-4 py-8">
           <div className="glass-card p-6">
