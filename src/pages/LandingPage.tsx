@@ -151,16 +151,18 @@ export function LandingPage() {
   return (
       <div>
       {/* Tab Navigation */}
-      <div className="max-w-4xl mx-auto px-4 pt-4">
-        <div className="flex gap-1 p-1 bg-white border border-slate-200 rounded-xl shadow-sm">
-          <button onClick={() => { setActiveTab('about'); setShowDetailsForm(false); }}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'about' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
-            About
-          </button>
-          <button onClick={() => { setActiveTab('book'); setShowDetailsForm(false); }}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'book' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
-            Book a Court
-          </button>
+      <div className="bg-teal-600 pt-4 pb-6">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex gap-1 p-1 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl shadow-sm">
+            <button onClick={() => { setActiveTab('about'); setShowDetailsForm(false); }}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'about' ? 'bg-white text-teal-700 shadow-md' : 'text-teal-100 hover:text-white'}`}>
+              About
+            </button>
+            <button onClick={() => { setActiveTab('book'); setShowDetailsForm(false); }}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'book' ? 'bg-white text-teal-700 shadow-md' : 'text-teal-100 hover:text-white'}`}>
+              Book a Court
+            </button>
+          </div>
         </div>
       </div>
 
