@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle, ChevronLeft, ChevronRight, Lock, Check, User, Mail, Phone, FileText } from 'lucide-react';
+import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle, ChevronLeft, ChevronRight, Lock, Check, User, Mail, Phone, FileText, Star } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useBookingStore } from '../stores/bookingStore';
 import { getCourt } from '../services/courtService';
@@ -35,13 +35,25 @@ const amenityIcons: Record<string, typeof Zap> = {
 function getDateStrip(): string[] {
   const dates: string[] = [];
   const now = new Date();
-  for (let i = 0; i < 14; i++) {  // Changed from 7 to 14
+  for (let i = 0; i < 14; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() + i);
     dates.push(d.toISOString().split('T')[0]);
   }
   return dates;
 }
+
+// ✅ Helper to check if a slot is the fixed 4-6 PM slot
+const isFixedSlot = (slot: TimeSlot): boolean => {
+  return slot.startTime === '16:00' && slot.endTime === '18:00';
+};
+
+// ✅ Helper to check if a slot is the 4-5 PM or 5-6 PM slot (to be removed)
+const isRemovedSlot = (slot: TimeSlot): boolean => {
+  return (slot.startTime === '16:00' && slot.endTime === '17:00') ||
+         (slot.startTime === '17:00' && slot.endTime === '18:00');
+};
+
 export function LandingPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'about' | 'book'>('about');
@@ -71,7 +83,13 @@ export function LandingPage() {
 
   useEffect(() => { getCourt().then(setCourt).catch(() => {}); }, []);
   useEffect(() => { fetchCourt(); }, []);
-  useEffect(() => { if (activeTab === 'book') fetchAvailability(selectedDate); }, [selectedDate, activeTab]);
+  
+  // ✅ Modified fetchAvailability to handle 2hr fixed slot
+  useEffect(() => {
+    if (activeTab === 'book') {
+      fetchAvailability(selectedDate);
+    }
+  }, [selectedDate, activeTab]);
 
   useEffect(() => {
     if (activeTab === 'about') {
@@ -80,6 +98,33 @@ export function LandingPage() {
       fetchAvailability(today);
     }
   }, [activeTab]);
+
+  // ✅ Get availability with 2hr fixed slot applied
+  const getProcessedAvailability = (): TimeSlot[] => {
+    // Filter out 4-5 PM and 5-6 PM slots
+    const filtered = availability.filter(slot => !isRemovedSlot(slot));
+    
+    // Check if 4-6 PM slot already exists
+    const has4to6 = filtered.some(slot => isFixedSlot(slot));
+    
+    if (!has4to6) {
+      // Add the 2hr fixed slot
+      const basePrice = court?.pricePerHour || 150;
+      const fixedSlot: TimeSlot = {
+        id: `fixed-${selectedDate}-16-18`,
+        date: selectedDate,
+        startTime: '16:00',
+        endTime: '18:00',
+        isAvailable: true,
+        price: basePrice * 2, // 2 hours
+      };
+      return [...filtered, fixedSlot].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    }
+    
+    return filtered;
+  };
+
+  const processedAvailability = getProcessedAvailability();
 
   const handleSlotClick = (slot: TimeSlot) => {
     if (!slot.isAvailable) return;
@@ -261,23 +306,41 @@ export function LandingPage() {
               <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl p-6">
                 {isLoading ? <LoadingSpinner size={24} /> : (
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-                    {availability.map(slot => (
-                      <div key={slot.id} className={`p-3 rounded-xl border flex flex-col items-center justify-center text-center transition-colors ${
-                        slot.isAvailable ? 'border-[#7CFC00]/30 bg-[#7CFC00]/5 text-white cursor-pointer hover:bg-[#7CFC00]/10' : 'border-white/5 bg-white/3 text-white/30 cursor-not-allowed'
-                      }`} onClick={() => { 
-                        if(slot.isAvailable) {
-                          selectSlot(slot);
-                          setActiveTab('book'); 
-                        }
-                      }}>
-                        <span className="font-bold text-sm">{format12h(slot.startTime)}</span>
-                        {slot.isAvailable ? (
-                          <span className="text-[#7CFC00] text-xs font-semibold mt-1">₱{slot.price || pricePerHour}</span>
-                        ) : (
-                          <Lock size={12} className="mt-1 opacity-50" />
-                        )}
-                      </div>
-                    ))}
+                    {processedAvailability.map(slot => {
+                      const fixed = isFixedSlot(slot);
+                      return (
+                        <div 
+                          key={slot.id} 
+                          className={`p-3 rounded-xl border flex flex-col items-center justify-center text-center transition-colors relative ${
+                            slot.isAvailable 
+                              ? fixed 
+                                ? 'border-amber-400/50 bg-amber-500/10 text-white cursor-pointer hover:bg-amber-500/20' 
+                                : 'border-[#7CFC00]/30 bg-[#7CFC00]/5 text-white cursor-pointer hover:bg-[#7CFC00]/10'
+                              : 'border-white/5 bg-white/3 text-white/30 cursor-not-allowed'
+                          }`} 
+                          onClick={() => { 
+                            if(slot.isAvailable) {
+                              selectSlot(slot);
+                              setActiveTab('book'); 
+                            }
+                          }}
+                        >
+                          {fixed && (
+                            <span className="absolute top-0.5 right-0.5 flex items-center gap-0.5 bg-amber-400 text-black text-[8px] font-bold px-1 py-0.5 rounded-full">
+                              <Star size={8} fill="currentColor" /> 2hr
+                            </span>
+                          )}
+                          <span className="font-bold text-sm">{format12h(slot.startTime)}</span>
+                          {slot.isAvailable ? (
+                            <span className={`text-xs font-semibold mt-1 ${fixed ? 'text-amber-400' : 'text-[#7CFC00]'}`}>
+                              ₱{slot.price || pricePerHour}
+                            </span>
+                          ) : (
+                            <Lock size={12} className="mt-1 opacity-50" />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -287,7 +350,7 @@ export function LandingPage() {
       )}
 
       {/* ========================================== */}
-      {/* BOOK TAB (ORIGINAL UI) */}
+      {/* BOOK TAB */}
       {/* ========================================== */}
       {activeTab === 'book' && !showDetailsForm && (
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -333,18 +396,37 @@ export function LandingPage() {
                 </h2>
                 {isLoading ? <LoadingSpinner size={24} /> : (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {availability.map(slot => {
+                    {processedAvailability.map(slot => {
                       const isSelected = selectedSlots.some(s => s.id === slot.id);
+                      const fixed = isFixedSlot(slot);
                       return (
-                        <motion.button key={slot.id} whileHover={slot.isAvailable ? { scale: 1.04 } : {}} whileTap={slot.isAvailable ? { scale: 0.97 } : {}}
+                        <motion.button 
+                          key={slot.id} 
+                          whileHover={slot.isAvailable ? { scale: 1.04 } : {}} 
+                          whileTap={slot.isAvailable ? { scale: 0.97 } : {}}
                           onClick={() => handleSlotClick(slot)}
                           className={`relative p-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${
-                            isSelected ? 'bg-[#7CFC00] text-black border-[#7CFC00] glow-green'
-                            : !slot.isAvailable ? 'bg-white/3 border-white/5 text-white/20 cursor-not-allowed'
-                            : 'border-white/15 text-white/80 hover:border-[#7CFC00]/50 hover:bg-[#7CFC00]/8 hover:text-white'}`}>
+                            isSelected 
+                              ? 'bg-[#7CFC00] text-black border-[#7CFC00] glow-green'
+                              : !slot.isAvailable 
+                                ? 'bg-white/3 border-white/5 text-white/20 cursor-not-allowed'
+                                : fixed
+                                  ? 'border-amber-400/50 bg-amber-500/10 text-white/90 hover:border-amber-400 hover:bg-amber-500/20'
+                                  : 'border-white/15 text-white/80 hover:border-[#7CFC00]/50 hover:bg-[#7CFC00]/8 hover:text-white'
+                          }`}
+                        >
+                          {fixed && (
+                            <span className="absolute top-0.5 right-0.5 flex items-center gap-0.5 bg-amber-400 text-black text-[8px] font-bold px-1 py-0.5 rounded-full">
+                              <Star size={8} fill="currentColor" /> 2hr
+                            </span>
+                          )}
                           <div className="text-center">
-                            <div className="font-bold">{format12h(slot.startTime)}</div>
-                            <div className="text-[10px] text-white/50">₱{slot.price || pricePerHour}</div>
+                            <div className={`font-bold ${fixed && !isSelected ? 'text-amber-400' : ''}`}>
+                              {format12h(slot.startTime)}
+                            </div>
+                            <div className={`text-[10px] ${fixed && !isSelected ? 'text-amber-400/70' : 'text-white/50'}`}>
+                              ₱{slot.price || pricePerHour}
+                            </div>
                           </div>
                           {isSelected && <Check size={14} className="absolute top-1.5 right-1.5 text-black" />}
                           {!slot.isAvailable && <Lock size={12} className="absolute top-1.5 right-1.5 text-white/20" />}
@@ -353,10 +435,11 @@ export function LandingPage() {
                     })}
                   </div>
                 )}
-                <div className="flex gap-4 mt-4 text-xs text-white/40">
+                <div className="flex flex-wrap gap-4 mt-4 text-xs text-white/40">
                   <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded border border-white/20 inline-block" />Available</span>
                   <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#7CFC00] inline-block" />Selected</span>
                   <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-white/5 inline-block" />Unavailable</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-400/50 border border-amber-400/50 inline-block" />2hr Fixed</span>
                 </div>
               </div>
             </div>
@@ -373,19 +456,25 @@ export function LandingPage() {
                 ) : (
                   <>
                     <div className="space-y-2 mb-4">
-                      {selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slot => (
-                        <div key={slot.id} className="flex items-center justify-between text-sm">
-                          <span className="text-white/70">{format12h(slot.startTime)} – {format12h(slot.endTime)}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white/50">₱{slot.price || pricePerHour}</span>
-                            <button onClick={() => deselectSlot(slot.id)} className="text-white/30 hover:text-red-400">×</button>
+                      {selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(slot => {
+                        const fixed = isFixedSlot(slot);
+                        return (
+                          <div key={slot.id} className={`flex items-center justify-between text-sm ${fixed ? 'bg-amber-500/10 rounded-lg px-2 py-1' : ''}`}>
+                            <span className={fixed ? 'text-amber-400' : 'text-white/70'}>
+                              {format12h(slot.startTime)} – {format12h(slot.endTime)}
+                              {fixed && <span className="ml-1 text-[10px] text-amber-400 font-bold">2hr Fixed</span>}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className={fixed ? 'text-amber-400' : 'text-white/50'}>₱{slot.price || pricePerHour}</span>
+                              <button onClick={() => deselectSlot(slot.id)} className="text-white/30 hover:text-red-400">×</button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     <div className="border-t border-white/8 pt-4">
                       <div className="flex justify-between font-black text-lg">
-                        <span className="text-white">{selectedSlots.length}h</span>
+                        <span className="text-white">{selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''}</span>
                         <span className="text-[#7CFC00]">₱{subtotal}</span>
                       </div>
                     </div>
@@ -398,7 +487,7 @@ export function LandingPage() {
         </div>
       )}
 
-      {/* DETAILS FORM (ORIGINAL UI) */}
+      {/* DETAILS FORM */}
       {activeTab === 'book' && showDetailsForm && (
         <div className="max-w-lg mx-auto px-4 py-8">
           <div className="glass-card p-6">
@@ -407,7 +496,7 @@ export function LandingPage() {
               <button onClick={() => setShowDetailsForm(false)} className="text-xs text-white/50 hover:text-white">← Back</button>
             </div>
             <div className="glass rounded-xl p-3 mb-4 text-sm text-white/50">
-              {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {selectedSlots.length}h · ₱{subtotal}
+              {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''} · ₱{subtotal}
             </div>
             <form onSubmit={handleDetailsSubmit} className="space-y-4">
               <Input label="Full Name *" placeholder="Juan Dela Cruz" value={customerName} onChange={e => setCustomerName(e.target.value)} leftIcon={<User size={16} />} />
