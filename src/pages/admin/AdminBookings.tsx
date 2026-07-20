@@ -88,10 +88,18 @@ export function AdminBookings() {
         className="sm:w-72" 
       />
       <div className="flex gap-1 p-1 glass rounded-xl overflow-x-auto">
-        {(['all', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
-          <button key={s} onClick={() => { setStatusFilter(s as BookingStatus); setPage(1); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${statusFilter === s ? 'bg-[#7CFC00] text-black' : 'text-white/50 hover:text-white'}`}>
-            {s === 'all' ? 'All' : s === 'pending_payment' ? 'Pending' : s === 'payment_submitted' ? 'Submitted' : s.charAt(0).toUpperCase() + s.slice(1)}
+        {(['all', 'recent', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
+          <button key={s} onClick={() => { 
+            if (s === 'recent') {
+              setStatusFilter('all');
+              setSortNewest(true);
+            } else {
+              setStatusFilter(s as BookingStatus);
+            }
+            setPage(1);
+          }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${(s === 'recent' && statusFilter === 'all' && sortNewest) || statusFilter === s ? 'bg-[#7CFC00] text-black' : 'text-white/50 hover:text-white'}`}>
+            {s === 'all' ? 'All' : s === 'recent' ? '🕐 Recent' : s === 'pending_payment' ? 'Pending' : s === 'payment_submitted' ? 'Submitted' : s.charAt(0).toUpperCase() + s.slice(1)}
           </button>
         ))}
       </div>
