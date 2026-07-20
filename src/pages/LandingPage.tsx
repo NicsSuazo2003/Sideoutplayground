@@ -149,7 +149,7 @@ export function LandingPage() {
   const subtotal = selectedSlots.reduce((sum, slot) => sum + (slot.price || pricePerHour), 0);
 
   return (
-    <div className="pt-16">
+      <div>
       {/* Tab Navigation */}
       <div className="max-w-4xl mx-auto px-4 pt-4">
         <div className="flex gap-1 p-1 bg-white border border-slate-200 rounded-xl shadow-sm">
