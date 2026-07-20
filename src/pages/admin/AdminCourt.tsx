@@ -39,17 +39,12 @@ export function AdminCourt() {
   useEffect(() => {
     if (courtSettings) {
       setForm({
-        name: courtSettings.name,
-        pricePerHour: String(courtSettings.pricePerHour),
-        openTime: courtSettings.openTime,
-        closeTime: courtSettings.closeTime,
-        status: courtSettings.status,
-        type: courtSettings.type,
+        name: courtSettings.name, pricePerHour: String(courtSettings.pricePerHour),
+        openTime: courtSettings.openTime, closeTime: courtSettings.closeTime,
+        status: courtSettings.status, type: courtSettings.type,
       });
       setAmenities(courtSettings.amenities);
-      const allImages = courtSettings.images?.length
-        ? courtSettings.images
-        : courtSettings.imageUrl ? [courtSettings.imageUrl] : [];
+      const allImages = courtSettings.images?.length ? courtSettings.images : courtSettings.imageUrl ? [courtSettings.imageUrl] : [];
       setImages(allImages);
     }
   }, [courtSettings]);
@@ -58,28 +53,18 @@ export function AdminCourt() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    try {
-      const url = await uploadImage(file);
-      setImages(prev => [...prev, url]);
-      toast.success('Image uploaded!');
-    } catch {
-      toast.error('Upload failed');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    try { const url = await uploadImage(file); setImages(prev => [...prev, url]); toast.success('Image uploaded!'); }
+    catch { toast.error('Upload failed'); }
+    finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
   };
 
   const handleDeleteImage = async (url: string) => {
-    if (url.includes('/images/courts/') || url.includes('supabase')) {
-      try { await deleteImage(url); } catch { /* ignore */ }
-    }
+    if (url.includes('/images/courts/') || url.includes('supabase')) { try { await deleteImage(url); } catch { } }
     setImages(prev => prev.filter(i => i !== url));
   };
 
   const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
+    e.preventDefault(); setSaving(true);
     try {
       await updateCourtSettings({
         name: form.name, pricePerHour: parseFloat(form.pricePerHour),
@@ -95,12 +80,7 @@ export function AdminCourt() {
   const handleAddBlockedDate = async () => {
     if (!newBlockDate) { toast.error('Pick a date'); return; }
     try {
-      const bd = await addBlockedDate({
-        date: newBlockDate,
-        startTime: newBlockStart || undefined,
-        endTime: newBlockEnd || undefined,
-        reason: newBlockReason || undefined,
-      });
+      const bd = await addBlockedDate({ date: newBlockDate, startTime: newBlockStart || undefined, endTime: newBlockEnd || undefined, reason: newBlockReason || undefined });
       setBlockedDates(prev => [...prev, bd]);
       setNewBlockDate(''); setNewBlockStart(''); setNewBlockEnd(''); setNewBlockReason('');
       toast.success('Date blocked');
@@ -108,11 +88,8 @@ export function AdminCourt() {
   };
 
   const handleDeleteBlockedDate = async (id: string) => {
-    try {
-      await deleteBlockedDate(id);
-      setBlockedDates(prev => prev.filter(b => b.id !== id));
-      toast.success('Block removed');
-    } catch { toast.error('Failed to remove block'); }
+    try { await deleteBlockedDate(id); setBlockedDates(prev => prev.filter(b => b.id !== id)); toast.success('Block removed'); }
+    catch { toast.error('Failed to remove block'); }
   };
 
   if (isLoading && !courtSettings) return <LoadingSpinner />;
@@ -120,118 +97,80 @@ export function AdminCourt() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-black text-white">Court Settings</h1>
-        <p className="text-white/50 text-sm mt-1">Manage images, blocked dates, and court details</p>
+        <h1 className="text-2xl font-black text-slate-800">Court Settings</h1>
+        <p className="text-slate-500 text-sm mt-1">Manage images, blocked dates, and court details</p>
       </div>
 
-      {/* ===== IMAGES ===== */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5">
+      {/* IMAGES */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
         <div className="flex items-center gap-2 mb-4">
-          <ImagePlus size={18} className="text-[#7CFC00]" />
-          <h2 className="text-white font-bold">Court Images</h2>
+          <ImagePlus size={18} className="text-teal-600" />
+          <h2 className="text-slate-800 font-bold">Court Images</h2>
         </div>
-
         {images.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
             {images.map((url, idx) => (
-              <div key={url} className="relative group rounded-xl overflow-hidden aspect-video">
+              <div key={url} className="relative group rounded-xl overflow-hidden aspect-video border border-slate-200">
                 <img src={getImageUrl(url)} alt={`Court ${idx + 1}`} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                  <button type="button" onClick={() => handleDeleteImage(url)}
-                    className="opacity-0 group-hover:opacity-100 p-2 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-all">
-                    <Trash2 size={14} />
-                  </button>
-                  {idx === 0 && (
-                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-[#7CFC00] text-black text-[10px] font-bold flex items-center gap-1">
-                      <Star size={10} /> Main
-                    </span>
-                  )}
+                  <button type="button" onClick={() => handleDeleteImage(url)} className="opacity-0 group-hover:opacity-100 p-2 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-all"><Trash2 size={14} /></button>
+                  {idx === 0 && <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-teal-600 text-white text-[10px] font-bold flex items-center gap-1"><Star size={10} /> Main</span>}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="glass rounded-xl p-6 text-center text-white/40 text-sm mb-3">No images added yet</div>
+          <div className="bg-slate-50 rounded-xl p-6 text-center text-slate-400 text-sm mb-3">No images added yet</div>
         )}
-
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} loading={uploading}>
-          <Upload size={14} /> Upload Image
-        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} loading={uploading}><Upload size={14} /> Upload Image</Button>
       </motion.div>
 
-      {/* ===== BLOCKED DATES ===== */}
-<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-card p-5">
-  <div className="flex items-center gap-2 mb-4">
-    <Calendar size={18} className="text-[#FF1493]" />
-    <h2 className="text-white font-bold">Blocked Dates</h2>
-  </div>
-
-  <p className="text-white/40 text-xs mb-4">Block specific dates or time ranges from being booked.</p>
-
-  {/* Existing blocked dates list */}
-  <div className="flex flex-wrap gap-2 mb-4">
-    {blockedDates.length === 0 && <span className="text-white/40 text-xs">No blocked dates</span>}
-    {blockedDates.map(bd => (
-      <span key={bd.id} className="flex items-center gap-1.5 text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded-full px-3 py-1">
-        {new Date(bd.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-        {bd.startTime ? ` ${bd.startTime}–${bd.endTime}` : ' All Day'}
-        {bd.reason && ` — ${bd.reason}`}
-        <button type="button" onClick={() => handleDeleteBlockedDate(bd.id)} className="text-red-400 hover:text-red-300"><X size={11} /></button>
-      </span>
-    ))}
-  </div>
-
-  {/* Add new blocked date */}
-  <div className="space-y-3">
-    <div className="flex items-center gap-4">
-      <div className="flex-1">
-        <label className="text-[10px] text-white/40 block mb-0.5">Date *</label>
-        <input type="date" value={newBlockDate} onChange={e => setNewBlockDate(e.target.value)}
-          className="input-glass rounded-xl px-3 py-2 text-sm w-full" />
-      </div>
-      <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer pt-4">
-        <input type="checkbox" checked={!newBlockStart && !newBlockEnd}
-          onChange={e => { if (e.target.checked) { setNewBlockStart(''); setNewBlockEnd(''); } }}
-          className="accent-[#7CFC00]" />
-        All Day
-      </label>
-    </div>
-
-    {!(newBlockStart === '' && newBlockEnd === '' && !newBlockDate) && newBlockStart === '' && newBlockEnd === '' ? null : (
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-[10px] text-white/40 block mb-0.5">From</label>
-          <input type="time" value={newBlockStart} onChange={e => setNewBlockStart(e.target.value)}
-            className="input-glass rounded-xl px-3 py-2 text-sm w-full" />
-        </div>
-        <div>
-          <label className="text-[10px] text-white/40 block mb-0.5">To</label>
-          <input type="time" value={newBlockEnd} onChange={e => setNewBlockEnd(e.target.value)}
-            className="input-glass rounded-xl px-3 py-2 text-sm w-full" />
-        </div>
-      </div>
-    )}
-
-    <div>
-      <label className="text-[10px] text-white/40 block mb-0.5">Reason (optional)</label>
-      <input placeholder="e.g. Maintenance, Holiday" value={newBlockReason} onChange={e => setNewBlockReason(e.target.value)}
-        className="input-glass rounded-xl px-3 py-2 text-sm w-full" />
-    </div>
-
-    <Button type="button" variant="outline" size="sm" onClick={handleAddBlockedDate}>
-      <Plus size={14} /> Block Date
-    </Button>
-  </div>
-</motion.div>
-
-      {/* ===== COURT DETAILS ===== */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5">
+      {/* BLOCKED DATES */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
         <div className="flex items-center gap-2 mb-4">
-          <Settings size={18} className="text-[#7CFC00]" />
-          <h2 className="text-white font-bold">Court Details</h2>
+          <Calendar size={18} className="text-amber-500" />
+          <h2 className="text-slate-800 font-bold">Blocked Dates</h2>
         </div>
+        <p className="text-slate-500 text-xs mb-4">Block specific dates or time ranges from being booked.</p>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {blockedDates.length === 0 && <span className="text-slate-400 text-xs">No blocked dates</span>}
+          {blockedDates.map(bd => (
+            <span key={bd.id} className="flex items-center gap-1.5 text-xs bg-red-50 text-red-600 border border-red-200 rounded-full px-3 py-1">
+              {new Date(bd.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {bd.startTime ? ` ${bd.startTime}–${bd.endTime}` : ' All Day'}
+              {bd.reason && ` — ${bd.reason}`}
+              <button type="button" onClick={() => handleDeleteBlockedDate(bd.id)} className="text-red-400 hover:text-red-600"><X size={11} /></button>
+            </span>
+          ))}
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <label className="text-[10px] text-slate-400 block mb-0.5">Date *</label>
+              <input type="date" value={newBlockDate} onChange={e => setNewBlockDate(e.target.value)} className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm w-full text-slate-700" />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-500 cursor-pointer pt-4">
+              <input type="checkbox" checked={!newBlockStart && !newBlockEnd} onChange={e => { if (e.target.checked) { setNewBlockStart(''); setNewBlockEnd(''); } }} className="accent-teal-600" /> All Day
+            </label>
+          </div>
+          {!(newBlockStart === '' && newBlockEnd === '' && !newBlockDate) && newBlockStart === '' && newBlockEnd === '' ? null : (
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-[10px] text-slate-400 block mb-0.5">From</label><input type="time" value={newBlockStart} onChange={e => setNewBlockStart(e.target.value)} className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm w-full text-slate-700" /></div>
+              <div><label className="text-[10px] text-slate-400 block mb-0.5">To</label><input type="time" value={newBlockEnd} onChange={e => setNewBlockEnd(e.target.value)} className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm w-full text-slate-700" /></div>
+            </div>
+          )}
+          <div><label className="text-[10px] text-slate-400 block mb-0.5">Reason (optional)</label><input placeholder="e.g. Maintenance, Holiday" value={newBlockReason} onChange={e => setNewBlockReason(e.target.value)} className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm w-full text-slate-700" /></div>
+          <Button type="button" variant="outline" size="sm" onClick={handleAddBlockedDate}><Plus size={14} /> Block Date</Button>
+        </div>
+      </motion.div>
 
+      {/* COURT DETAILS */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Settings size={18} className="text-teal-600" />
+          <h2 className="text-slate-800 font-bold">Court Details</h2>
+        </div>
         <form onSubmit={handleSave} className="space-y-5">
           <div className="grid sm:grid-cols-2 gap-4">
             <Input label="Court Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
@@ -241,17 +180,15 @@ export function AdminCourt() {
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-white/80 block mb-1.5">Court Type</label>
-              <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as 'indoor' | 'outdoor' }))}
-                className="w-full input-glass rounded-xl px-4 py-2.5 text-sm">
+              <label className="text-sm font-medium text-slate-600 block mb-1.5">Court Type</label>
+              <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as 'indoor' | 'outdoor' }))} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700">
                 <option value="indoor">Indoor</option>
                 <option value="outdoor">Outdoor</option>
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-white/80 block mb-1.5">Status</label>
-              <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as 'active' | 'inactive' | 'maintenance' }))}
-                className="w-full input-glass rounded-xl px-4 py-2.5 text-sm">
+              <label className="text-sm font-medium text-slate-600 block mb-1.5">Status</label>
+              <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as 'active' | 'inactive' | 'maintenance' }))} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700">
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="maintenance">Maintenance</option>
@@ -259,22 +196,18 @@ export function AdminCourt() {
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium text-white/80 block mb-2">Amenities</label>
+            <label className="text-sm font-medium text-slate-600 block mb-2">Amenities</label>
             <div className="flex flex-wrap gap-2 mb-3">
               {amenities.map(a => (
-                <span key={a} className="flex items-center gap-1.5 text-xs bg-[#7CFC00]/10 text-[#7CFC00] border border-[#7CFC00]/20 rounded-full px-3 py-1">
+                <span key={a} className="flex items-center gap-1.5 text-xs bg-teal-50 text-teal-600 border border-teal-200 rounded-full px-3 py-1">
                   {a}
-                  <button type="button" onClick={() => setAmenities(prev => prev.filter(x => x !== a))} className="text-[#7CFC00]/60 hover:text-red-400 transition-colors"><X size={11} /></button>
+                  <button type="button" onClick={() => setAmenities(prev => prev.filter(x => x !== a))} className="text-teal-400 hover:text-red-500 transition-colors"><X size={11} /></button>
                 </span>
               ))}
             </div>
             <div className="flex gap-2">
-              <input value={newAmenity} onChange={e => setNewAmenity(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newAmenity.trim()) { setAmenities(p => [...p, newAmenity.trim()]); setNewAmenity(''); } } }}
-                placeholder="Add amenity..." className="input-glass flex-1 rounded-xl px-4 py-2 text-sm" />
-              <Button type="button" variant="outline" size="sm" onClick={() => { if (newAmenity.trim()) { setAmenities(p => [...p, newAmenity.trim()]); setNewAmenity(''); } }}>
-                <Plus size={14} />
-              </Button>
+              <input value={newAmenity} onChange={e => setNewAmenity(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newAmenity.trim()) { setAmenities(p => [...p, newAmenity.trim()]); setNewAmenity(''); } } }} placeholder="Add amenity..." className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 flex-1" />
+              <Button type="button" variant="outline" size="sm" onClick={() => { if (newAmenity.trim()) { setAmenities(p => [...p, newAmenity.trim()]); setNewAmenity(''); } }}><Plus size={14} /></Button>
             </div>
           </div>
           <Button variant="neon" type="submit" loading={saving}>Save Changes</Button>

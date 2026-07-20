@@ -507,26 +507,26 @@ export function LandingPage() {
       )}
 
       {/* DETAILS FORM */}
-      {activeTab === 'book' && showDetailsForm && (
-        <div className="max-w-lg mx-auto px-4 py-8">
-          <div className="glass-card p-6 border border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-slate-800 font-bold">Your Details</h2>
-              <button onClick={() => setShowDetailsForm(false)} className="text-xs text-slate-400 hover:text-slate-600">← Back</button>
-            </div>
-            <div className="bg-slate-50 rounded-xl p-3 mb-4 text-sm text-slate-500">
-              {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''} · ₱{subtotal}
-            </div>
-            <form onSubmit={handleDetailsSubmit} className="space-y-4">
-              <Input label="Full Name *" placeholder="Juan Dela Cruz" value={customerName} onChange={e => setCustomerName(e.target.value)} leftIcon={<User size={16} />} />
-              <Input label="Email *" type="email" placeholder="you@email.com" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} leftIcon={<Mail size={16} />} />
-              <Input label="Phone *" placeholder="09xx-xxx-xxxx" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} leftIcon={<Phone size={16} />} />
-              <Input label="Notes (optional)" placeholder="Any special requests..." value={notes} onChange={e => setNotes(e.target.value)} leftIcon={<FileText size={16} />} />
-              <Button variant="neon" size="lg" className="w-full" type="submit">Proceed to Checkout</Button>
-            </form>
-          </div>
-        </div>
-      )}
+{activeTab === 'book' && showDetailsForm && (
+  <div className="max-w-lg mx-auto px-4 py-8">
+    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-slate-800 font-bold">Your Details</h2>
+        <button onClick={() => setShowDetailsForm(false)} className="text-xs text-slate-400 hover:text-slate-600">← Back</button>
+      </div>
+      <div className="bg-slate-50 rounded-xl p-3 mb-4 text-sm text-slate-500">
+        {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''} · ₱{subtotal}
+      </div>
+      <form onSubmit={handleDetailsSubmit} className="space-y-4">
+        <Input label="Full Name *" placeholder="Juan Dela Cruz" value={customerName} onChange={e => setCustomerName(e.target.value)} leftIcon={<User size={16} className="text-slate-500" />} />
+        <Input label="Email *" type="email" placeholder="you@email.com" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} leftIcon={<Mail size={16} className="text-slate-500" />} />
+        <Input label="Phone *" placeholder="09xx-xxx-xxxx" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} leftIcon={<Phone size={16} className="text-slate-500" />} />
+        <Input label="Notes (optional)" placeholder="Any special requests..." value={notes} onChange={e => setNotes(e.target.value)} leftIcon={<FileText size={16} className="text-slate-500" />} />
+        <Button variant="neon" size="lg" className="w-full" type="submit">Proceed to Checkout</Button>
+      </form>
+    </div>
+  </div>
+)}
     </div>
   );
 }
