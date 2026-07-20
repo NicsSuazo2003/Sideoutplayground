@@ -26,6 +26,11 @@ function format12h(time: string): string {
   return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
+// ✅ Format full time range
+function formatTimeRange(start: string, end: string): string {
+  return `${format12h(start)} - ${format12h(end)}`;
+}
+
 const amenityIcons: Record<string, typeof Zap> = {
   'LED Lighting': Zap, 'Air Conditioning': Wind, 'Professional Nets': Shield,
   'Seating Area': Tv2, 'Water Station': Droplets, 'Locker Rooms': Shield,
@@ -48,10 +53,11 @@ const isFixedSlot = (slot: TimeSlot): boolean => {
   return slot.startTime === '16:00' && slot.endTime === '18:00';
 };
 
-// ✅ Helper to check if a slot is the 4-5 PM or 5-6 PM slot (to be removed)
+// ✅ Helper to check if a slot should be removed (4-5 PM, 5-6 PM, or 6-7 PM)
 const isRemovedSlot = (slot: TimeSlot): boolean => {
   return (slot.startTime === '16:00' && slot.endTime === '17:00') ||
-         (slot.startTime === '17:00' && slot.endTime === '18:00');
+         (slot.startTime === '17:00' && slot.endTime === '18:00') ||
+         (slot.startTime === '18:00' && slot.endTime === '19:00');
 };
 
 export function LandingPage() {
@@ -84,7 +90,6 @@ export function LandingPage() {
   useEffect(() => { getCourt().then(setCourt).catch(() => {}); }, []);
   useEffect(() => { fetchCourt(); }, []);
   
-  // ✅ Modified fetchAvailability to handle 2hr fixed slot
   useEffect(() => {
     if (activeTab === 'book') {
       fetchAvailability(selectedDate);
@@ -99,16 +104,15 @@ export function LandingPage() {
     }
   }, [activeTab]);
 
-  // ✅ Get availability with 2hr fixed slot applied
+  // ✅ Get availability with 2hr fixed slot applied and 6-7 PM removed
   const getProcessedAvailability = (): TimeSlot[] => {
-    // Filter out 4-5 PM and 5-6 PM slots
+    // Filter out 4-5 PM, 5-6 PM, and 6-7 PM slots
     const filtered = availability.filter(slot => !isRemovedSlot(slot));
     
     // Check if 4-6 PM slot already exists
     const has4to6 = filtered.some(slot => isFixedSlot(slot));
     
     if (!has4to6) {
-      // Add the 2hr fixed slot
       const basePrice = court?.pricePerHour || 150;
       const fixedSlot: TimeSlot = {
         id: `fixed-${selectedDate}-16-18`,
@@ -116,7 +120,7 @@ export function LandingPage() {
         startTime: '16:00',
         endTime: '18:00',
         isAvailable: true,
-        price: basePrice * 2, // 2 hours
+        price: basePrice * 2,
       };
       return [...filtered, fixedSlot].sort((a, b) => a.startTime.localeCompare(b.startTime));
     }
@@ -330,7 +334,7 @@ export function LandingPage() {
                               <Star size={8} fill="currentColor" /> 2hr
                             </span>
                           )}
-                          <span className="font-bold text-sm">{format12h(slot.startTime)}</span>
+                          <span className="font-bold text-xs">{formatTimeRange(slot.startTime, slot.endTime)}</span>
                           {slot.isAvailable ? (
                             <span className={`text-xs font-semibold mt-1 ${fixed ? 'text-amber-400' : 'text-[#7CFC00]'}`}>
                               ₱{slot.price || pricePerHour}
@@ -421,10 +425,10 @@ export function LandingPage() {
                             </span>
                           )}
                           <div className="text-center">
-                            <div className={`font-bold ${fixed && !isSelected ? 'text-amber-400' : ''}`}>
-                              {format12h(slot.startTime)}
+                            <div className={`font-bold text-xs leading-tight ${fixed && !isSelected ? 'text-amber-400' : ''}`}>
+                              {formatTimeRange(slot.startTime, slot.endTime)}
                             </div>
-                            <div className={`text-[10px] ${fixed && !isSelected ? 'text-amber-400/70' : 'text-white/50'}`}>
+                            <div className={`text-[10px] mt-0.5 ${fixed && !isSelected ? 'text-amber-400/70' : 'text-white/50'}`}>
                               ₱{slot.price || pricePerHour}
                             </div>
                           </div>
@@ -461,7 +465,7 @@ export function LandingPage() {
                         return (
                           <div key={slot.id} className={`flex items-center justify-between text-sm ${fixed ? 'bg-amber-500/10 rounded-lg px-2 py-1' : ''}`}>
                             <span className={fixed ? 'text-amber-400' : 'text-white/70'}>
-                              {format12h(slot.startTime)} – {format12h(slot.endTime)}
+                              {formatTimeRange(slot.startTime, slot.endTime)}
                               {fixed && <span className="ml-1 text-[10px] text-amber-400 font-bold">2hr Fixed</span>}
                             </span>
                             <div className="flex items-center gap-2">
