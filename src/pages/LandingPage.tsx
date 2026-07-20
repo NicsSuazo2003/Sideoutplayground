@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle, ChevronLeft, ChevronRight, Lock, Check, User, Mail, Phone, FileText, Star } from 'lucide-react';
+import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle, ChevronLeft, ChevronRight, Lock, Check, User, Mail, Phone, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useBookingStore } from '../stores/bookingStore';
 import { getCourt } from '../services/courtService';
@@ -10,6 +10,7 @@ import { StarRating } from '../components/ui/StarRating';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Input } from '../components/ui/Input';
 import type { Court, TimeSlot } from '../types';
+import { CalendarDays, CreditCard, MapPin, Star, Users, Wifi, Lightbulb, Clock, CheckCircle } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5154';
 
@@ -163,181 +164,208 @@ export function LandingPage() {
         </div>
       </div>
 
-      {/* ========================================== */}
-      {/* ABOUT TAB */}
-      {/* ========================================== */}
-      {activeTab === 'about' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          {/* Hero */}
-          <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden px-4 bg-gradient-to-b from-teal-600 to-teal-700">
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-[100px]" />
-              <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-400/10 rounded-full blur-[100px]" />
-            </div>
-            <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-center max-w-4xl mx-auto relative z-10">
-              <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1 }} className="flex justify-center mb-6">
-                <div className="w-24 h-24 sm:w-40 sm:h-40 rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-lg">
-                  <img src="/logo.png" alt="Side Out Playground" className="w-full h-full object-contain" />
-                </div>
-              </motion.div>
-              <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-4xl sm:text-6xl font-black text-white mb-4 leading-tight">
-                One Court.{' '}<span className="text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">Infinite </span>
-                <span className="text-white">Games.</span>
-              </motion.h2>
-              <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="text-white/80 text-lg sm:text-xl max-w-xl mx-auto mb-8">
-                Book your slot at our premium pickleball court — fresh air, open space, and ready for play.
-              </motion.p>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="flex flex-col items-center gap-3">
-                <Button variant="neon" size="lg" onClick={() => setActiveTab('book')}>
-                  <Zap size={18} /> Book a Slot
-                </Button>
-                <span className="text-white/70 text-sm">Starting at <span className="text-amber-400 font-bold">₱{pricePerHour}/hr</span></span>
-              </motion.div>
-            </motion.div>
-          </section>
-
-          {/* Court Showcase */}
-          <section className="py-12 px-4 bg-slate-50">
-            <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-12">
-                <div className="text-teal-600 text-sm font-bold tracking-widest uppercase mb-2">Our Facility</div>
-                <h2 className="text-4xl font-black text-slate-800">{court?.name || 'Side Out Arena'}</h2>
+     {/* ABOUT TAB */}
+{activeTab === 'about' && (
+  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    {/* Hero */}
+    <section className="relative bg-teal-600 text-white overflow-hidden">
+      <div className="absolute inset-0 bg-cover bg-center opacity-20"
+        style={{ backgroundImage: "url('https://images.pexels.com/photos/2277981/pexels-photo-2277981.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1')" }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-teal-700/80 to-teal-500/60" />
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-36">
+        <motion.div initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="max-w-2xl">
+          <div className="flex items-center gap-3 mb-6">
+            <img src="/logo.png" alt="Side Out Playground" className="w-12 h-12 object-contain rounded-xl bg-white/10 p-2" />
+            <span className="inline-flex items-center gap-1.5 bg-amber-400/20 text-amber-200 border border-amber-400/30 px-3 py-1 rounded-full text-sm font-medium">
+              <Zap size={13} fill="currentColor" /> Now Open for Bookings
+            </span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
+            Book Your<br />
+            <span className="text-amber-300">Pickleball Court</span><br />
+            in Seconds
+          </h1>
+          <p className="text-lg text-teal-100 mb-8 max-w-lg">
+            Enjoy pickleball facility at SideOut Playground. Easy online booking, instant confirmation.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <Button variant="pink" size="lg" onClick={() => setActiveTab('book')}>
+              <CalendarDays size={18} /> Book a Court
+            </Button>
+            <Button variant="outline" size="lg" onClick={() => navigate('/track')} className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-xl">
+              Track Booking
+            </Button>
+          </div>
+          {court && (
+            <div className="flex items-center gap-6 mt-10 pt-8 border-t border-white/20">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-amber-300">₱{pricePerHour}</p>
+                <p className="text-xs text-teal-200">per hour</p>
               </div>
-              <div className="grid md:grid-cols-2 gap-8 items-center">
-                <div className="relative rounded-2xl overflow-hidden aspect-video cursor-pointer group border border-slate-200 shadow-md" 
-                     onClick={() => setActiveTab('book')}
-                     onMouseEnter={() => setIsHoveringImg(true)}
-                     onMouseLeave={() => setIsHoveringImg(false)}>
-                  <AnimatePresence mode="wait">
-                    <motion.img key={currentImg} src={allImages.length > 0 ? getImageUrl(allImages[currentImg]) : 'https://images.pexels.com/photos/1103829/pexels-photo-1103829.jpeg'}
-                      alt="Court" className="w-full h-full object-cover absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} />
-                  </AnimatePresence>
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent pointer-events-none" />
-                  
-                  {allImages.length > 1 && (
-                    <>
-                      <div className="absolute inset-y-0 left-0 flex items-center px-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <button onClick={prevImg} className="p-2 rounded-full bg-slate-800/50 text-white hover:bg-slate-800/80 backdrop-blur-md"><ChevronLeft size={20} /></button>
-                      </div>
-                      <div className="absolute inset-y-0 right-0 flex items-center px-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <button onClick={nextImg} className="p-2 rounded-full bg-slate-800/50 text-white hover:bg-slate-800/80 backdrop-blur-md"><ChevronRight size={20} /></button>
-                      </div>
-                      <div className="absolute bottom-4 right-0 left-0 flex justify-center gap-1">
-                        {allImages.map((_, i) => (
-                          <button key={i} onClick={(e) => { e.stopPropagation(); setCurrentImg(i); }} className="p-1 cursor-pointer" aria-label={`Go to slide ${i + 1}`}>
-                            <div className={`h-2 rounded-full transition-all ${i === currentImg ? 'bg-teal-600 w-6' : 'bg-white/40 w-2 hover:bg-white/70'}`} />
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                  <div className="absolute bottom-4 left-4 flex gap-2 pointer-events-none">
-                    <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-semibold">{court?.type === 'indoor' ? 'Indoor' : 'Outdoor'}</span>
-                    <span className="px-3 py-1 rounded-full bg-teal-600/20 text-teal-600 border border-teal-600/30 text-xs font-semibold capitalize">{court?.status || 'Active'}</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <StarRating rating={court?.rating || 4.9} />
-                  <h3 className="text-3xl font-bold text-slate-800 mt-3 mb-2">{court?.name || 'Side Out Arena'}</h3>
-                  <p className="text-slate-500 text-sm mb-1">{court?.dimensions || '60ft x 30ft'} - {court?.surface || 'Acrylic Hard Court'}</p>
-                  <div className="text-4xl font-black text-teal-600 mb-6">₱{pricePerHour}<span className="text-xl font-normal text-slate-400">/hr</span></div>
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    {(court?.amenities || ['LED Lighting', 'Air Conditioning', 'Professional Nets', 'Seating Area', 'Water Station', 'Locker Rooms', 'Pro Shop', 'Parking']).map(a => {
-                      const Icon = amenityIcons[a] || Zap;
-                      return <div key={a} className="flex items-center gap-2 text-slate-600 text-sm"><Icon size={16} className="text-teal-600 shrink-0" />{a}</div>;
-                    })}
-                  </div>
-                </div>
+              <div className="w-px h-10 bg-white/20" />
+              <div className="text-center">
+                <p className="text-2xl font-bold">{court ? `${format12h(court.openTime)} – ${format12h(court.closeTime)}` : '5AM – 12AM'}</p>
+                <p className="text-xs text-teal-200">operating hours</p>
+              </div>
+              <div className="w-px h-10 bg-white/20" />
+              <div className="text-center">
+                <div className="flex justify-center"><StarRating rating={court?.rating || 4.9} /></div>
+                <p className="text-xs text-teal-200">court rating</p>
               </div>
             </div>
-          </section>
-
-          {/* Hours & Location */}
-          <section className="py-16 px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="grid sm:grid-cols-2 gap-6">
-                <div className="glass-card p-6 border border-slate-200 flex flex-col h-full">
-                  <h3 className="text-slate-800 font-bold mb-3">🕐 Operating Hours</h3>
-                  <p className="text-slate-600 text-sm">Open Daily: {court ? `${format12h(court.openTime)} – ${format12h(court.closeTime)}` : '3:00 PM – 12:00 AM'}</p>
-                  <p className="text-slate-500 text-xs mt-2">Book up to 7 days in advance.</p>
-                </div>
-                <div className="glass-card p-6 border border-slate-200 flex flex-col h-full">
-                  <h3 className="text-slate-800 font-bold mb-3">📍 Location</h3>
-                  <p className="text-slate-600 text-sm">Purok Million, Barangay San Agustin Sur</p>
-                  <p className="text-slate-600 text-sm mb-4">Tandag City, Surigao del Sur 8300</p>
-                  
-                  <div className="mt-auto space-y-3">
-                    <a href="tel:+639058100973" className="flex items-center gap-2 text-teal-600 hover:text-teal-700 text-sm transition-colors w-fit">
-                      <Phone size={16} /> 0905 810 0973
-                    </a>
-                    <a 
-                      href="https://maps.google.com/?q=Purok+Million,+Barangay+San+Agustin+Sur,+Tandag+City" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold transition-colors w-fit"
-                    >
-                      <ParkingCircle size={14} /> Get Directions
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Today's Availability Preview */}
-          <section className="py-12 px-4 bg-slate-50">
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
-                <div className="text-teal-600 text-sm font-bold tracking-widest uppercase mb-2">Today's Schedule</div>
-                <h2 className="text-3xl font-black text-slate-800">Court Availability</h2>
-                <p className="text-slate-500 text-sm mt-2">Tap an open slot below to secure it.</p>
-              </div>
-              <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6">
-                {isLoading ? <LoadingSpinner size={24} /> : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-                    {processedAvailability.map(slot => {
-                      const fixed = isFixedSlot(slot);
-                      return (
-                        <div 
-                          key={slot.id} 
-                          className={`p-3 rounded-xl border flex flex-col items-center justify-center text-center transition-colors relative ${
-                            slot.isAvailable 
-                              ? fixed 
-                                ? 'border-amber-400/50 bg-amber-50 text-slate-800 cursor-pointer hover:bg-amber-100' 
-                                : 'border-teal-600/30 bg-teal-50 text-slate-800 cursor-pointer hover:bg-teal-100'
-                              : 'border-slate-100 bg-slate-100 text-slate-300 cursor-not-allowed'
-                          }`} 
-                          onClick={() => { 
-                            if(slot.isAvailable) {
-                              selectSlot(slot);
-                              setActiveTab('book'); 
-                            }
-                          }}
-                        >
-                          {fixed && (
-                            <span className="absolute top-0.5 right-0.5 flex items-center gap-0.5 bg-amber-400 text-white text-[8px] font-bold px-1 py-0.5 rounded-full">
-                              <Star size={8} fill="currentColor" /> 2hr
-                            </span>
-                          )}
-                          <span className="font-bold text-xs">{formatTimeRange(slot.startTime, slot.endTime)}</span>
-                          {slot.isAvailable ? (
-                            <span className={`text-xs font-semibold mt-1 ${fixed ? 'text-amber-600' : 'text-teal-600'}`}>
-                              ₱{slot.price || pricePerHour}
-                            </span>
-                          ) : (
-                            <Lock size={12} className="mt-1 opacity-30" />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
+          )}
         </motion.div>
-      )}
+      </div>
+    </section>
+
+    {/* Today's Availability */}
+    <section className="py-16 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-slate-800 mb-2">Today's Availability</h2>
+          <p className="text-slate-500">Check what time slots are open for today</p>
+        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : availability.length === 0 ? (
+          <div className="text-center py-12 text-slate-400">
+            <Clock size={40} className="mx-auto mb-3 opacity-30" />
+            <p>No slots available today</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {availability.map((slot) => (
+              <motion.div
+                key={slot.id}
+                whileHover={{ y: -2 }}
+                onClick={() => { if(slot.isAvailable) { selectSlot(slot); setActiveTab('book'); } }}
+                className={`rounded-xl p-3 text-center border-2 transition-all cursor-pointer ${
+                  slot.isAvailable
+                    ? 'bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100'
+                    : 'bg-slate-50 border-slate-100 text-slate-400'
+                }`}
+              >
+                <p className="text-xs font-medium mb-1">{format12h(slot.startTime)} – {format12h(slot.endTime)}</p>
+                <p className={`text-xs font-semibold ${slot.isAvailable ? 'text-teal-600' : 'text-slate-400'}`}>
+                  {slot.isAvailable ? `₱${slot.price || pricePerHour}` : 'Booked'}
+                </p>
+                <span className={`mt-1.5 inline-block w-2 h-2 rounded-full ${slot.isAvailable ? 'bg-teal-500' : 'bg-slate-300'}`} />
+              </motion.div>
+            ))}
+          </div>
+        )}
+        <div className="text-center mt-8">
+          <Button size="lg" onClick={() => setActiveTab('book')}>
+            <CalendarDays size={17} /> Book a Slot Now
+          </Button>
+        </div>
+      </div>
+    </section>
+
+    {/* Court Info */}
+    {court && (
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <div>
+              <span className="text-sm font-semibold text-teal-600 uppercase tracking-wider">The Court</span>
+              <h2 className="text-3xl font-bold text-slate-800 mt-2 mb-4">{court.name}</h2>
+              <p className="text-slate-500 mb-6">
+                {court.indoor ? 'Indoor' : 'Outdoor'} court with {court.surface} surface.
+                {court.dimensions && ` Dimensions: ${court.dimensions}.`}
+              </p>
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+                  <p className="text-xs text-slate-400 mb-1">Price per Hour</p>
+                  <p className="text-xl font-bold text-teal-600">₱{pricePerHour}</p>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+                  <p className="text-xs text-slate-400 mb-1">Operating Hours</p>
+                  <p className="text-sm font-semibold text-slate-700">
+                    {format12h(court.openTime)} – {format12h(court.closeTime)}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-600 mb-3">Amenities</p>
+                <div className="flex flex-wrap gap-2">
+                  {court.amenities.map((a) => {
+                    const Icon = amenityIcons[a] || CheckCircle;
+                    return (
+                      <span key={a} className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs rounded-full font-medium">
+                        <Icon size={12} /> {a}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="relative">
+              <img
+                src={allImages.length > 0 ? getImageUrl(allImages[0]) : 'https://images.pexels.com/photos/3755440/pexels-photo-3755440.jpeg'}
+                alt={court.name}
+                className="w-full h-72 md:h-96 object-cover rounded-2xl shadow-lg"
+              />
+              <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/10" />
+              <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 shadow-md">
+                <div className="flex items-center gap-2">
+                  <MapPin size={14} className="text-teal-600" />
+                  <span className="text-sm font-medium text-slate-700">Purok Million, Dawis, Tandag City</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    )}
+
+    {/* How It Works */}
+    <section className="py-16 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <span className="text-sm font-semibold text-teal-600 uppercase tracking-wider">Simple Process</span>
+          <h2 className="text-3xl font-bold text-slate-800 mt-2">How It Works</h2>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { icon: CalendarDays, step: '01', title: 'Pick a Date', desc: 'Choose from the next 7 available days that works for you.' },
+            { icon: Clock, step: '02', title: 'Select Slots', desc: 'Pick one or more time slots that fit your schedule.' },
+            { icon: Users, step: '03', title: 'Fill Details', desc: 'Enter your name, email, and contact number.' },
+            { icon: CreditCard, step: '04', title: 'Pay via GCash', desc: 'Send payment and upload your screenshot to confirm.' },
+          ].map((item, idx) => (
+            <div key={item.step} className="relative bg-gray-50 rounded-2xl p-6 border border-slate-100">
+              <span className="absolute top-4 right-4 text-4xl font-bold text-slate-100">{item.step}</span>
+              <div className="w-11 h-11 bg-teal-100 rounded-xl flex items-center justify-center mb-4">
+                <item.icon size={20} className="text-teal-600" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-800 mb-2">{item.title}</h3>
+              <p className="text-sm text-slate-500">{item.desc}</p>
+              {idx < 3 && <ChevronRight size={20} className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 text-slate-300 z-10" />}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* CTA */}
+    <section className="py-16 bg-teal-600 text-white">
+      <div className="max-w-3xl mx-auto px-4 text-center">
+        <Star size={32} className="mx-auto mb-4 text-amber-300" fill="currentColor" />
+        <h2 className="text-3xl font-bold mb-4">Ready to Play?</h2>
+        <p className="text-teal-100 mb-8 text-lg">
+          Book your court now and experience the best pickleball facilities in town.
+        </p>
+        <Button variant="pink" size="lg" onClick={() => setActiveTab('book')}>
+          Book a Court Now
+        </Button>
+      </div>
+    </section>
+  </motion.div>
+)}
 
       {/* ========================================== */}
       {/* BOOK TAB */}
