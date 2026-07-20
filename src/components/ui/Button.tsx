@@ -11,11 +11,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<Variant, string> = {
-  neon: 'btn-neon rounded-xl text-black',
-  pink: 'btn-pink rounded-xl',
-  outline: 'border border-white/20 text-white hover:bg-white/5 rounded-xl transition-all duration-300',
-  ghost: 'text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all duration-300',
-  destructive: 'bg-red-600/20 text-red-400 border border-red-600/30 hover:bg-red-600/30 rounded-xl transition-all duration-300',
+  neon: 'bg-teal-600 text-white hover:bg-teal-700 shadow-md hover:shadow-lg rounded-xl transition-all duration-300 font-bold',
+  pink: 'border-2 border-amber-400 text-amber-500 hover:bg-amber-50 rounded-xl transition-all duration-300 font-bold',
+  outline: 'border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl transition-all duration-300',
+  ghost: 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all duration-300',
+  destructive: 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded-xl transition-all duration-300',
 };
 
 const sizeClasses: Record<Size, string> = {

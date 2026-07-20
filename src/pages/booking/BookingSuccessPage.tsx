@@ -25,53 +25,53 @@ export function BookingSuccessPage() {
   };
 
   return (
-    <div className="pt-16 min-h-screen flex items-center justify-center px-4">
+    <div className="pt-16 min-h-screen flex items-center justify-center px-4 bg-slate-50">
       <div className="max-w-md w-full relative z-10 text-center">
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-          className="w-20 h-20 rounded-full bg-[#7CFC00]/20 flex items-center justify-center mx-auto mb-6"
+          className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-6"
         >
-          <CheckCircle2 size={40} className="text-[#7CFC00]" />
+          <CheckCircle2 size={40} className="text-teal-600" />
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <div className="text-[#7CFC00] text-sm font-bold tracking-widest uppercase mb-2">
+          <div className="text-teal-600 text-sm font-bold tracking-widest uppercase mb-2">
             {booking.status === 'payment_submitted' ? 'Payment Submitted' : 'Booking Created'}
           </div>
-          <h1 className="text-4xl font-black text-white mb-2">
+          <h1 className="text-4xl font-black text-slate-800 mb-2">
             {booking.status === 'payment_submitted' ? 'Awaiting Verification' : 'Reservation Received!'}
           </h1>
-          <p className="text-white/50 mb-6">
+          <p className="text-slate-500 mb-6">
             {booking.status === 'payment_submitted'
               ? 'Your payment proof has been submitted. Admin will verify shortly.'
               : 'Complete your payment to confirm your slot.'}
           </p>
 
           {/* Reference Code */}
-          <div className="glass-card p-4 mb-6 inline-block">
-            <div className="text-white/40 text-xs mb-1">Booking Reference</div>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 mb-6 inline-block">
+            <div className="text-slate-400 text-xs mb-1">Booking Reference</div>
             <div className="flex items-center gap-3">
-              <span className="text-2xl font-black text-[#7CFC00] tracking-wider">{booking.referenceCode}</span>
-              <button onClick={copyReference} className="p-2 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+              <span className="text-2xl font-black text-teal-600 tracking-wider">{booking.referenceCode}</span>
+              <button onClick={copyReference} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
                 <Copy size={16} />
               </button>
             </div>
           </div>
 
-          <div className="glass-card p-5 text-left mb-6 space-y-3">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 text-left mb-6 space-y-3">
             <div className="flex items-center gap-3 text-sm">
-              <Calendar size={16} className="text-[#7CFC00] shrink-0" />
-              <span className="text-white/70">{new Date(booking.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
+              <Calendar size={16} className="text-teal-600 shrink-0" />
+              <span className="text-slate-600">{new Date(booking.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <Clock size={16} className="text-[#7CFC00] shrink-0" />
-              <span className="text-white/70">{booking.slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(s => format12h(s.startTime)).join(', ')} ({booking.slots.length}h)</span>
+              <Clock size={16} className="text-teal-600 shrink-0" />
+              <span className="text-slate-600">{booking.slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(s => format12h(s.startTime)).join(', ')} ({booking.slots.length}h)</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <Hash size={16} className="text-[#7CFC00] shrink-0" />
-              <span className="text-white/70">₱{booking.totalAmount.toFixed(2)}</span>
+              <Hash size={16} className="text-teal-600 shrink-0" />
+              <span className="text-slate-600">₱{booking.totalAmount.toFixed(2)}</span>
             </div>
           </div>
 

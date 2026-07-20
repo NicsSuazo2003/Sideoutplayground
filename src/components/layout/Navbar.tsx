@@ -29,15 +29,15 @@ export function Navbar() {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled ? 'glass border-b border-white/8' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-white shadow-sm">
               <img src="/logo.png" alt="Side Out Playground" className="w-full h-full object-contain" />
             </div>
             <div className="leading-none">
-              <div className="font-black text-white text-sm tracking-tight">SIDE OUT</div>
-              <div className="text-[10px] text-[#7CFC00] tracking-widest font-semibold">PLAYGROUND</div>
+              <div className="font-black text-slate-800 text-sm tracking-tight">SIDE OUT</div>
+              <div className="text-[10px] text-teal-600 tracking-widest font-semibold">PLAYGROUND</div>
             </div>
           </Link>
 
@@ -46,7 +46,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 to={link.href}
-                className={`text-sm font-medium transition-colors duration-200 ${location.pathname === link.href ? 'text-[#7CFC00]' : 'text-white/70 hover:text-white'}`}
+                className={`text-sm font-medium transition-colors duration-200 ${location.pathname === link.href ? 'text-teal-600' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 {link.label}
               </Link>
@@ -65,7 +65,7 @@ export function Navbar() {
           </div>
 
           <button
-            className="md:hidden p-2 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+            className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
             onClick={() => setMenuOpen(!menuOpen)}
           >
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -80,7 +80,7 @@ export function Navbar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 z-40 md:hidden"
+              className="fixed inset-0 bg-slate-900/60 z-40 md:hidden"
               onClick={() => setMenuOpen(false)}
             />
             <motion.div
@@ -88,12 +88,12 @@ export function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed top-0 right-0 bottom-0 w-72 z-50 glass border-l border-white/8 p-6 flex flex-col md:hidden"
+              className="fixed top-0 right-0 bottom-0 w-72 z-50 bg-white border-l border-slate-200 p-6 flex flex-col md:hidden shadow-xl"
             >
               <div className="flex justify-between items-center mb-8">
-                <span className="font-black text-white">Menu</span>
-                <button onClick={() => setMenuOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10">
-                  <X size={20} className="text-white/70" />
+                <span className="font-black text-slate-800">Menu</span>
+                <button onClick={() => setMenuOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-100">
+                  <X size={20} className="text-slate-500" />
                 </button>
               </div>
               <div className="flex flex-col gap-1">
@@ -102,7 +102,7 @@ export function Navbar() {
                     key={link.href}
                     to={link.href}
                     onClick={() => setMenuOpen(false)}
-                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${location.pathname === link.href ? 'text-[#7CFC00] bg-[#7CFC00]/10' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
+                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${location.pathname === link.href ? 'text-teal-600 bg-teal-50' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
                   >
                     {link.label}
                   </Link>

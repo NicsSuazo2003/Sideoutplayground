@@ -26,7 +26,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={onClose}
           />
           <motion.div
@@ -34,18 +34,18 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 16 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`relative glass-card p-6 w-full ${sizes[size]} z-10`}
+            className={`relative bg-white rounded-2xl shadow-xl p-6 w-full ${sizes[size]} z-10 border border-slate-200`}
           >
             {title && (
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-bold text-white">{title}</h2>
-                <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+                <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+                <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
                   <X size={18} />
                 </button>
               </div>
             )}
             {!title && (
-              <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors z-10">
+              <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors z-10">
                 <X size={18} />
               </button>
             )}
