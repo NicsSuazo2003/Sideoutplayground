@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Eye, Plus } from 'lucide-react';
+import { Search, Eye, Plus, ArrowUpDown } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAdminStore } from '../../stores/adminStore';
 import { StatusBadge } from '../../components/ui/Badge';
@@ -32,6 +32,7 @@ export function AdminBookings() {
   const { bookings, isLoading, fetchAllBookings, manageBooking } = useAdminStore();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | BookingStatus>('all');
+  const [sortNewest, setSortNewest] = useState(true);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Booking | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -39,13 +40,19 @@ export function AdminBookings() {
 
   useEffect(() => { fetchAllBookings(); }, []);
 
-  const filtered = bookings.filter(b => {
-    const matchSearch = b.customerName.toLowerCase().includes(search.toLowerCase()) ||
-                        b.referenceCode.toLowerCase().includes(search.toLowerCase()) ||
-                        b.id.includes(search);
-    const matchStatus = statusFilter === 'all' || b.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const filtered = bookings
+    .filter(b => {
+      const matchSearch = b.customerName.toLowerCase().includes(search.toLowerCase()) ||
+                          b.referenceCode.toLowerCase().includes(search.toLowerCase()) ||
+                          b.id.includes(search);
+      const matchStatus = statusFilter === 'all' || b.status === statusFilter;
+      return matchSearch && matchStatus;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.date + 'T' + (a.slots[0]?.startTime || '00:00'));
+      const dateB = new Date(b.date + 'T' + (b.slots[0]?.startTime || '00:00'));
+      return sortNewest ? dateB.getTime() - dateA.getTime() : dateA.getTime() - dateB.getTime();
+    });
 
   const pageCount = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -72,13 +79,29 @@ export function AdminBookings() {
     </Button>
     </div>
 
+    <div className="flex flex-col sm:flex-row gap-3">
+      <Input 
+        placeholder="Search by name, reference, or ID..." 
+        value={search} 
+        onChange={e => { setSearch(e.target.value); setPage(1); }} 
+        leftIcon={<Search size={16} />} 
+        className="sm:w-72" 
+      />
       <div className="flex gap-1 p-1 glass rounded-xl overflow-x-auto">
-   {(['all', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
-    <button key={s} onClick={() => { setStatusFilter(s as BookingStatus); setPage(1); }}
-      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${statusFilter === s ? 'bg-[#7CFC00] text-black' : 'text-white/50 hover:text-white'}`}>
-      {s === 'all' ? 'All' : s === 'pending_payment' ? 'Pending' : s === 'payment_submitted' ? 'Submitted' : s.charAt(0).toUpperCase() + s.slice(1)}
-    </button>
-    ))}
+        {(['all', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
+          <button key={s} onClick={() => { setStatusFilter(s as BookingStatus); setPage(1); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${statusFilter === s ? 'bg-[#7CFC00] text-black' : 'text-white/50 hover:text-white'}`}>
+            {s === 'all' ? 'All' : s === 'pending_payment' ? 'Pending' : s === 'payment_submitted' ? 'Submitted' : s.charAt(0).toUpperCase() + s.slice(1)}
+          </button>
+        ))}
+      </div>
+      <button 
+        onClick={() => setSortNewest(!sortNewest)} 
+        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/50 hover:text-white hover:bg-white/5 transition-all"
+      >
+        <ArrowUpDown size={12} />
+        {sortNewest ? 'Newest' : 'Oldest'}
+      </button>
     </div>
 
       {isLoading ? <LoadingSpinner /> : (
