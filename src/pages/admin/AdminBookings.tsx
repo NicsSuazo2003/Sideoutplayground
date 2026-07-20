@@ -47,20 +47,17 @@ export function AdminBookings() {
       return matchSearch && matchStatus;
     })
     .sort((a, b) => {
-      const dateA = new Date(a.date + 'T' + (a.slots[0]?.startTime || '00:00'));
-      const dateB = new Date(b.date + 'T' + (b.slots[0]?.startTime || '00:00'));
-      return sortNewest ? dateB.getTime() - dateA.getTime() : dateA.getTime() - dateB.getTime();
+      const timeA = new Date(a.createdAt).getTime();
+      const timeB = new Date(b.createdAt).getTime();
+      return sortNewest ? timeB - timeA : timeA - timeB;
     });
 
   const pageCount = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleAction = async (id: string, status: BookingStatus) => {
-    try {
-      await manageBooking(id, status);
-      toast.success(`Booking ${status}`);
-      setSelected(null);
-    } catch { toast.error('Action failed'); }
+    try { await manageBooking(id, status); toast.success(`Booking ${status}`); setSelected(null); }
+    catch { toast.error('Action failed'); }
   };
 
   return (
@@ -92,7 +89,7 @@ export function AdminBookings() {
         </div>
         <button onClick={() => setSortNewest(!sortNewest)}
           className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all">
-          <ArrowUpDown size={12} /> {sortNewest ? 'Newest' : 'Oldest'}
+          <ArrowUpDown size={12} /> {sortNewest ? 'Latest' : 'Oldest'}
         </button>
       </div>
 
