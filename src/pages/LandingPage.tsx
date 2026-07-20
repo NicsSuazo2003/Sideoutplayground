@@ -35,14 +35,13 @@ const amenityIcons: Record<string, typeof Zap> = {
 function getDateStrip(): string[] {
   const dates: string[] = [];
   const now = new Date();
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 14; i++) {  // Changed from 7 to 14
     const d = new Date(now);
     d.setDate(d.getDate() + i);
     dates.push(d.toISOString().split('T')[0]);
   }
   return dates;
 }
-
 export function LandingPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'about' | 'book'>('about');
