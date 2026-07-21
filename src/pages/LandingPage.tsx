@@ -102,17 +102,23 @@ export function LandingPage() {
     }
   }, [activeTab]);
 
-  const getProcessedAvailability = (): TimeSlot[] => {
+ const getProcessedAvailability = (): TimeSlot[] => {
     const filtered = availability.filter(slot => !isRemovedSlot(slot));
     const has4to6 = filtered.some(slot => isFixedSlot(slot));
+    
     if (!has4to6) {
+      // Check if 4-5PM or 5-6PM are actually booked
+      const slot4to5 = availability.find(s => s.startTime === '16:00' && s.endTime === '17:00');
+      const slot5to6 = availability.find(s => s.startTime === '17:00' && s.endTime === '18:00');
+      const is4to6Available = (slot4to5?.isAvailable !== false) && (slot5to6?.isAvailable !== false);
+      
       const basePrice = court?.pricePerHour || 150;
       const fixedSlot: TimeSlot = {
         id: `fixed-${selectedDate}-16-18`,
         date: selectedDate,
         startTime: '16:00',
         endTime: '18:00',
-        isAvailable: true,
+        isAvailable: is4to6Available,  // ← Now checks real availability
         price: basePrice * 2,
       };
       return [...filtered, fixedSlot].sort((a, b) => a.startTime.localeCompare(b.startTime));
