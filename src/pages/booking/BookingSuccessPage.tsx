@@ -37,6 +37,17 @@ export function BookingSuccessPage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          {/* Parking Reminder */}
+          <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🛵</span>
+              <div className="text-left">
+                <p className="text-amber-800 font-bold text-sm">Strictly No Car Parking Inside</p>
+                <p className="text-amber-600 text-xs mt-0.5">Motorcycle parking only. Please park your car outside the venue.</p>
+              </div>
+            </div>
+          </div>
+
           <div className="text-teal-600 text-sm font-bold tracking-widest uppercase mb-2">
             {booking.status === 'payment_submitted' ? 'Payment Submitted' : 'Booking Created'}
           </div>
