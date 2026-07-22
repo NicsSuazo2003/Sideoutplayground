@@ -29,33 +29,6 @@ function isPastBooking(booking: Booking): boolean {
 
 const PAGE_SIZE = 10;
 
-const calendarStyles = `
-  .react-calendar {
-    background: transparent;
-    border: none;
-    font-family: 'Inter', sans-serif;
-    width: 100%;
-  }
-  .react-calendar__navigation button { color: #1e293b; font-weight: 600; }
-  .react-calendar__navigation button:enabled:hover,
-  .react-calendar__navigation button:enabled:focus { background: #f1f5f9; border-radius: 8px; }
-  .react-calendar__tile {
-    padding: 12px 6px;
-    border-radius: 10px;
-    font-weight: 500;
-    color: #1e293b;
-  }
-  .react-calendar__tile:enabled:hover,
-  .react-calendar__tile:enabled:focus { background: #e2e8f0; }
-  .react-calendar__tile--now { background: #fef3c7; color: #92400e; font-weight: 700; }
-  .react-calendar__tile--active { background: #0d9488 !important; color: white !important; }
-  .react-calendar__month-view__days__day--weekend { color: #ef4444; }
-  .react-calendar__month-view__weekdays__weekday { color: #64748b; font-weight: 600; font-size: 0.75rem; }
-  .tile-booked { background: #fee2e2 !important; color: #dc2626 !important; font-weight: 600; }
-  .tile-partial { background: #fef3c7 !important; color: #92400e !important; font-weight: 600; }
-  .tile-available { background: #dcfce7 !important; color: #16a34a !important; font-weight: 600; }
-`;
-
 export function AdminBookings() {
   const { bookings, isLoading, fetchAllBookings, manageBooking } = useAdminStore();
   const [search, setSearch] = useState('');
@@ -66,7 +39,7 @@ export function AdminBookings() {
   const [selected, setSelected] = useState<Booking | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [calendarDate, setCalendarDate] = useState<Date>(new Date());
+  const [calendarDate] = useState<Date>(new Date());
 
   useEffect(() => { fetchAllBookings(); }, []);
 
@@ -93,35 +66,8 @@ export function AdminBookings() {
     catch { toast.error('Action failed'); }
   };
 
-  // Calendar helpers
-  const getDateStatus = (date: Date): 'fully-booked' | 'partial' | 'available' => {
-    const dateStr = date.toISOString().split('T')[0];
-    const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'expired');
-    if (dayBookings.length === 0) return 'available';
-    const bookedHours = dayBookings.reduce((sum, b) => sum + b.slots.length, 0);
-    if (bookedHours >= 16) return 'fully-booked';
-    return 'partial';
-  };
-
-  const getTileClassName = ({ date }: { date: Date }) => {
-    const status = getDateStatus(date);
-    if (status === 'fully-booked') return 'tile-booked';
-    if (status === 'partial') return 'tile-partial';
-    return 'tile-available';
-  };
-
-  const handleCalendarClick = (value: any) => {
-    if (value instanceof Date) {
-      setDateFilter(value.toISOString().split('T')[0]);
-      setCalendarDate(value);
-      setShowCalendar(false);
-    }
-  };
-
   return (
     <div className="space-y-5">
-      <style>{calendarStyles}</style>
-      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black text-slate-800">Booking Management</h1>
@@ -160,18 +106,78 @@ export function AdminBookings() {
         </button>
       </div>
 
-      {/* Calendar Modal */}
-      <Modal open={showCalendar} onClose={() => setShowCalendar(false)} title="Court Calendar" size="md">
-        <div className="space-y-4">
+      {/* ==================== CALENDAR MODAL ==================== */}
+      <Modal open={showCalendar} onClose={() => setShowCalendar(false)} title="Court Calendar" size="xl">
+        <style>{`
+          .react-calendar {
+            background: transparent;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+          }
+          .react-calendar__navigation { margin-bottom: 16px; }
+          .react-calendar__navigation button { color: #1e293b; font-weight: 700; font-size: 1rem; }
+          .react-calendar__navigation button:enabled:hover,
+          .react-calendar__navigation button:enabled:focus { background: #f1f5f9; border-radius: 8px; }
+          .react-calendar__month-view__weekdays__weekday { color: #64748b; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; }
+          .react-calendar__tile {
+            height: 110px;
+            padding: 4px;
+            vertical-align: top;
+            text-align: left;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #f1f5f9 !important;
+            overflow: hidden;
+            background: white;
+          }
+          .react-calendar__tile:enabled:hover { background: #f8fafc; }
+          .react-calendar__tile--now { background: #fefce8; }
+          .react-calendar__tile--now .day-number { color: #92400e; font-weight: 800; }
+          .react-calendar__month-view__days__day--neighboringMonth { opacity: 0.3; }
+          .day-number { font-weight: 600; font-size: 0.8rem; color: #1e293b; margin-bottom: 2px; display: block; }
+          .event-tag {
+            font-size: 0.6rem;
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-bottom: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+          }
+          .event-tag.confirmed { background: #0d9488; color: white; }
+          .event-tag.pending { background: #f59e0b; color: white; }
+          .event-tag.submitted { background: #3b82f6; color: white; }
+        `}</style>
+        <div className="space-y-3">
           <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-200 inline-block" /> Fully Booked</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-200 inline-block" /> Partial</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-green-200 inline-block" /> Available</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-teal-600 inline-block" /> Confirmed</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-500 inline-block" /> Pending</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-blue-500 inline-block" /> Submitted</span>
           </div>
           <Calendar
-            onChange={handleCalendarClick}
             value={calendarDate}
-            tileClassName={getTileClassName}
+            tileContent={({ date }) => {
+              const dateStr = date.toISOString().split('T')[0];
+              const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'expired');
+              if (dayBookings.length === 0) return null;
+              return (
+                <div className="space-y-0.5 mt-1">
+                  {dayBookings.slice(0, 3).map(b => (
+                    <div 
+                      key={b.id}
+                      className={`event-tag ${b.status === 'confirmed' ? 'confirmed' : b.status === 'pending_payment' ? 'pending' : 'submitted'}`}
+                    >
+                      {b.slots[0]?.startTime ? format12h(b.slots[0].startTime) : ''} {b.customerName.split(' ')[0]}
+                    </div>
+                  ))}
+                  {dayBookings.length > 3 && (
+                    <div className="text-[0.55rem] text-slate-400 pl-1">+{dayBookings.length - 3} more</div>
+                  )}
+                </div>
+              );
+            }}
             className="!w-full"
           />
         </div>
