@@ -40,6 +40,9 @@ export function AdminBookings() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarDate] = useState<Date>(new Date());
+  const [selectedDayBookings, setSelectedDayBookings] = useState<Booking[]>([]);
+  const [showDayModal, setShowDayModal] = useState(false);
+  const [selectedDayLabel, setSelectedDayLabel] = useState('');
 
   useEffect(() => { fetchAllBookings(); }, []);
 
@@ -109,43 +112,19 @@ export function AdminBookings() {
       {/* ==================== CALENDAR MODAL ==================== */}
       <Modal open={showCalendar} onClose={() => setShowCalendar(false)} title="Court Calendar" size="xl">
         <style>{`
-          .react-calendar {
-            background: transparent;
-            border: none;
-            font-family: 'Inter', sans-serif;
-            width: 100%;
-          }
+          .react-calendar { background: transparent; border: none; font-family: 'Inter', sans-serif; width: 100%; }
           .react-calendar__navigation { margin-bottom: 16px; }
           .react-calendar__navigation button { color: #1e293b; font-weight: 700; font-size: 1rem; }
           .react-calendar__navigation button:enabled:hover,
           .react-calendar__navigation button:enabled:focus { background: #f1f5f9; border-radius: 8px; }
           .react-calendar__month-view__weekdays__weekday { color: #64748b; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; }
-          .react-calendar__tile {
-            height: 110px;
-            padding: 4px;
-            vertical-align: top;
-            text-align: left;
-            font-size: 0.75rem;
-            border-radius: 8px;
-            border: 1px solid #f1f5f9 !important;
-            overflow: hidden;
-            background: white;
-          }
+          .react-calendar__tile { height: 110px; padding: 4px; vertical-align: top; text-align: left; font-size: 0.75rem; border-radius: 8px; border: 1px solid #f1f5f9 !important; overflow: hidden; background: white; cursor: pointer; }
           .react-calendar__tile:enabled:hover { background: #f8fafc; }
           .react-calendar__tile--now { background: #fefce8; }
           .react-calendar__tile--now .day-number { color: #92400e; font-weight: 800; }
           .react-calendar__month-view__days__day--neighboringMonth { opacity: 0.3; }
           .day-number { font-weight: 600; font-size: 0.8rem; color: #1e293b; margin-bottom: 2px; display: block; }
-          .event-tag {
-            font-size: 0.6rem;
-            padding: 1px 4px;
-            border-radius: 3px;
-            margin-bottom: 1px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: 1.3;
-          }
+          .event-tag { font-size: 0.6rem; padding: 1px 4px; border-radius: 3px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
           .event-tag.confirmed { background: #0d9488; color: white; }
           .event-tag.pending { background: #f59e0b; color: white; }
           .event-tag.submitted { background: #3b82f6; color: white; }
@@ -158,6 +137,13 @@ export function AdminBookings() {
           </div>
           <Calendar
             value={calendarDate}
+            onClickDay={(value: Date) => {
+              const dateStr = value.toISOString().split('T')[0];
+              const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'expired');
+              setSelectedDayBookings(dayBookings);
+              setSelectedDayLabel(value.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }));
+              setShowDayModal(true);
+            }}
             tileContent={({ date }) => {
               const dateStr = date.toISOString().split('T')[0];
               const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'expired');
@@ -165,10 +151,7 @@ export function AdminBookings() {
               return (
                 <div className="space-y-0.5 mt-1">
                   {dayBookings.slice(0, 3).map(b => (
-                    <div 
-                      key={b.id}
-                      className={`event-tag ${b.status === 'confirmed' ? 'confirmed' : b.status === 'pending_payment' ? 'pending' : 'submitted'}`}
-                    >
+                    <div key={b.id} className={`event-tag ${b.status === 'confirmed' ? 'confirmed' : b.status === 'pending_payment' ? 'pending' : 'submitted'}`}>
                       {b.slots[0]?.startTime ? format12h(b.slots[0].startTime) : ''} {b.customerName.split(' ')[0]}
                     </div>
                   ))}
@@ -181,6 +164,39 @@ export function AdminBookings() {
             className="!w-full"
           />
         </div>
+      </Modal>
+
+      {/* ==================== DAY DETAILS MODAL ==================== */}
+      <Modal open={showDayModal} onClose={() => setShowDayModal(false)} title={selectedDayLabel} size="lg">
+        {selectedDayBookings.length === 0 ? (
+          <div className="text-center py-8 text-slate-400">No bookings for this date</div>
+        ) : (
+          <div className="space-y-3">
+            {selectedDayBookings.map(b => (
+              <div key={b.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={b.status} />
+                    <span className="text-teal-600 text-xs font-mono">{b.referenceCode}</span>
+                  </div>
+                  <span className="text-teal-600 font-bold">₱{b.totalAmount}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                  <div><span className="text-slate-400">Customer:</span> {b.customerName}</div>
+                  <div><span className="text-slate-400">Email:</span> {b.customerEmail}</div>
+                  <div><span className="text-slate-400">Time:</span> {b.slots.length > 0 
+                    ? (() => { const sorted = [...b.slots].sort((a, b) => a.startTime.localeCompare(b.startTime)); return `${format12h(sorted[0]?.startTime)} – ${format12h(sorted[sorted.length-1]?.endTime)}`; })() 
+                    : '—'}</div>
+                  <div><span className="text-slate-400">Duration:</span> {b.slots.length}h</div>
+                  {b.notes && <div className="col-span-2"><span className="text-slate-400">Notes:</span> {b.notes}</div>}
+                  <div className="col-span-2 text-slate-400">
+                    Booked: {new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at {new Date(b.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Modal>
 
       {isLoading ? <LoadingSpinner /> : (

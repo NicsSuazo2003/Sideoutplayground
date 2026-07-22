@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle, ChevronLeft, ChevronRight, Lock, Check, User, Mail, Phone, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useBookingStore } from '../stores/bookingStore';
@@ -65,6 +65,7 @@ export function LandingPage() {
   const [currentImg, setCurrentImg] = useState(0);
   const [showDetailsForm, setShowDetailsForm] = useState(false);
   const [isHoveringImg, setIsHoveringImg] = useState(false);
+  const datePickerRef = useRef<HTMLInputElement>(null);
 
   const {
     selectedDate, selectedSlots, availability, isLoading,
@@ -102,12 +103,11 @@ export function LandingPage() {
     }
   }, [activeTab]);
 
- const getProcessedAvailability = (): TimeSlot[] => {
+  const getProcessedAvailability = (): TimeSlot[] => {
     const filtered = availability.filter(slot => !isRemovedSlot(slot));
     const has4to6 = filtered.some(slot => isFixedSlot(slot));
     
     if (!has4to6) {
-      // Check if 4-5PM or 5-6PM are actually booked
       const slot4to5 = availability.find(s => s.startTime === '16:00' && s.endTime === '17:00');
       const slot5to6 = availability.find(s => s.startTime === '17:00' && s.endTime === '18:00');
       const is4to6Available = (slot4to5?.isAvailable !== false) && (slot5to6?.isAvailable !== false);
@@ -118,7 +118,7 @@ export function LandingPage() {
         date: selectedDate,
         startTime: '16:00',
         endTime: '18:00',
-        isAvailable: is4to6Available,  // ← Now checks real availability
+        isAvailable: is4to6Available,
         price: basePrice * 2,
       };
       return [...filtered, fixedSlot].sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -155,7 +155,7 @@ export function LandingPage() {
   const subtotal = selectedSlots.reduce((sum, slot) => sum + (slot.price || pricePerHour), 0);
 
   return (
-      <div>
+    <div>
       {/* Tab Navigation */}
       <div className="bg-teal-600 pt-4 pb-6">
         <div className="max-w-4xl mx-auto px-4">
@@ -172,208 +172,208 @@ export function LandingPage() {
         </div>
       </div>
 
-     {/* ABOUT TAB */}
-{activeTab === 'about' && (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-    {/* Hero */}
-    <section className="relative bg-teal-600 text-white overflow-hidden">
-      <div className="absolute inset-0 bg-cover bg-center opacity-20"
-        style={{ backgroundImage: "url('https://images.pexels.com/photos/2277981/pexels-photo-2277981.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1')" }} />
-      <div className="absolute inset-0 bg-gradient-to-br from-teal-700/80 to-teal-500/60" />
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-36">
-        <motion.div initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="max-w-2xl">
-          <div className="flex items-center gap-3 mb-6">
-            <img src="/logo.png" alt="Side Out Playground" className="w-12 h-12 object-contain rounded-xl bg-white/10 p-2" />
-            <span className="inline-flex items-center gap-1.5 bg-amber-400/20 text-amber-200 border border-amber-400/30 px-3 py-1 rounded-full text-sm font-medium">
-              <Zap size={13} fill="currentColor" /> Now Open for Bookings
-            </span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-            Book Your<br />
-            <span className="text-amber-300">Pickleball Court</span><br />
-            in Seconds
-          </h1>
-          <p className="text-lg text-teal-100 mb-8 max-w-lg">
-            Enjoy pickleball facility at SideOut Playground. Easy online booking, instant confirmation.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <Button variant="pink" size="lg" onClick={() => setActiveTab('book')}>
-              <CalendarDays size={18} /> Book a Court
-            </Button>
-            <Button variant="outline" size="lg" onClick={() => navigate('/track')} className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-xl">
-              Track Booking
-            </Button>
-          </div>
-          {court && (
-            <div className="flex items-center gap-6 mt-10 pt-8 border-t border-white/20">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-amber-300">₱{pricePerHour}</p>
-                <p className="text-xs text-teal-200">per hour</p>
-              </div>
-              <div className="w-px h-10 bg-white/20" />
-              <div className="text-center">
-                <p className="text-2xl font-bold">{court ? `${format12h(court.openTime)} – ${format12h(court.closeTime)}` : '5AM – 12AM'}</p>
-                <p className="text-xs text-teal-200">operating hours</p>
-              </div>
-              <div className="w-px h-10 bg-white/20" />
-              <div className="text-center">
-                <div className="flex justify-center"><StarRating rating={court?.rating || 4.9} /></div>
-                <p className="text-xs text-teal-200">court rating</p>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </div>
-    </section>
-
-    {/* Today's Availability */}
-    <section className="py-16 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-slate-800 mb-2">Today's Availability</h2>
-          <p className="text-slate-500">Check what time slots are open for today</p>
-        </div>
-        {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />
-            ))}
-          </div>
-        ) : availability.length === 0 ? (
-          <div className="text-center py-12 text-slate-400">
-            <Clock size={40} className="mx-auto mb-3 opacity-30" />
-            <p>No slots available today</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {availability.map((slot) => (
-              <motion.div
-                key={slot.id}
-                whileHover={{ y: -2 }}
-                onClick={() => { if(slot.isAvailable) { selectSlot(slot); setActiveTab('book'); } }}
-                className={`rounded-xl p-3 text-center border-2 transition-all cursor-pointer ${
-                  slot.isAvailable
-                    ? 'bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100'
-                    : 'bg-slate-50 border-slate-100 text-slate-400'
-                }`}
-              >
-                <p className="text-xs font-medium mb-1">{format12h(slot.startTime)} – {format12h(slot.endTime)}</p>
-                <p className={`text-xs font-semibold ${slot.isAvailable ? 'text-teal-600' : 'text-slate-400'}`}>
-                  {slot.isAvailable ? `₱${slot.price || pricePerHour}` : 'Booked'}
+      {/* ABOUT TAB */}
+      {activeTab === 'about' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          {/* Hero */}
+          <section className="relative bg-teal-600 text-white overflow-hidden">
+            <div className="absolute inset-0 bg-cover bg-center opacity-20"
+              style={{ backgroundImage: "url('https://images.pexels.com/photos/2277981/pexels-photo-2277981.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1')" }} />
+            <div className="absolute inset-0 bg-gradient-to-br from-teal-700/80 to-teal-500/60" />
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-36">
+              <motion.div initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="max-w-2xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <img src="/logo.png" alt="Side Out Playground" className="w-12 h-12 object-contain rounded-xl bg-white/10 p-2" />
+                  <span className="inline-flex items-center gap-1.5 bg-amber-400/20 text-amber-200 border border-amber-400/30 px-3 py-1 rounded-full text-sm font-medium">
+                    <Zap size={13} fill="currentColor" /> Now Open for Bookings
+                  </span>
+                </div>
+                <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
+                  Book Your<br />
+                  <span className="text-amber-300">Pickleball Court</span><br />
+                  in Seconds
+                </h1>
+                <p className="text-lg text-teal-100 mb-8 max-w-lg">
+                  Enjoy pickleball facility at SideOut Playground. Easy online booking, instant confirmation.
                 </p>
-                <span className={`mt-1.5 inline-block w-2 h-2 rounded-full ${slot.isAvailable ? 'bg-teal-500' : 'bg-slate-300'}`} />
+                <div className="flex flex-wrap gap-4">
+                  <Button variant="pink" size="lg" onClick={() => setActiveTab('book')}>
+                    <CalendarDays size={18} /> Book a Court
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={() => navigate('/track')} className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-xl">
+                    Track Booking
+                  </Button>
+                </div>
+                {court && (
+                  <div className="flex items-center gap-6 mt-10 pt-8 border-t border-white/20">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-amber-300">₱{pricePerHour}</p>
+                      <p className="text-xs text-teal-200">per hour</p>
+                    </div>
+                    <div className="w-px h-10 bg-white/20" />
+                    <div className="text-center">
+                      <p className="text-2xl font-bold">{court ? `${format12h(court.openTime)} – ${format12h(court.closeTime)}` : '5AM – 12AM'}</p>
+                      <p className="text-xs text-teal-200">operating hours</p>
+                    </div>
+                    <div className="w-px h-10 bg-white/20" />
+                    <div className="text-center">
+                      <div className="flex justify-center"><StarRating rating={court?.rating || 4.9} /></div>
+                      <p className="text-xs text-teal-200">court rating</p>
+                    </div>
+                  </div>
+                )}
               </motion.div>
-            ))}
-          </div>
-        )}
-        <div className="text-center mt-8">
-          <Button size="lg" onClick={() => setActiveTab('book')}>
-            <CalendarDays size={17} /> Book a Slot Now
-          </Button>
-        </div>
-      </div>
-    </section>
+            </div>
+          </section>
 
-    {/* Court Info */}
-    {court && (
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div>
-              <span className="text-sm font-semibold text-teal-600 uppercase tracking-wider">The Court</span>
-              <h2 className="text-3xl font-bold text-slate-800 mt-2 mb-4">{court.name}</h2>
-              <p className="text-slate-500 mb-6">
-                {court.indoor ? 'Indoor' : 'Outdoor'} court with {court.surface} surface.
-                {court.dimensions && ` Dimensions: ${court.dimensions}.`}
+          {/* Today's Availability */}
+          <section className="py-16 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-10">
+                <h2 className="text-3xl font-bold text-slate-800 mb-2">Today's Availability</h2>
+                <p className="text-slate-500">Check what time slots are open for today</p>
+              </div>
+              {isLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />
+                  ))}
+                </div>
+              ) : availability.length === 0 ? (
+                <div className="text-center py-12 text-slate-400">
+                  <Clock size={40} className="mx-auto mb-3 opacity-30" />
+                  <p>No slots available today</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {availability.map((slot) => (
+                    <motion.div
+                      key={slot.id}
+                      whileHover={{ y: -2 }}
+                      onClick={() => { if(slot.isAvailable) { selectSlot(slot); setActiveTab('book'); } }}
+                      className={`rounded-xl p-3 text-center border-2 transition-all cursor-pointer ${
+                        slot.isAvailable
+                          ? 'bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100'
+                          : 'bg-slate-50 border-slate-100 text-slate-400'
+                      }`}
+                    >
+                      <p className="text-xs font-medium mb-1">{format12h(slot.startTime)} – {format12h(slot.endTime)}</p>
+                      <p className={`text-xs font-semibold ${slot.isAvailable ? 'text-teal-600' : 'text-slate-400'}`}>
+                        {slot.isAvailable ? `₱${slot.price || pricePerHour}` : 'Booked'}
+                      </p>
+                      <span className={`mt-1.5 inline-block w-2 h-2 rounded-full ${slot.isAvailable ? 'bg-teal-500' : 'bg-slate-300'}`} />
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+              <div className="text-center mt-8">
+                <Button size="lg" onClick={() => setActiveTab('book')}>
+                  <CalendarDays size={17} /> Book a Slot Now
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          {/* Court Info */}
+          {court && (
+            <section className="py-16 bg-gray-50">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid md:grid-cols-2 gap-10 items-center">
+                  <div>
+                    <span className="text-sm font-semibold text-teal-600 uppercase tracking-wider">The Court</span>
+                    <h2 className="text-3xl font-bold text-slate-800 mt-2 mb-4">{court.name}</h2>
+                    <p className="text-slate-500 mb-6">
+                      {court.indoor ? 'Indoor' : 'Outdoor'} court with {court.surface} surface.
+                      {court.dimensions && ` Dimensions: ${court.dimensions}.`}
+                    </p>
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+                        <p className="text-xs text-slate-400 mb-1">Price per Hour</p>
+                        <p className="text-xl font-bold text-teal-600">₱{pricePerHour}</p>
+                      </div>
+                      <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+                        <p className="text-xs text-slate-400 mb-1">Operating Hours</p>
+                        <p className="text-sm font-semibold text-slate-700">
+                          {format12h(court.openTime)} – {format12h(court.closeTime)}
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 mb-3">Amenities</p>
+                      <div className="flex flex-wrap gap-2">
+                        {court.amenities.map((a) => {
+                          const Icon = amenityIcons[a] || CheckCircle;
+                          return (
+                            <span key={a} className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs rounded-full font-medium">
+                              <Icon size={12} /> {a}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <img
+                      src={allImages.length > 0 ? getImageUrl(allImages[0]) : 'https://images.pexels.com/photos/3755440/pexels-photo-3755440.jpeg'}
+                      alt={court.name}
+                      className="w-full h-72 md:h-96 object-cover rounded-2xl shadow-lg"
+                    />
+                    <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/10" />
+                    <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 shadow-md">
+                      <div className="flex items-center gap-2">
+                        <MapPin size={14} className="text-teal-600" />
+                        <span className="text-sm font-medium text-slate-700">Purok Million, Dawis, Tandag City</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* How It Works */}
+          <section className="py-16 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-12">
+                <span className="text-sm font-semibold text-teal-600 uppercase tracking-wider">Simple Process</span>
+                <h2 className="text-3xl font-bold text-slate-800 mt-2">How It Works</h2>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  { icon: CalendarDays, step: '01', title: 'Pick a Date', desc: 'Choose from the next 7 available days that works for you.' },
+                  { icon: Clock, step: '02', title: 'Select Slots', desc: 'Pick one or more time slots that fit your schedule.' },
+                  { icon: Users, step: '03', title: 'Fill Details', desc: 'Enter your name, email, and contact number.' },
+                  { icon: CreditCard, step: '04', title: 'Pay via GCash', desc: 'Send payment and upload your screenshot to confirm.' },
+                ].map((item, idx) => (
+                  <div key={item.step} className="relative bg-gray-50 rounded-2xl p-6 border border-slate-100">
+                    <span className="absolute top-4 right-4 text-4xl font-bold text-slate-100">{item.step}</span>
+                    <div className="w-11 h-11 bg-teal-100 rounded-xl flex items-center justify-center mb-4">
+                      <item.icon size={20} className="text-teal-600" />
+                    </div>
+                    <h3 className="text-base font-semibold text-slate-800 mb-2">{item.title}</h3>
+                    <p className="text-sm text-slate-500">{item.desc}</p>
+                    {idx < 3 && <ChevronRight size={20} className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 text-slate-300 z-10" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* CTA */}
+          <section className="py-16 bg-teal-600 text-white">
+            <div className="max-w-3xl mx-auto px-4 text-center">
+              <Star size={32} className="mx-auto mb-4 text-amber-300" fill="currentColor" />
+              <h2 className="text-3xl font-bold mb-4">Ready to Play?</h2>
+              <p className="text-teal-100 mb-8 text-lg">
+                Book your court now and experience the best pickleball facilities in town.
               </p>
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
-                  <p className="text-xs text-slate-400 mb-1">Price per Hour</p>
-                  <p className="text-xl font-bold text-teal-600">₱{pricePerHour}</p>
-                </div>
-                <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
-                  <p className="text-xs text-slate-400 mb-1">Operating Hours</p>
-                  <p className="text-sm font-semibold text-slate-700">
-                    {format12h(court.openTime)} – {format12h(court.closeTime)}
-                  </p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-600 mb-3">Amenities</p>
-                <div className="flex flex-wrap gap-2">
-                  {court.amenities.map((a) => {
-                    const Icon = amenityIcons[a] || CheckCircle;
-                    return (
-                      <span key={a} className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs rounded-full font-medium">
-                        <Icon size={12} /> {a}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
+              <Button variant="pink" size="lg" onClick={() => setActiveTab('book')}>
+                Book a Court Now
+              </Button>
             </div>
-            <div className="relative">
-              <img
-                src={allImages.length > 0 ? getImageUrl(allImages[0]) : 'https://images.pexels.com/photos/3755440/pexels-photo-3755440.jpeg'}
-                alt={court.name}
-                className="w-full h-72 md:h-96 object-cover rounded-2xl shadow-lg"
-              />
-              <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/10" />
-              <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 shadow-md">
-                <div className="flex items-center gap-2">
-                  <MapPin size={14} className="text-teal-600" />
-                  <span className="text-sm font-medium text-slate-700">Purok Million, Dawis, Tandag City</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    )}
-
-    {/* How It Works */}
-    <section className="py-16 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <span className="text-sm font-semibold text-teal-600 uppercase tracking-wider">Simple Process</span>
-          <h2 className="text-3xl font-bold text-slate-800 mt-2">How It Works</h2>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { icon: CalendarDays, step: '01', title: 'Pick a Date', desc: 'Choose from the next 7 available days that works for you.' },
-            { icon: Clock, step: '02', title: 'Select Slots', desc: 'Pick one or more time slots that fit your schedule.' },
-            { icon: Users, step: '03', title: 'Fill Details', desc: 'Enter your name, email, and contact number.' },
-            { icon: CreditCard, step: '04', title: 'Pay via GCash', desc: 'Send payment and upload your screenshot to confirm.' },
-          ].map((item, idx) => (
-            <div key={item.step} className="relative bg-gray-50 rounded-2xl p-6 border border-slate-100">
-              <span className="absolute top-4 right-4 text-4xl font-bold text-slate-100">{item.step}</span>
-              <div className="w-11 h-11 bg-teal-100 rounded-xl flex items-center justify-center mb-4">
-                <item.icon size={20} className="text-teal-600" />
-              </div>
-              <h3 className="text-base font-semibold text-slate-800 mb-2">{item.title}</h3>
-              <p className="text-sm text-slate-500">{item.desc}</p>
-              {idx < 3 && <ChevronRight size={20} className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 text-slate-300 z-10" />}
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    {/* CTA */}
-    <section className="py-16 bg-teal-600 text-white">
-      <div className="max-w-3xl mx-auto px-4 text-center">
-        <Star size={32} className="mx-auto mb-4 text-amber-300" fill="currentColor" />
-        <h2 className="text-3xl font-bold mb-4">Ready to Play?</h2>
-        <p className="text-teal-100 mb-8 text-lg">
-          Book your court now and experience the best pickleball facilities in town.
-        </p>
-        <Button variant="pink" size="lg" onClick={() => setActiveTab('book')}>
-          Book a Court Now
-        </Button>
-      </div>
-    </section>
-  </motion.div>
-)}
+          </section>
+        </motion.div>
+      )}
 
       {/* ========================================== */}
       {/* BOOK TAB */}
@@ -391,7 +391,35 @@ export function LandingPage() {
               <div className="glass-card p-4 border border-slate-200">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-slate-800 font-bold">Select Date</h2>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 items-center">
+                    {/* Calendar picker button */}
+                    <div className="relative">
+                      <button 
+                        onClick={() => datePickerRef.current?.showPicker()} 
+                        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-teal-600 transition-colors"
+                        title="Jump to date"
+                      >
+                        <CalendarDays size={16} />
+                      </button>
+                      <input
+                        ref={datePickerRef}
+                        type="date"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        min={dates[0]}
+                        max={dates[dates.length - 1]}
+                        value={selectedDate}
+                        onChange={(e) => {
+                          const picked = e.target.value;
+                          if (picked) {
+                            setSelectedDate(picked);
+                            const today = new Date();
+                            const pickedDate = new Date(picked + 'T12:00:00');
+                            const diffDays = Math.floor((pickedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                            setDateOffset(Math.max(0, Math.min(diffDays, dates.length - 7)));
+                          }
+                        }}
+                      />
+                    </div>
                     <button onClick={() => setDateOffset(Math.max(0, dateOffset - 1))} disabled={dateOffset === 0} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-30"><ChevronLeft size={16} /></button>
                     <button onClick={() => setDateOffset(Math.min(dates.length - 7, dateOffset + 1))} disabled={dateOffset >= dates.length - 7} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-30"><ChevronRight size={16} /></button>
                   </div>
@@ -513,26 +541,26 @@ export function LandingPage() {
       )}
 
       {/* DETAILS FORM */}
-{activeTab === 'book' && showDetailsForm && (
-  <div className="max-w-lg mx-auto px-4 py-8">
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-slate-800 font-bold">Your Details</h2>
-        <button onClick={() => setShowDetailsForm(false)} className="text-xs text-slate-400 hover:text-slate-600">← Back</button>
-      </div>
-      <div className="bg-slate-50 rounded-xl p-3 mb-4 text-sm text-slate-500">
-        {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''} · ₱{subtotal}
-      </div>
-      <form onSubmit={handleDetailsSubmit} className="space-y-4">
-        <Input label="Full Name *" placeholder="Juan Dela Cruz" value={customerName} onChange={e => setCustomerName(e.target.value)} leftIcon={<User size={16} className="text-slate-500" />} />
-        <Input label="Email *" type="email" placeholder="you@email.com" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} leftIcon={<Mail size={16} className="text-slate-500" />} />
-        <Input label="Phone *" placeholder="09xx-xxx-xxxx" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} leftIcon={<Phone size={16} className="text-slate-500" />} />
-        <Input label="Notes (optional)" placeholder="Any special requests..." value={notes} onChange={e => setNotes(e.target.value)} leftIcon={<FileText size={16} className="text-slate-500" />} />
-        <Button variant="neon" size="lg" className="w-full" type="submit">Proceed to Checkout</Button>
-      </form>
-    </div>
-  </div>
-)}
+      {activeTab === 'book' && showDetailsForm && (
+        <div className="max-w-lg mx-auto px-4 py-8">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-slate-800 font-bold">Your Details</h2>
+              <button onClick={() => setShowDetailsForm(false)} className="text-xs text-slate-400 hover:text-slate-600">← Back</button>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-3 mb-4 text-sm text-slate-500">
+              {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''} · ₱{subtotal}
+            </div>
+            <form onSubmit={handleDetailsSubmit} className="space-y-4">
+              <Input label="Full Name *" placeholder="Juan Dela Cruz" value={customerName} onChange={e => setCustomerName(e.target.value)} leftIcon={<User size={16} className="text-slate-500" />} />
+              <Input label="Email *" type="email" placeholder="you@email.com" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} leftIcon={<Mail size={16} className="text-slate-500" />} />
+              <Input label="Phone *" placeholder="09xx-xxx-xxxx" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} leftIcon={<Phone size={16} className="text-slate-500" />} />
+              <Input label="Notes (optional)" placeholder="Any special requests..." value={notes} onChange={e => setNotes(e.target.value)} leftIcon={<FileText size={16} className="text-slate-500" />} />
+              <Button variant="neon" size="lg" className="w-full" type="submit">Proceed to Checkout</Button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
