@@ -1,4 +1,4 @@
-export type BookingStatus = 'pending_payment' | 'payment_submitted' | 'confirmed' | 'cancelled' | 'completed' | 'expired';
+export type BookingStatus = 'pending_payment' | 'payment_submitted' | 'confirmed' | 'cancelled' | 'completed' | 'expired' | 'refunded';
 export type CourtStatus = 'active' | 'inactive' | 'maintenance';
 export type CourtType = 'indoor' | 'outdoor';
 export type PaymentMethod = 'cash';

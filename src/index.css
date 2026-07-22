@@ -125,6 +125,8 @@
   .status-pending_payment { background: rgba(234, 179, 8, 0.1); color: #ca8a04; border: 1px solid rgba(234,179,8,0.2); }
   .status-payment_submitted { background: rgba(59, 130, 246, 0.1); color: #2563eb; border: 1px solid rgba(59,130,246,0.2); }
   .status-expired { background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239,68,68,0.2); }
+  .status-refunded { background: rgba(147, 51, 234, 0.1); color: #9333ea; border: 1px solid rgba(147, 51, 234, 0.2); }
+
 }
 
 @layer utilities {

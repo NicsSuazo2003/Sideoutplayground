@@ -96,10 +96,10 @@ export function AdminBookings() {
           className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 bg-white focus:outline-none focus:border-teal-500"
         />
         <div className="flex gap-1 p-1 bg-white border border-slate-200 rounded-xl overflow-x-auto">
-          {(['all', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
+          {(['all', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired', 'refunded'] as string[]).map(s => (
             <button key={s} onClick={() => { setStatusFilter(s as BookingStatus); setPage(1); }}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${statusFilter === s ? 'bg-teal-600 text-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}>
-              {s === 'all' ? 'All' : s === 'pending_payment' ? 'Pending' : s === 'payment_submitted' ? 'Submitted' : s.charAt(0).toUpperCase() + s.slice(1)}
+              {s === 'all' ? 'All' : s === 'pending_payment' ? 'Pending' : s === 'payment_submitted' ? 'Submitted' : s === 'refunded' ? 'Refunded' : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
         </div>
@@ -139,14 +139,14 @@ export function AdminBookings() {
             value={calendarDate}
             onClickDay={(value: Date) => {
               const dateStr = value.toISOString().split('T')[0];
-              const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'expired');
+              const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'expired' && b.status !== 'refunded');
               setSelectedDayBookings(dayBookings);
               setSelectedDayLabel(value.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }));
               setShowDayModal(true);
             }}
             tileContent={({ date }) => {
               const dateStr = date.toISOString().split('T')[0];
-              const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'expired');
+              const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'expired' && b.status !== 'refunded');
               if (dayBookings.length === 0) return null;
               return (
                 <div className="space-y-0.5 mt-1">
@@ -247,6 +247,7 @@ export function AdminBookings() {
                         </>)}
                         {b.status === 'confirmed' && isPastBooking(b) && <button onClick={() => handleAction(b.id, 'completed')} className="px-2 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors">Complete</button>}
                         {b.status === 'confirmed' && <button onClick={() => handleAction(b.id, 'cancelled')} className="px-2 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition-colors">Cancel</button>}
+                        {b.status === 'confirmed' && <button onClick={() => handleAction(b.id, 'refunded')} className="px-2 py-1 rounded-lg bg-purple-50 text-purple-600 text-xs font-semibold hover:bg-purple-100 transition-colors">Refund</button>}
                       </div>
                     </td>
                   </motion.tr>
@@ -298,6 +299,7 @@ export function AdminBookings() {
               </>)}
               {selected.status === 'confirmed' && isPastBooking(selected) && <Button variant="outline" size="sm" onClick={() => handleAction(selected.id, 'completed')}>Mark Complete</Button>}
               {selected.status === 'confirmed' && <Button variant="destructive" size="sm" onClick={() => handleAction(selected.id, 'cancelled')}>Cancel</Button>}
+              {selected.status === 'confirmed' && <Button variant="ghost" size="sm" onClick={() => handleAction(selected.id, 'refunded')} className="text-purple-600 hover:bg-purple-50">Refund</Button>}
             </div>
           </div>
         )}
