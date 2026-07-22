@@ -62,7 +62,7 @@ export function BookingSuccessPage() {
 
           {/* Email Reminder */}
           <div className="flex items-center justify-center gap-2 text-slate-500 text-xs mb-6">
-            <Mail size={12} className="text-teal-600" />
+            
             <span>
               A confirmation email will be sent to <strong className="text-slate-700">{booking.customerEmail}</strong> once admin verifies your payment.
             </span>
