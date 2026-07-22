@@ -1,11 +1,9 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Calendar, Clock, Hash, Copy } from 'lucide-react';
+import { CheckCircle2, Calendar, Clock, Hash, Copy, Mail } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Button } from '../../components/ui/Button';
 import type { Booking } from '../../types';
-
-
 
 function format12h(time: string): string {
   const [h, m] = time.split(':').map(Number);
@@ -39,31 +37,6 @@ export function BookingSuccessPage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          {/* Parking Reminder */}
-          <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">🛵</span>
-              <div className="text-left">
-                <p className="text-amber-800 font-bold text-sm">Strictly No Car Parking Inside</p>
-                <p className="text-amber-600 text-xs mt-0.5">Motorcycle parking only. Please park your car outside the venue.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Email Reminder */}
-<div className="bg-blue-50 border-2 border-blue-400 rounded-2xl p-4 mb-6">
-  <div className="flex items-start gap-3">
-    <span className="text-2xl">📧</span>
-    <div className="text-left">
-      <p className="text-blue-800 font-bold text-sm">Check Your Email</p>
-      <p className="text-blue-600 text-xs mt-0.5">
-        We'll send a confirmation email once the admin verifies your payment. 
-        You can also track your booking status anytime.
-      </p>
-    </div>
-  </div>
-</div>
-
           <div className="text-teal-600 text-sm font-bold tracking-widest uppercase mb-2">
             {booking.status === 'payment_submitted' ? 'Payment Submitted' : 'Booking Created'}
           </div>
@@ -85,6 +58,14 @@ export function BookingSuccessPage() {
                 <Copy size={16} />
               </button>
             </div>
+          </div>
+
+          {/* Email Reminder */}
+          <div className="flex items-center justify-center gap-2 text-slate-500 text-xs mb-6">
+            <Mail size={12} className="text-teal-600" />
+            <span>
+              A confirmation email will be sent to <strong className="text-slate-700">{booking.customerEmail}</strong> once admin verifies your payment.
+            </span>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 text-left mb-6 space-y-3">
