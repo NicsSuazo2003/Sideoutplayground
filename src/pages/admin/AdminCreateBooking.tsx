@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Mail, Phone, FileText, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, User, Mail, Phone, FileText, Plus, X, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getAvailability } from '../../services/courtService';
 import { api } from '../../services/api';
@@ -26,6 +26,16 @@ function getDateStrip(): string[] {
   return dates;
 }
 
+const isFixedSlot = (slot: TimeSlot): boolean => {
+  return slot.startTime === '16:00' && slot.endTime === '18:00';
+};
+
+const isRemovedSlot = (slot: TimeSlot): boolean => {
+  return (slot.startTime === '16:00' && slot.endTime === '17:00') ||
+         (slot.startTime === '17:00' && slot.endTime === '18:00') ||
+         (slot.startTime === '18:00' && slot.endTime === '19:00');
+};
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -50,6 +60,25 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
   useEffect(() => {
     if (open) { getAvailability(selectedDate).then(setAvailability); setSelectedSlots([]); setStep('slots'); }
   }, [selectedDate, open]);
+
+  // Process availability with 2hr fixed slot
+  const processedAvailability = (() => {
+    const filtered = availability.filter(slot => !isRemovedSlot(slot));
+    const has4to6 = filtered.some(slot => isFixedSlot(slot));
+    if (!has4to6) {
+      const basePrice = availability[0]?.price || 0;
+      const fixedSlot: TimeSlot = {
+        id: `fixed-${selectedDate}-16-18`,
+        date: selectedDate,
+        startTime: '16:00',
+        endTime: '18:00',
+        isAvailable: true,
+        price: basePrice * 2,
+      };
+      return [...filtered, fixedSlot].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    }
+    return filtered;
+  })();
 
   const toggleSlot = (slot: TimeSlot) => {
     if (!slot.isAvailable) return;
@@ -108,16 +137,24 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
               <button onClick={() => setDateOffset(Math.min(dates.length - 7, dateOffset + 1))} disabled={dateOffset >= dates.length - 7} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-30"><ChevronRight size={14} /></button>
             </div>
 
+            {/* Slots Grid with 2hr Fixed */}
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {availability.map(slot => {
+              {processedAvailability.map(slot => {
                 const isSelected = selectedSlots.some(s => s.id === slot.id);
+                const fixed = isFixedSlot(slot);
                 return (
                   <button key={slot.id} onClick={() => toggleSlot(slot)}
-                    className={`p-2 rounded-lg text-xs font-semibold transition-all border ${
+                    className={`relative p-2 rounded-lg text-xs font-semibold transition-all border ${
                       isSelected ? 'bg-teal-600 text-white border-teal-600'
                       : !slot.isAvailable ? 'bg-slate-100 border-slate-100 text-slate-300 cursor-not-allowed'
+                      : fixed ? 'border-amber-400/50 bg-amber-50 text-slate-700 hover:border-amber-400 hover:bg-amber-100'
                       : 'border-slate-200 text-slate-600 hover:border-teal-400'}`}>
-                    <div>{format12h(slot.startTime)}</div>
+                    {fixed && (
+                      <span className="absolute top-0.5 right-0.5 flex items-center gap-0.5 bg-amber-400 text-white text-[8px] font-bold px-1 py-0.5 rounded-full">
+                        <Star size={8} fill="currentColor" /> 2hr
+                      </span>
+                    )}
+                    <div className={fixed && !isSelected ? 'text-amber-600' : ''}>{format12h(slot.startTime)}</div>
                     <div className="text-[10px] opacity-60">₱{slot.price || pricePerHour}</div>
                   </button>
                 );

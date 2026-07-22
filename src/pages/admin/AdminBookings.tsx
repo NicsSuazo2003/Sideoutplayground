@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Eye, Plus, ArrowUpDown } from 'lucide-react';
+import { Search, Eye, Plus, ArrowUpDown, Calendar } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAdminStore } from '../../stores/adminStore';
 import { StatusBadge } from '../../components/ui/Badge';
@@ -32,6 +32,7 @@ export function AdminBookings() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | BookingStatus>('all');
   const [sortNewest, setSortNewest] = useState(true);
+  const [dateFilter, setDateFilter] = useState('');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Booking | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -44,7 +45,8 @@ export function AdminBookings() {
                           b.referenceCode.toLowerCase().includes(search.toLowerCase()) ||
                           b.id.includes(search);
       const matchStatus = statusFilter === 'all' || b.status === statusFilter;
-      return matchSearch && matchStatus;
+      const matchDate = !dateFilter || b.date === dateFilter;
+      return matchSearch && matchStatus && matchDate;
     })
     .sort((a, b) => {
       const timeA = new Date(a.createdAt).getTime();
@@ -74,16 +76,18 @@ export function AdminBookings() {
 
       <div className="flex flex-col sm:flex-row gap-3">
         <Input placeholder="Search by name, reference, or ID..." value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1); }} leftIcon={<Search size={16} />} className="sm:w-72" />
+          onChange={e => { setSearch(e.target.value); setPage(1); }} leftIcon={<Search size={16} />} className="sm:w-56" />
+        <input 
+          type="date" 
+          value={dateFilter} 
+          onChange={e => { setDateFilter(e.target.value); setPage(1); }}
+          className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 bg-white focus:outline-none focus:border-teal-500"
+        />
         <div className="flex gap-1 p-1 bg-white border border-slate-200 rounded-xl overflow-x-auto">
-          {(['all', 'recent', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
-            <button key={s} onClick={() => {
-              if (s === 'recent') { setStatusFilter('all'); setSortNewest(true); }
-              else { setStatusFilter(s as BookingStatus); }
-              setPage(1);
-            }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${(s === 'recent' && statusFilter === 'all' && sortNewest) || statusFilter === s ? 'bg-teal-600 text-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}>
-              {s === 'all' ? 'All' : s === 'recent' ? '🕐 Recent' : s === 'pending_payment' ? 'Pending' : s === 'payment_submitted' ? 'Submitted' : s.charAt(0).toUpperCase() + s.slice(1)}
+          {(['all', 'pending_payment', 'payment_submitted', 'confirmed', 'cancelled', 'completed', 'expired'] as string[]).map(s => (
+            <button key={s} onClick={() => { setStatusFilter(s as BookingStatus); setPage(1); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${statusFilter === s ? 'bg-teal-600 text-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}>
+              {s === 'all' ? 'All' : s === 'pending_payment' ? 'Pending' : s === 'payment_submitted' ? 'Submitted' : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
         </div>
@@ -101,8 +105,9 @@ export function AdminBookings() {
                 <tr className="border-b border-slate-200 text-slate-400 text-xs">
                   <th className="text-left p-4 font-semibold">Reference</th>
                   <th className="text-left p-4 font-semibold">Customer</th>
-                  <th className="text-left p-4 font-semibold">Date</th>
+                  <th className="text-left p-4 font-semibold">Game Date</th>
                   <th className="text-left p-4 font-semibold">Time</th>
+                  <th className="text-left p-4 font-semibold">Booked On</th>
                   <th className="text-left p-4 font-semibold">Amount</th>
                   <th className="text-left p-4 font-semibold">Status</th>
                   <th className="text-left p-4 font-semibold">Actions</th>
@@ -117,12 +122,16 @@ export function AdminBookings() {
                       <div className="text-slate-800 font-medium">{b.customerName}</div>
                       <div className="text-slate-400 text-xs">{b.customerEmail}</div>
                     </td>
-                    <td className="p-4 text-slate-600">{b.date}</td>
+                    <td className="p-4 text-slate-600 font-medium">{b.date}</td>
                     <td className="p-4 text-slate-600">
                       {b.slots.length > 0
                         ? (() => { const sorted = [...b.slots].sort((a, b) => a.startTime.localeCompare(b.startTime)); return `${format12h(sorted[0]?.startTime)} – ${format12h(sorted[sorted.length-1]?.endTime)}`; })()
                         : '—'}
                       <div className="text-slate-400 text-xs">{b.slots.length}h</div>
+                    </td>
+                    <td className="p-4 text-slate-500 text-xs">
+                      {new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      <div className="text-slate-400 text-[10px]">{new Date(b.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
                     </td>
                     <td className="p-4 text-teal-600 font-semibold">₱{b.totalAmount}</td>
                     <td className="p-4"><StatusBadge status={b.status} /></td>
@@ -167,8 +176,9 @@ export function AdminBookings() {
             <div className="grid grid-cols-2 gap-3">
               {[
                 ['Reference', selected.referenceCode], ['Customer', selected.customerName], ['Email', selected.customerEmail],
-                ['Phone', selected.customerPhone || '—'], ['Date', selected.date],
+                ['Phone', selected.customerPhone || '—'], ['Game Date', selected.date],
                 ['Time', selected.slots.length > 0 ? (() => { const sorted = [...selected.slots].sort((a, b) => a.startTime.localeCompare(b.startTime)); return `${format12h(sorted[0]?.startTime)} – ${format12h(sorted[sorted.length-1]?.endTime)}`; })() : '—'],
+                ['Booked On', new Date(selected.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date(selected.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })],
                 ['Duration', `${selected.slots.length} hour(s)`], ['Amount', `₱${selected.totalAmount.toFixed(2)}`], ['Notes', selected.notes || '—'],
               ].map(([k, v]) => (
                 <div key={k} className="bg-slate-50 rounded-xl p-3 border border-slate-200">
