@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Calendar, Clock, Hash, Copy } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Button } from '../../components/ui/Button';
@@ -16,6 +17,12 @@ export function BookingSuccessPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const booking = (location.state as { booking?: Booking })?.booking;
+  const [showEmailPopup, setShowEmailPopup] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowEmailPopup(false), 4000);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!booking) { navigate('/book'); return null; }
 
@@ -26,6 +33,30 @@ export function BookingSuccessPage() {
 
   return (
     <div className="pt-16 min-h-screen flex items-center justify-center px-4 bg-slate-50">
+      {/* Email Reminder Popup */}
+      <AnimatePresence>
+        {showEmailPopup && (
+          <motion.div
+            initial={{ opacity: 0, y: -30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -30, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-blue-600 text-white rounded-2xl shadow-2xl p-5 max-w-sm w-full mx-4"
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">📧</span>
+              <div className="flex-1">
+                <p className="font-bold text-sm">Check Your Email</p>
+                <p className="text-blue-100 text-xs mt-1">
+                  Confirmation email will be sent once admin verifies your payment.
+                </p>
+              </div>
+              <button onClick={() => setShowEmailPopup(false)} className="text-blue-200 hover:text-white shrink-0 text-lg leading-none">×</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-md w-full relative z-10 text-center">
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
@@ -47,20 +78,6 @@ export function BookingSuccessPage() {
               </div>
             </div>
           </div>
-
-          {/* Email Reminder */}
-<div className="bg-blue-50 border-2 border-blue-400 rounded-2xl p-4 mb-6">
-  <div className="flex items-start gap-3">
-    <span className="text-2xl">📧</span>
-    <div className="text-left">
-      <p className="text-blue-800 font-bold text-sm">Check Your Email</p>
-      <p className="text-blue-600 text-xs mt-0.5">
-        We'll send a confirmation email once the admin verifies your payment. 
-        You can also track your booking status anytime.
-      </p>
-    </div>
-  </div>
-</div>
 
           <div className="text-teal-600 text-sm font-bold tracking-widest uppercase mb-2">
             {booking.status === 'payment_submitted' ? 'Payment Submitted' : 'Booking Created'}
