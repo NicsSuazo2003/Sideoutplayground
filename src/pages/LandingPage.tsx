@@ -40,7 +40,7 @@ const amenityIcons: Record<string, typeof Zap> = {
 function getDateStrip(): string[] {
   const dates: string[] = [];
   const now = new Date();
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 60; i++) {  // Changed from 14 to 60 days
     const d = new Date(now);
     d.setDate(d.getDate() + i);
     dates.push(d.toISOString().split('T')[0]);
