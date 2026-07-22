@@ -48,6 +48,20 @@ export function BookingSuccessPage() {
             </div>
           </div>
 
+          {/* Email Reminder */}
+<div className="bg-blue-50 border-2 border-blue-400 rounded-2xl p-4 mb-6">
+  <div className="flex items-start gap-3">
+    <span className="text-2xl">📧</span>
+    <div className="text-left">
+      <p className="text-blue-800 font-bold text-sm">Check Your Email</p>
+      <p className="text-blue-600 text-xs mt-0.5">
+        We'll send a confirmation email once the admin verifies your payment. 
+        You can also track your booking status anytime.
+      </p>
+    </div>
+  </div>
+</div>
+
           <div className="text-teal-600 text-sm font-bold tracking-widest uppercase mb-2">
             {booking.status === 'payment_submitted' ? 'Payment Submitted' : 'Booking Created'}
           </div>
