@@ -54,8 +54,7 @@ const isFixedSlot = (slot: TimeSlot): boolean => {
 
 const isRemovedSlot = (slot: TimeSlot): boolean => {
   return (slot.startTime === '16:00' && slot.endTime === '17:00') ||
-         (slot.startTime === '17:00' && slot.endTime === '18:00') ||
-         (slot.startTime === '18:00' && slot.endTime === '19:00');
+         (slot.startTime === '17:00' && slot.endTime === '18:00');
 };
 
 export function LandingPage() {
