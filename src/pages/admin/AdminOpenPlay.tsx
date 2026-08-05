@@ -100,9 +100,17 @@ export function AdminOpenPlay() {
   };
 
   const handleRegStatus = async (id: string, status: string) => {
-    try { await updateRegistrationStatus(id, status); toast.success(`Updated to ${status}`); }
-    catch { toast.error('Failed to update'); }
-  };
+  try { 
+    await updateRegistrationStatus(id, status); 
+    toast.success(`Updated to ${status}`);
+    // Refresh registrations list
+    const regs = await getRegistrations(selectedRegistrations[0]?.sessionId || '');
+    setSelectedRegistrations(regs);
+    // Refresh sessions list to update counts
+    fetchSessions();
+  }
+  catch { toast.error('Failed to update'); }
+};
 
   if (loading) return <LoadingSpinner />;
 
