@@ -47,6 +47,8 @@ export async function getRegistrations(sessionId: string): Promise<OpenPlayRegis
 }
 
 export async function updateRegistrationStatus(id: string, status: string): Promise<OpenPlayRegistration> {
-  const { data } = await api.put<OpenPlayRegistration>(`/openplay/registrations/${id}`, status);
+  const { data } = await api.put<OpenPlayRegistration>(`/openplay/registrations/${id}`, JSON.stringify(status), {
+    headers: { 'Content-Type': 'application/json' }
+  });
   return data;
 }
