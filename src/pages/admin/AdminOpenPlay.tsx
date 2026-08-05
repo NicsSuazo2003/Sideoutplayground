@@ -100,17 +100,17 @@ export function AdminOpenPlay() {
   };
 
   const handleRegStatus = async (id: string, status: string) => {
-  try { 
-    await updateRegistrationStatus(id, status); 
-    toast.success(`Updated to ${status}`);
-    // Refresh registrations list
-    const regs = await getRegistrations(selectedRegistrations[0]?.sessionId || '');
-    setSelectedRegistrations(regs);
-    // Refresh sessions list to update counts
-    fetchSessions();
-  }
-  catch { toast.error('Failed to update'); }
-};
+    try { 
+      await updateRegistrationStatus(id, status); 
+      toast.success(`Updated to ${status}`);
+      // Refresh registrations list
+      const regs = await getRegistrations(selectedRegistrations[0]?.sessionId || '');
+      setSelectedRegistrations(regs);
+      // Refresh sessions list to update counts
+      fetchSessions();
+    }
+    catch { toast.error('Failed to update'); }
+  };
 
   if (loading) return <LoadingSpinner />;
 
@@ -162,71 +162,72 @@ export function AdminOpenPlay() {
         </div>
       </Modal>
 
-     {/* Registrations Modal */}
-<Modal 
-  open={showRegistrations} 
-  onClose={() => setShowRegistrations(false)} 
-  title={`Registrations: ${selectedSessionTitle}`} 
-  size="3xl" /* <--- Set this to '3xl' or 'full' so the table has plenty of room! */
->
-  {selectedRegistrations.length === 0 ? (
-    <p className="text-slate-400 text-sm text-center py-8">No registrations yet</p>
-  ) : (
-    <div className="border border-slate-200/80 rounded-xl overflow-hidden">
-      <table className="w-full text-sm text-left border-collapse">
-        <thead className="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
-          <tr>
-            <th className="py-3 px-4 font-semibold text-center w-10">#</th>
-            <th className="py-3 px-4 font-semibold">Name</th>
-            <th className="py-3 px-4 font-semibold">Email</th>
-            <th className="py-3 px-4 font-semibold">Phone</th>
-            <th className="py-3 px-4 font-semibold">Status</th>
-            <th className="py-3 px-4 font-semibold">Reference</th>
-            <th className="py-3 px-4 font-semibold text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 bg-white">
-          {selectedRegistrations.map((r, i) => (
-            <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="py-3 px-4 text-slate-400 text-center font-mono text-xs">{i + 1}</td>
-              <td className="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">{r.customerName}</td>
-              <td className="py-3 px-4 text-slate-600 text-xs">{r.customerEmail}</td>
-              <td className="py-3 px-4 text-slate-600 text-xs whitespace-nowrap">{r.customerPhone || '—'}</td>
-              <td className="py-3 px-4 whitespace-nowrap">
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
-                  r.status === 'registered' || r.status === 'confirmed' ? 'bg-green-50 text-green-600 border border-green-200/60' :
-                  r.status === 'waitlisted' ? 'bg-amber-50 text-amber-600 border border-amber-200/60' : 'bg-red-50 text-red-600 border border-red-200/60'
-                }`}>
-                  {r.status}
-                </span>
-              </td>
-              <td className="py-3 px-4 text-teal-600 text-xs font-mono select-all whitespace-nowrap">{r.referenceCode}</td>
-              <td className="py-3 px-4 text-right whitespace-nowrap">
-                <div className="flex items-center justify-end gap-3">
-                  {r.status === 'registered' && (
-                    <button onClick={() => handleRegStatus(r.id, 'confirmed')} className="text-xs font-semibold text-green-600 hover:text-green-700 hover:underline">
-                      Confirm
-                    </button>
-                  )}
-                  {r.status === 'waitlisted' && (
-                    <button onClick={() => handleRegStatus(r.id, 'registered')} className="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline">
-                      Promote
-                    </button>
-                  )}
-                  {(r.status === 'registered' || r.status === 'waitlisted') && (
-                    <button onClick={() => handleRegStatus(r.id, 'cancelled')} className="text-xs font-semibold text-red-500 hover:text-red-700 hover:underline">
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )}
-</Modal>
+      {/* Registrations Modal */}
+      <Modal 
+        open={showRegistrations} 
+        onClose={() => setShowRegistrations(false)} 
+        title={`Registrations: ${selectedSessionTitle}`} 
+        size="3xl"
+      >
+        {selectedRegistrations.length === 0 ? (
+          <p className="text-slate-400 text-sm text-center py-8">No registrations yet</p>
+        ) : (
+          /* Scrollable Container with rounded border */
+          <div className="border border-slate-200/80 rounded-xl overflow-x-auto overflow-y-auto max-h-[60vh] shadow-xs">
+            <table className="w-full min-w-[680px] text-sm text-left border-collapse">
+              <thead className="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10">
+                <tr>
+                  <th className="py-3 px-4 font-semibold text-center w-10">#</th>
+                  <th className="py-3 px-4 font-semibold">Name</th>
+                  <th className="py-3 px-4 font-semibold">Email</th>
+                  <th className="py-3 px-4 font-semibold">Phone</th>
+                  <th className="py-3 px-4 font-semibold">Status</th>
+                  <th className="py-3 px-4 font-semibold">Reference</th>
+                  <th className="py-3 px-4 font-semibold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {selectedRegistrations.map((r, i) => (
+                  <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3 px-4 text-slate-400 text-center font-mono text-xs">{i + 1}</td>
+                    <td className="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">{r.customerName}</td>
+                    <td className="py-3 px-4 text-slate-600 text-xs">{r.customerEmail}</td>
+                    <td className="py-3 px-4 text-slate-600 text-xs whitespace-nowrap">{r.customerPhone || '—'}</td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
+                        r.status === 'registered' || r.status === 'confirmed' ? 'bg-green-50 text-green-600 border border-green-200/60' :
+                        r.status === 'waitlisted' ? 'bg-amber-50 text-amber-600 border border-amber-200/60' : 'bg-red-50 text-red-600 border border-red-200/60'
+                      }`}>
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-teal-600 text-xs font-mono select-all whitespace-nowrap">{r.referenceCode}</td>
+                    <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-3">
+                        {r.status === 'registered' && (
+                          <button onClick={() => handleRegStatus(r.id, 'confirmed')} className="text-xs font-semibold text-green-600 hover:text-green-700 hover:underline">
+                            Confirm
+                          </button>
+                        )}
+                        {r.status === 'waitlisted' && (
+                          <button onClick={() => handleRegStatus(r.id, 'registered')} className="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline">
+                            Promote
+                          </button>
+                        )}
+                        {(r.status === 'registered' || r.status === 'waitlisted') && (
+                          <button onClick={() => handleRegStatus(r.id, 'cancelled')} className="text-xs font-semibold text-red-500 hover:text-red-700 hover:underline">
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Modal>
 
       {/* Sessions List */}
       <div className="space-y-4">
