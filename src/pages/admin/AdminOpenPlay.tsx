@@ -141,51 +141,53 @@ export function AdminOpenPlay() {
       </Modal>
 
       {/* Registrations Modal */}
-      <Modal open={showRegistrations} onClose={() => setShowRegistrations(false)} title={`Registrations: ${selectedSessionTitle}`} size="lg">
-        {selectedRegistrations.length === 0 ? (
-          <p className="text-slate-400 text-sm text-center py-8">No registrations yet</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-400 text-xs">
-                  <th className="text-left p-3 font-semibold">#</th>
-                  <th className="text-left p-3 font-semibold">Name</th>
-                  <th className="text-left p-3 font-semibold">Email</th>
-                  <th className="text-left p-3 font-semibold">Phone</th>
-                  <th className="text-left p-3 font-semibold">Status</th>
-                  <th className="text-left p-3 font-semibold">Reference</th>
-                  <th className="text-left p-3 font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedRegistrations.map((r, i) => (
-                  <tr key={r.id} className="border-b border-slate-100">
-                    <td className="p-3 text-slate-500">{i + 1}</td>
-                    <td className="p-3 text-slate-800">{r.customerName}</td>
-                    <td className="p-3 text-slate-500 text-xs">{r.customerEmail}</td>
-                    <td className="p-3 text-slate-500">{r.customerPhone || '—'}</td>
-                    <td className="p-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                        r.status === 'registered' || r.status === 'confirmed' ? 'bg-green-50 text-green-600' :
-                        r.status === 'waitlisted' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
-                      }`}>{r.status}</span>
-                    </td>
-                    <td className="p-3 text-teal-600 text-xs font-mono">{r.referenceCode}</td>
-                    <td className="p-3">
-                      <div className="flex gap-1">
-                        {r.status === 'registered' && <button onClick={() => handleRegStatus(r.id, 'confirmed')} className="text-xs text-green-600 hover:underline">Confirm</button>}
-                        {r.status === 'waitlisted' && <button onClick={() => handleRegStatus(r.id, 'registered')} className="text-xs text-teal-600 hover:underline">Promote</button>}
-                        {(r.status === 'registered' || r.status === 'waitlisted') && <button onClick={() => handleRegStatus(r.id, 'cancelled')} className="text-xs text-red-500 hover:underline">Cancel</button>}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Modal>
+<Modal open={showRegistrations} onClose={() => setShowRegistrations(false)} title={`Registrations: ${selectedSessionTitle}`} size="lg">
+  <div className="max-h-[60vh] overflow-y-auto">
+    {selectedRegistrations.length === 0 ? (
+      <p className="text-slate-400 text-sm text-center py-8">No registrations yet</p>
+    ) : (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 bg-white z-10">
+            <tr className="border-b border-slate-200 text-slate-400 text-xs">
+              <th className="text-left p-3 font-semibold">#</th>
+              <th className="text-left p-3 font-semibold">Name</th>
+              <th className="text-left p-3 font-semibold">Email</th>
+              <th className="text-left p-3 font-semibold">Phone</th>
+              <th className="text-left p-3 font-semibold">Status</th>
+              <th className="text-left p-3 font-semibold">Reference</th>
+              <th className="text-left p-3 font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {selectedRegistrations.map((r, i) => (
+              <tr key={r.id} className="border-b border-slate-100">
+                <td className="p-3 text-slate-500">{i + 1}</td>
+                <td className="p-3 text-slate-800">{r.customerName}</td>
+                <td className="p-3 text-slate-500 text-xs">{r.customerEmail}</td>
+                <td className="p-3 text-slate-500">{r.customerPhone || '—'}</td>
+                <td className="p-3">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                    r.status === 'registered' || r.status === 'confirmed' ? 'bg-green-50 text-green-600' :
+                    r.status === 'waitlisted' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
+                  }`}>{r.status}</span>
+                </td>
+                <td className="p-3 text-teal-600 text-xs font-mono">{r.referenceCode}</td>
+                <td className="p-3">
+                  <div className="flex gap-1">
+                    {r.status === 'registered' && <button onClick={() => handleRegStatus(r.id, 'confirmed')} className="text-xs text-green-600 hover:underline">Confirm</button>}
+                    {r.status === 'waitlisted' && <button onClick={() => handleRegStatus(r.id, 'registered')} className="text-xs text-teal-600 hover:underline">Promote</button>}
+                    {(r.status === 'registered' || r.status === 'waitlisted') && <button onClick={() => handleRegStatus(r.id, 'cancelled')} className="text-xs text-red-500 hover:underline">Cancel</button>}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+</Modal>
 
       {/* Sessions List */}
       <div className="space-y-4">
