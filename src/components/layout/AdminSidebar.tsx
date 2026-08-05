@@ -1,9 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Users, MapPin, BarChart3, DollarSign, Zap } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, MapPin, BarChart3, DollarSign, Zap, Trophy } from 'lucide-react';
 
 const links = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Bookings', href: '/admin/bookings', icon: Calendar },
+  { label: 'Open Play', href: '/admin/openplay', icon: Trophy },
   { label: 'Customers', href: '/admin/customers', icon: Users },
   { label: 'Court', href: '/admin/court', icon: MapPin },
   { label: 'Pricing', href: '/admin/pricing', icon: DollarSign },
@@ -18,7 +19,6 @@ export function AdminSidebar() {
 
   return (
     <nav className="flex flex-col gap-1 p-4 h-full bg-slate-50 border-r border-slate-200">
-      {/* Brand */}
       <Link to="/admin" className="flex items-center gap-2.5 mb-6 px-2">
         <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center">
           <Zap size={16} className="text-white fill-white" />
@@ -29,7 +29,6 @@ export function AdminSidebar() {
         </div>
       </Link>
 
-      {/* Links */}
       {links.map(link => (
         <Link
           key={link.href}
@@ -45,7 +44,6 @@ export function AdminSidebar() {
         </Link>
       ))}
 
-      {/* Footer */}
       <div className="mt-auto pt-4 border-t border-slate-200">
         <Link to="/" className="text-xs text-slate-400 hover:text-slate-600 transition-colors px-3">
           ← Back to Site

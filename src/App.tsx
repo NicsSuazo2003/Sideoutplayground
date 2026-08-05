@@ -15,6 +15,7 @@ import { OpenPlayRegisterPage } from './pages/booking/OpenPlayRegisterPage';
 
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminBookings } from './pages/admin/AdminBookings';
+import { AdminOpenPlay } from './pages/admin/AdminOpenPlay';
 import { AdminCustomers } from './pages/admin/AdminCustomers';
 import { AdminCourt } from './pages/admin/AdminCourt';
 import { AdminReports } from './pages/admin/AdminReports';
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="bookings" element={<AdminBookings />} />
+          <Route path="openplay" element={<AdminOpenPlay />} />
           <Route path="customers" element={<AdminCustomers />} />
           <Route path="court" element={<AdminCourt />} />
           <Route path="pricing" element={<AdminPriceRules />} />
