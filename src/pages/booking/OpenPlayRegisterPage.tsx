@@ -94,7 +94,7 @@ export function OpenPlayRegisterPage() {
       // Upload screenshot to the court booking upload endpoint (reuse)
       const formData = new FormData();
       formData.append('screenshot', screenshot);
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/bookings/${registration.id}/upload-payment`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/openplay/registrations/${registration.id}/upload-payment`, {
         method: 'POST', body: formData,
       });
       if (res.ok) {
