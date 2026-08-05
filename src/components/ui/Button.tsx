@@ -1,7 +1,7 @@
 import { type ButtonHTMLAttributes, forwardRef } from 'react';
 import { Loader2 } from 'lucide-react';
 
-type Variant = 'neon' | 'pink' | 'outline' | 'ghost' | 'destructive';
+type Variant = 'neon' | 'pink' | 'outline' | 'ghost' | 'destructive' | 'secondary';
 type Size = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -16,6 +16,7 @@ const variantClasses: Record<Variant, string> = {
   outline: 'border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl transition-all duration-300',
   ghost: 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all duration-300',
   destructive: 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded-xl transition-all duration-300',
+  secondary: 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 rounded-xl transition-all duration-300',
 };
 
 const sizeClasses: Record<Size, string> = {
