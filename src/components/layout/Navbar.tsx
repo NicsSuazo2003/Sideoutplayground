@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Book Now', href: '/book' },
+  { label: 'Open Play', href: '/openplay' },
   { label: 'Track Booking', href: '/track' },
 ];
 

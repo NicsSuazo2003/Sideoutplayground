@@ -36,7 +36,6 @@ export interface TimeSlot {
   endTime: string;
   isAvailable: boolean;
   price: number;
-
 }
 
 export interface Booking {
@@ -56,11 +55,10 @@ export interface Booking {
   paymentExpiresAt?: string;
 }
 
-
 export interface Analytics {
   totalRevenue: number;
   totalBookings: number;
-  activeUsers: number; 
+  activeUsers: number;
   revenueByDay: { date: string; revenue: number }[];
   bookingsByDay: { date: string; bookings: number }[];
   revenueGrowth: number;
@@ -74,4 +72,33 @@ export interface BlockedDate {
   startTime?: string;
   endTime?: string;
   reason?: string;
+}
+
+export interface OpenPlaySession {
+  id: string;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  venue: string;
+  isExternalVenue: boolean;
+  externalVenueName?: string;
+  externalVenueAddress?: string;
+  maxPlayers: number;
+  pricePerPerson: number;
+  status: string;
+  notes?: string;
+  registeredCount: number;
+  waitlistCount: number;
+}
+
+export interface OpenPlayRegistration {
+  id: string;
+  sessionId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  status: string;
+  referenceCode: string;
+  createdAt: string;
 }
