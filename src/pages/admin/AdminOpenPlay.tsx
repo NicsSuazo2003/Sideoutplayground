@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Trash2, Users, MapPin, Calendar, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { getAllSessions, createSession, deleteSession, updateSessionStatus, getRegistrations, updateRegistrationStatus } from '../../services/openPlayService';
+import { 
+  getAllSessions, 
+  createSession, 
+  deleteSession, 
+  updateSessionStatus, 
+  getRegistrations, 
+  updateRegistrationStatus 
+} from '../../services/openPlayService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
@@ -41,7 +48,12 @@ export function AdminOpenPlay() {
   };
 
   const resetForm = () => {
-    setForm({ title: '', date: '', startTime: '', endTime: '', venue: 'Side Out Playground', isExternalVenue: false, externalVenueName: '', externalVenueAddress: '', maxPlayers: '12', pricePerPerson: '', notes: '' });
+    setForm({ 
+      title: '', date: '', startTime: '', endTime: '', 
+      venue: 'Side Out Playground', isExternalVenue: false, 
+      externalVenueName: '', externalVenueAddress: '', 
+      maxPlayers: '12', pricePerPerson: '', notes: '' 
+    });
     setShowCreate(false);
   };
 
@@ -108,86 +120,86 @@ export function AdminOpenPlay() {
 
       {/* Create Modal */}
       <Modal open={showCreate} onClose={resetForm} title="Create Open Play Session" size="lg">
-        <form onSubmit={handleCreate} className="space-y-4">
-          <Input label="Session Title *" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Saturday Open Play" />
-          <div className="grid sm:grid-cols-3 gap-3">
-            <Input label="Date *" type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
-            <Input label="Start Time *" type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} />
-            <Input label="End Time *" type="time" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))} />
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm text-slate-600 block mb-1.5">Venue</label>
-              <select value={form.venue} onChange={e => { const v = e.target.value; setForm(f => ({ ...f, venue: v, isExternalVenue: v !== 'Side Out Playground' })); }}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700">
-                <option value="Side Out Playground">Side Out Playground (blocks court)</option>
-                <option value="External">External Venue</option>
-              </select>
+        <div className="max-h-[75vh] overflow-y-auto pr-1">
+          <form onSubmit={handleCreate} className="space-y-4">
+            <Input label="Session Title *" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Saturday Open Play" />
+            <div className="grid sm:grid-cols-3 gap-3">
+              <Input label="Date *" type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+              <Input label="Start Time *" type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} />
+              <Input label="End Time *" type="time" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))} />
             </div>
-            <Input label="Max Players *" type="number" value={form.maxPlayers} onChange={e => setForm(f => ({ ...f, maxPlayers: e.target.value }))} />
-          </div>
-          {form.isExternalVenue && (
             <div className="grid sm:grid-cols-2 gap-3">
-              <Input label="Venue Name" value={form.externalVenueName} onChange={e => setForm(f => ({ ...f, externalVenueName: e.target.value }))} />
-              <Input label="Venue Address" value={form.externalVenueAddress} onChange={e => setForm(f => ({ ...f, externalVenueAddress: e.target.value }))} />
+              <div>
+                <label className="text-sm text-slate-600 block mb-1.5">Venue</label>
+                <select value={form.venue} onChange={e => { const v = e.target.value; setForm(f => ({ ...f, venue: v, isExternalVenue: v !== 'Side Out Playground' })); }}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700">
+                  <option value="Side Out Playground">Side Out Playground (blocks court)</option>
+                  <option value="External">External Venue</option>
+                </select>
+              </div>
+              <Input label="Max Players *" type="number" value={form.maxPlayers} onChange={e => setForm(f => ({ ...f, maxPlayers: e.target.value }))} />
             </div>
-          )}
-          <div className="grid sm:grid-cols-2 gap-3">
-            <Input label="Price per Person * (₱)" type="number" value={form.pricePerPerson} onChange={e => setForm(f => ({ ...f, pricePerPerson: e.target.value }))} />
-            <Input label="Notes" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
-          </div>
-          <Button variant="neon" size="sm" type="submit" loading={saving}>Create Session</Button>
-        </form>
+            {form.isExternalVenue && (
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Input label="Venue Name" value={form.externalVenueName} onChange={e => setForm(f => ({ ...f, externalVenueName: e.target.value }))} />
+                <Input label="Venue Address" value={form.externalVenueAddress} onChange={e => setForm(f => ({ ...f, externalVenueAddress: e.target.value }))} />
+              </div>
+            )}
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Input label="Price per Person * (₱)" type="number" value={form.pricePerPerson} onChange={e => setForm(f => ({ ...f, pricePerPerson: e.target.value }))} />
+              <Input label="Notes" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+            </div>
+            <Button variant="neon" size="sm" type="submit" loading={saving}>Create Session</Button>
+          </form>
+        </div>
       </Modal>
 
       {/* Registrations Modal */}
-<Modal open={showRegistrations} onClose={() => setShowRegistrations(false)} title={`Registrations: ${selectedSessionTitle}`} size="lg">
-  <div className="max-h-[60vh] overflow-y-auto">
-    {selectedRegistrations.length === 0 ? (
-      <p className="text-slate-400 text-sm text-center py-8">No registrations yet</p>
-    ) : (
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-white z-10">
-            <tr className="border-b border-slate-200 text-slate-400 text-xs">
-              <th className="text-left p-3 font-semibold">#</th>
-              <th className="text-left p-3 font-semibold">Name</th>
-              <th className="text-left p-3 font-semibold">Email</th>
-              <th className="text-left p-3 font-semibold">Phone</th>
-              <th className="text-left p-3 font-semibold">Status</th>
-              <th className="text-left p-3 font-semibold">Reference</th>
-              <th className="text-left p-3 font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {selectedRegistrations.map((r, i) => (
-              <tr key={r.id} className="border-b border-slate-100">
-                <td className="p-3 text-slate-500">{i + 1}</td>
-                <td className="p-3 text-slate-800">{r.customerName}</td>
-                <td className="p-3 text-slate-500 text-xs">{r.customerEmail}</td>
-                <td className="p-3 text-slate-500">{r.customerPhone || '—'}</td>
-                <td className="p-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                    r.status === 'registered' || r.status === 'confirmed' ? 'bg-green-50 text-green-600' :
-                    r.status === 'waitlisted' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
-                  }`}>{r.status}</span>
-                </td>
-                <td className="p-3 text-teal-600 text-xs font-mono">{r.referenceCode}</td>
-                <td className="p-3">
-                  <div className="flex gap-1">
-                    {r.status === 'registered' && <button onClick={() => handleRegStatus(r.id, 'confirmed')} className="text-xs text-green-600 hover:underline">Confirm</button>}
-                    {r.status === 'waitlisted' && <button onClick={() => handleRegStatus(r.id, 'registered')} className="text-xs text-teal-600 hover:underline">Promote</button>}
-                    {(r.status === 'registered' || r.status === 'waitlisted') && <button onClick={() => handleRegStatus(r.id, 'cancelled')} className="text-xs text-red-500 hover:underline">Cancel</button>}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )}
-  </div>
-</Modal>
+      <Modal open={showRegistrations} onClose={() => setShowRegistrations(false)} title={`Registrations: ${selectedSessionTitle}`} size="lg">
+        {selectedRegistrations.length === 0 ? (
+          <p className="text-slate-400 text-sm text-center py-8">No registrations yet</p>
+        ) : (
+          <div className="max-h-[60vh] sm:max-h-[65vh] overflow-y-auto overflow-x-auto border border-slate-200/80 rounded-xl shadow-inner">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead className="sticky top-0 bg-slate-100 text-slate-600 text-xs uppercase tracking-wider z-10 shadow-xs">
+                <tr>
+                  <th className="p-3 font-semibold w-10 text-center">#</th>
+                  <th className="p-3 font-semibold">Name</th>
+                  <th className="p-3 font-semibold">Email</th>
+                  <th className="p-3 font-semibold">Phone</th>
+                  <th className="p-3 font-semibold">Status</th>
+                  <th className="p-3 font-semibold">Reference</th>
+                  <th className="p-3 font-semibold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {selectedRegistrations.map((r, i) => (
+                  <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-3 text-slate-400 text-center font-mono text-xs">{i + 1}</td>
+                    <td className="p-3 font-medium text-slate-800">{r.customerName}</td>
+                    <td className="p-3 text-slate-500 text-xs">{r.customerEmail}</td>
+                    <td className="p-3 text-slate-500 text-xs">{r.customerPhone || '—'}</td>
+                    <td className="p-3 whitespace-nowrap">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                        r.status === 'registered' || r.status === 'confirmed' ? 'bg-green-50 text-green-600 border border-green-200/60' :
+                        r.status === 'waitlisted' ? 'bg-amber-50 text-amber-600 border border-amber-200/60' : 'bg-red-50 text-red-600 border border-red-200/60'
+                      }`}>{r.status}</span>
+                    </td>
+                    <td className="p-3 text-teal-600 text-xs font-mono select-all">{r.referenceCode}</td>
+                    <td className="p-3 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
+                        {r.status === 'registered' && <button onClick={() => handleRegStatus(r.id, 'confirmed')} className="text-xs font-semibold text-green-600 hover:text-green-700 hover:underline">Confirm</button>}
+                        {r.status === 'waitlisted' && <button onClick={() => handleRegStatus(r.id, 'registered')} className="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline">Promote</button>}
+                        {(r.status === 'registered' || r.status === 'waitlisted') && <button onClick={() => handleRegStatus(r.id, 'cancelled')} className="text-xs font-semibold text-red-500 hover:text-red-700 hover:underline">Cancel</button>}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Modal>
 
       {/* Sessions List */}
       <div className="space-y-4">
