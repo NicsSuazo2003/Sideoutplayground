@@ -101,4 +101,5 @@ export interface OpenPlayRegistration {
   status: string;
   referenceCode: string;
   createdAt: string;
+  paymentScreenshot?: string;
 }

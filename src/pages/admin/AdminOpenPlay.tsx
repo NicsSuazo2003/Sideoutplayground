@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Users, MapPin, Calendar, Clock } from 'lucide-react';
+import { Plus, Trash2, Users, MapPin, Calendar, Clock, Eye } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { 
   getAllSessions, 
@@ -37,6 +37,7 @@ export function AdminOpenPlay() {
   const [selectedRegistrations, setSelectedRegistrations] = useState<OpenPlayRegistration[]>([]);
   const [showRegistrations, setShowRegistrations] = useState(false);
   const [selectedSessionTitle, setSelectedSessionTitle] = useState('');
+  const [previewScreenshot, setPreviewScreenshot] = useState<string | null>(null);
 
   useEffect(() => { fetchSessions(); }, []);
 
@@ -103,10 +104,8 @@ export function AdminOpenPlay() {
     try { 
       await updateRegistrationStatus(id, status); 
       toast.success(`Updated to ${status}`);
-      // Refresh registrations list
       const regs = await getRegistrations(selectedRegistrations[0]?.sessionId || '');
       setSelectedRegistrations(regs);
-      // Refresh sessions list to update counts
       fetchSessions();
     }
     catch { toast.error('Failed to update'); }
@@ -172,9 +171,8 @@ export function AdminOpenPlay() {
         {selectedRegistrations.length === 0 ? (
           <p className="text-slate-400 text-sm text-center py-8">No registrations yet</p>
         ) : (
-          /* Scrollable Container with rounded border */
           <div className="border border-slate-200/80 rounded-xl overflow-x-auto overflow-y-auto max-h-[60vh] shadow-xs">
-            <table className="w-full min-w-[680px] text-sm text-left border-collapse">
+            <table className="w-full min-w-[780px] text-sm text-left border-collapse">
               <thead className="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10">
                 <tr>
                   <th className="py-3 px-4 font-semibold text-center w-10">#</th>
@@ -196,15 +194,21 @@ export function AdminOpenPlay() {
                     <td className="py-3 px-4 whitespace-nowrap">
                       <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
                         r.status === 'registered' || r.status === 'confirmed' ? 'bg-green-50 text-green-600 border border-green-200/60' :
+                        r.status === 'payment_submitted' ? 'bg-blue-50 text-blue-600 border border-blue-200/60' :
                         r.status === 'waitlisted' ? 'bg-amber-50 text-amber-600 border border-amber-200/60' : 'bg-red-50 text-red-600 border border-red-200/60'
                       }`}>
-                        {r.status}
+                        {r.status.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-teal-600 text-xs font-mono select-all whitespace-nowrap">{r.referenceCode}</td>
                     <td className="py-3 px-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-3">
-                        {r.status === 'registered' && (
+                        {(r.status === 'payment_submitted' || r.status === 'confirmed') && r.paymentScreenshot && (
+                          <button onClick={() => setPreviewScreenshot(r.paymentScreenshot || null)} className="text-slate-400 hover:text-slate-600 p-1" title="View payment screenshot">
+                            <Eye size={14} />
+                          </button>
+                        )}
+                        {(r.status === 'registered' || r.status === 'payment_submitted') && (
                           <button onClick={() => handleRegStatus(r.id, 'confirmed')} className="text-xs font-semibold text-green-600 hover:text-green-700 hover:underline">
                             Confirm
                           </button>
@@ -214,7 +218,7 @@ export function AdminOpenPlay() {
                             Promote
                           </button>
                         )}
-                        {(r.status === 'registered' || r.status === 'waitlisted') && (
+                        {(r.status === 'registered' || r.status === 'waitlisted' || r.status === 'payment_submitted') && (
                           <button onClick={() => handleRegStatus(r.id, 'cancelled')} className="text-xs font-semibold text-red-500 hover:text-red-700 hover:underline">
                             Cancel
                           </button>
@@ -226,6 +230,13 @@ export function AdminOpenPlay() {
               </tbody>
             </table>
           </div>
+        )}
+      </Modal>
+
+      {/* Screenshot Preview Modal */}
+      <Modal open={!!previewScreenshot} onClose={() => setPreviewScreenshot(null)} title="Payment Screenshot" size="md">
+        {previewScreenshot && (
+          <img src={previewScreenshot} alt="Payment proof" className="rounded-lg w-full object-cover max-h-[70vh]" />
         )}
       </Modal>
 
