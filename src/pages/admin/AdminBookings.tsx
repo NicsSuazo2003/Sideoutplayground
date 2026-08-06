@@ -101,18 +101,18 @@ export function AdminBookings() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // FIX 4: Refresh bookings after action to update availability
-  const handleAction = async (id: string, status: BookingStatus) => {
+ const handleAction = async (id: string, status: BookingStatus) => {
     try { 
-      await manageBooking(id, status); 
-      toast.success(`Booking ${status}`);
-      setSelected(null);
-      // Refresh bookings to update availability
-      await fetchAllBookings(); 
+        await manageBooking(id, status); 
+        toast.success(`Booking ${status}`);
+        setSelected(null);
+        // ✅ IMPORTANT: Refresh bookings to update availability
+        await fetchAllBookings(); 
     }
     catch { 
-      toast.error('Action failed'); 
+        toast.error('Action failed'); 
     }
-  };
+};
 
   return (
     <div className="space-y-5">
