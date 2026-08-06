@@ -13,6 +13,10 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import type { Booking, BookingStatus } from '../../types';
 import { AdminCreateBooking } from './AdminCreateBooking';
 
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
+
 function format12h(time: string): string {
   const [h, m] = time.split(':').map(Number);
   const ampm = h >= 12 ? 'PM' : 'AM';
@@ -25,6 +29,38 @@ function isPastBooking(booking: Booking): boolean {
   const lastSlot = booking.slots[booking.slots.length - 1];
   const bookingEnd = new Date(booking.date + 'T' + lastSlot.endTime);
   return bookingEnd < new Date();
+}
+
+// FIX 1: Calculate actual duration from slots (not just count)
+function calculateDuration(slots: any[]): string {
+  if (!slots || slots.length === 0) return '—';
+  const sorted = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const start = sorted[0]?.startTime;
+  const end = sorted[sorted.length - 1]?.endTime;
+  if (start && end) {
+    const startParts = start.split(':').map(Number);
+    const endParts = end.split(':').map(Number);
+    const startMinutes = startParts[0] * 60 + startParts[1];
+    const endMinutes = endParts[0] * 60 + endParts[1];
+    const diffHours = (endMinutes - startMinutes) / 60;
+    return `${diffHours}h`;  // ✅ Change diff to diffHours
+  }
+  return `${slots.length}h`;
+}
+
+// FIX 2: Format date in local timezone (not UTC)
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// FIX 3: Get time range from slots
+function getTimeRange(slots: any[]): string {
+  if (!slots || slots.length === 0) return '—';
+  const sorted = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  return `${format12h(sorted[0]?.startTime)} – ${format12h(sorted[sorted.length - 1]?.endTime)}`;
 }
 
 const PAGE_SIZE = 10;
@@ -64,18 +100,19 @@ export function AdminBookings() {
   const pageCount = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  // FIX 4: Refresh bookings after action to update availability
   const handleAction = async (id: string, status: BookingStatus) => {
     try { 
-        await manageBooking(id, status); 
-        toast.success(`Booking ${status}`);
-        setSelected(null);
-        // IMPORTANT: Refresh bookings to update availability
-        await fetchAllBookings(); 
+      await manageBooking(id, status); 
+      toast.success(`Booking ${status}`);
+      setSelected(null);
+      // Refresh bookings to update availability
+      await fetchAllBookings(); 
     }
     catch { 
-        toast.error('Action failed'); 
+      toast.error('Action failed'); 
     }
-};
+  };
 
   return (
     <div className="space-y-5">
@@ -117,7 +154,9 @@ export function AdminBookings() {
         </button>
       </div>
 
-      {/* ==================== CALENDAR MODAL ==================== */}
+      {/* ============================================================
+          CALENDAR MODAL - FIXED
+          ============================================================ */}
       <Modal open={showCalendar} onClose={() => setShowCalendar(false)} title="Court Calendar" size="xl">
         <style>{`
           .react-calendar { background: transparent; border: none; font-family: 'Inter', sans-serif; width: 100%; }
@@ -146,15 +185,35 @@ export function AdminBookings() {
           <Calendar
             value={calendarDate}
             onClickDay={(value: Date) => {
-              const dateStr = value.toISOString().split('T')[0];
-              const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'expired' && b.status !== 'refunded');
+              // FIX: Use local date instead of UTC
+              const dateStr = formatLocalDate(value);
+              const dayBookings = bookings.filter(b => 
+                b.date === dateStr && 
+                b.status !== 'cancelled' && 
+                b.status !== 'expired' && 
+                b.status !== 'refunded'
+              );
               setSelectedDayBookings(dayBookings);
-              setSelectedDayLabel(value.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }));
+              setSelectedDayLabel(value.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                month: 'long', 
+                day: 'numeric', 
+                year: 'numeric' 
+              }));
               setShowDayModal(true);
             }}
-            tileContent={({ date }) => {
-              const dateStr = date.toISOString().split('T')[0];
-              const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== 'cancelled' && b.status !== 'expired' && b.status !== 'refunded');
+            tileContent={({ date, view }) => {
+              // Only show content for month view
+              if (view !== 'month') return null;
+              
+              // FIX: Use local date instead of UTC
+              const dateStr = formatLocalDate(date);
+              const dayBookings = bookings.filter(b => 
+                b.date === dateStr && 
+                b.status !== 'cancelled' && 
+                b.status !== 'expired' && 
+                b.status !== 'refunded'
+              );
               if (dayBookings.length === 0) return null;
               return (
                 <div className="space-y-0.5 mt-1">
@@ -174,7 +233,9 @@ export function AdminBookings() {
         </div>
       </Modal>
 
-      {/* ==================== DAY DETAILS MODAL ==================== */}
+      {/* ============================================================
+          DAY DETAILS MODAL - FIXED
+          ============================================================ */}
       <Modal open={showDayModal} onClose={() => setShowDayModal(false)} title={selectedDayLabel} size="lg">
         {selectedDayBookings.length === 0 ? (
           <div className="text-center py-8 text-slate-400">No bookings for this date</div>
@@ -192,10 +253,8 @@ export function AdminBookings() {
                 <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
                   <div><span className="text-slate-400">Customer:</span> {b.customerName}</div>
                   <div><span className="text-slate-400">Email:</span> {b.customerEmail}</div>
-                  <div><span className="text-slate-400">Time:</span> {b.slots.length > 0 
-                    ? (() => { const sorted = [...b.slots].sort((a, b) => a.startTime.localeCompare(b.startTime)); return `${format12h(sorted[0]?.startTime)} – ${format12h(sorted[sorted.length-1]?.endTime)}`; })() 
-                    : '—'}</div>
-                  <div><span className="text-slate-400">Duration:</span> {b.slots.length}h</div>
+                  <div><span className="text-slate-400">Time:</span> {getTimeRange(b.slots)}</div>
+                  <div><span className="text-slate-400">Duration:</span> {calculateDuration(b.slots)}</div>
                   {b.notes && <div className="col-span-2"><span className="text-slate-400">Notes:</span> {b.notes}</div>}
                   <div className="col-span-2 text-slate-400">
                     Booked: {new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at {new Date(b.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -234,10 +293,8 @@ export function AdminBookings() {
                     </td>
                     <td className="p-4 text-slate-600 font-medium">{b.date}</td>
                     <td className="p-4 text-slate-600">
-                      {b.slots.length > 0
-                        ? (() => { const sorted = [...b.slots].sort((a, b) => a.startTime.localeCompare(b.startTime)); return `${format12h(sorted[0]?.startTime)} – ${format12h(sorted[sorted.length-1]?.endTime)}`; })()
-                        : '—'}
-                      <div className="text-slate-400 text-xs">{b.slots.length}h</div>
+                      {getTimeRange(b.slots)}
+                      <div className="text-slate-400 text-xs">{calculateDuration(b.slots)}</div>
                     </td>
                     <td className="p-4 text-slate-500 text-xs">
                       {new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -275,6 +332,9 @@ export function AdminBookings() {
         </div>
       )}
 
+      {/* ============================================================
+          BOOKING DETAILS MODAL - FIXED
+          ============================================================ */}
       <Modal open={!!selected} onClose={() => setSelected(null)} title="Booking Details" size="md">
         {selected && (
           <div className="space-y-3 text-sm">
@@ -286,11 +346,16 @@ export function AdminBookings() {
             )}
             <div className="grid grid-cols-2 gap-3">
               {[
-                ['Reference', selected.referenceCode], ['Customer', selected.customerName], ['Email', selected.customerEmail],
-                ['Phone', selected.customerPhone || '—'], ['Game Date', selected.date],
-                ['Time', selected.slots.length > 0 ? (() => { const sorted = [...selected.slots].sort((a, b) => a.startTime.localeCompare(b.startTime)); return `${format12h(sorted[0]?.startTime)} – ${format12h(sorted[sorted.length-1]?.endTime)}`; })() : '—'],
+                ['Reference', selected.referenceCode],
+                ['Customer', selected.customerName],
+                ['Email', selected.customerEmail],
+                ['Phone', selected.customerPhone || '—'],
+                ['Game Date', selected.date],
+                ['Time', getTimeRange(selected.slots)],
                 ['Booked On', new Date(selected.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + new Date(selected.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })],
-                ['Duration', `${selected.slots.length} hour(s)`], ['Amount', `₱${selected.totalAmount.toFixed(2)}`], ['Notes', selected.notes || '—'],
+                ['Duration', calculateDuration(selected.slots)],
+                ['Amount', `₱${selected.totalAmount.toFixed(2)}`],
+                ['Notes', selected.notes || '—'],
               ].map(([k, v]) => (
                 <div key={k} className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                   <div className="text-slate-400 text-xs mb-0.5">{k}</div>
