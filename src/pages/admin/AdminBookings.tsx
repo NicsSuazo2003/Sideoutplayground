@@ -65,9 +65,17 @@ export function AdminBookings() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleAction = async (id: string, status: BookingStatus) => {
-    try { await manageBooking(id, status); toast.success(`Booking ${status}`); setSelected(null); }
-    catch { toast.error('Action failed'); }
-  };
+    try { 
+        await manageBooking(id, status); 
+        toast.success(`Booking ${status}`);
+        setSelected(null);
+        // IMPORTANT: Refresh bookings to update availability
+        await fetchAllBookings(); 
+    }
+    catch { 
+        toast.error('Action failed'); 
+    }
+};
 
   return (
     <div className="space-y-5">
