@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
-import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle, ChevronLeft, ChevronRight, Lock, Check, User, Mail, Phone, FileText } from 'lucide-react';
+import { Zap, Shield, Wind, Droplets, Tv2, ParkingCircle, ChevronLeft, ChevronRight, Lock, Check, User, Mail, Phone, FileText, Star } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useBookingStore } from '../stores/bookingStore';
 import { getCourt } from '../services/courtService';
@@ -10,7 +10,7 @@ import { StarRating } from '../components/ui/StarRating';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Input } from '../components/ui/Input';
 import type { Court, TimeSlot } from '../types';
-import { CalendarDays, CreditCard, MapPin, Star, Users, Wifi, Lightbulb, Clock, CheckCircle } from 'lucide-react';
+import { CalendarDays, CreditCard, MapPin, Users, Wifi, Lightbulb, Clock, CheckCircle } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5154';
 
@@ -225,7 +225,7 @@ export function LandingPage() {
             </div>
           </section>
 
-          {/* Today's Availability */}
+          {/* Today's Availability - FIXED: Uses processedAvailability */}
           <section className="py-16 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-10">
@@ -238,31 +238,41 @@ export function LandingPage() {
                     <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />
                   ))}
                 </div>
-              ) : availability.length === 0 ? (
+              ) : processedAvailability.length === 0 ? (
                 <div className="text-center py-12 text-slate-400">
                   <Clock size={40} className="mx-auto mb-3 opacity-30" />
                   <p>No slots available today</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {availability.map((slot) => (
-                    <motion.div
-                      key={slot.id}
-                      whileHover={{ y: -2 }}
-                      onClick={() => { if(slot.isAvailable) { selectSlot(slot); setActiveTab('book'); } }}
-                      className={`rounded-xl p-3 text-center border-2 transition-all cursor-pointer ${
-                        slot.isAvailable
-                          ? 'bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100'
-                          : 'bg-slate-50 border-slate-100 text-slate-400'
-                      }`}
-                    >
-                      <p className="text-xs font-medium mb-1">{format12h(slot.startTime)} – {format12h(slot.endTime)}</p>
-                      <p className={`text-xs font-semibold ${slot.isAvailable ? 'text-teal-600' : 'text-slate-400'}`}>
-                        {slot.isAvailable ? `₱${slot.price || pricePerHour}` : 'Booked'}
-                      </p>
-                      <span className={`mt-1.5 inline-block w-2 h-2 rounded-full ${slot.isAvailable ? 'bg-teal-500' : 'bg-slate-300'}`} />
-                    </motion.div>
-                  ))}
+                  {processedAvailability.map((slot) => {
+                    const fixed = isFixedSlot(slot);
+                    return (
+                      <motion.div
+                        key={slot.id}
+                        whileHover={{ y: -2 }}
+                        onClick={() => { if(slot.isAvailable) { selectSlot(slot); setActiveTab('book'); } }}
+                        className={`rounded-xl p-3 text-center border-2 transition-all cursor-pointer relative ${
+                          slot.isAvailable
+                            ? fixed
+                              ? 'bg-amber-50 border-amber-400 text-amber-700 hover:bg-amber-100'
+                              : 'bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100'
+                            : 'bg-slate-50 border-slate-100 text-slate-400'
+                        }`}
+                      >
+                        {fixed && (
+                          <span className="absolute top-0.5 right-0.5 flex items-center gap-0.5 bg-amber-400 text-white text-[8px] font-bold px-1 py-0.5 rounded-full">
+                            <Star size={8} fill="currentColor" /> 2hr
+                          </span>
+                        )}
+                        <p className="text-xs font-medium mb-1">{formatTimeRange(slot.startTime, slot.endTime)}</p>
+                        <p className={`text-xs font-semibold ${slot.isAvailable ? fixed ? 'text-amber-600' : 'text-teal-600' : 'text-slate-400'}`}>
+                          {slot.isAvailable ? `₱${slot.price || pricePerHour}` : 'Booked'}
+                        </p>
+                        <span className={`mt-1.5 inline-block w-2 h-2 rounded-full ${slot.isAvailable ? 'bg-teal-500' : 'bg-slate-300'}`} />
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
               <div className="text-center mt-8">
@@ -391,7 +401,6 @@ export function LandingPage() {
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-slate-800 font-bold">Select Date</h2>
                   <div className="flex gap-1 items-center">
-                    {/* Calendar picker button */}
                     <div className="relative">
                       <button 
                         onClick={() => datePickerRef.current?.showPicker()} 
