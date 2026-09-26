@@ -1,4 +1,4 @@
-import { type ButtonHTMLAttributes, forwardRef } from 'react';
+import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 
 type Variant = 'neon' | 'pink' | 'outline' | 'ghost' | 'destructive' | 'secondary';
@@ -8,6 +8,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
   loading?: boolean;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
 const variantClasses: Record<Variant, string> = {
@@ -26,7 +28,20 @@ const sizeClasses: Record<Size, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'outline', size = 'md', loading, children, disabled, className = '', ...props }, ref) => {
+  (
+    {
+      variant = 'outline',
+      size = 'md',
+      loading,
+      leftIcon,
+      rightIcon,
+      children,
+      disabled,
+      className = '',
+      ...props
+    },
+    ref
+  ) => {
     return (
       <button
         ref={ref}
@@ -34,8 +49,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={`inline-flex items-center justify-center gap-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
         {...props}
       >
-        {loading && <Loader2 size={16} className="animate-spin" />}
+        {loading ? (
+          <Loader2 size={16} className="animate-spin shrink-0" />
+        ) : (
+          leftIcon && <span className="inline-flex shrink-0">{leftIcon}</span>
+        )}
         {children}
+        {!loading && rightIcon && (
+          <span className="inline-flex shrink-0">{rightIcon}</span>
+        )}
       </button>
     );
   }

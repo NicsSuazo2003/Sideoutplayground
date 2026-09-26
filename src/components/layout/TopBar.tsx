@@ -1,11 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Bell, ChevronRight } from 'lucide-react';
+import { Bell, ChevronRight, User } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useNotificationStore } from '../../stores/notificationStore';
 
 function getBreadcrumbs(pathname: string): string[] {
   const parts = pathname.split('/').filter(Boolean);
-  return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).replace(/-/g, ' '));
+  return parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1).replace(/-/g, ' '));
 }
 
 export function TopBar() {
@@ -16,34 +16,54 @@ export function TopBar() {
   const crumbs = getBreadcrumbs(location.pathname);
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-30">
-      <div className="flex items-center gap-1.5 text-sm text-slate-400">
+    <header className="h-14 sm:h-16 bg-white/95 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30">
+      
+      {/* Scrollable Breadcrumbs on Mobile */}
+      <div className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-400 overflow-x-auto no-scrollbar py-1 pr-2 max-w-[65%] sm:max-w-none">
         {crumbs.map((c, i) => (
-          <span key={i} className="flex items-center gap-1.5">
-            {i > 0 && <ChevronRight size={13} />}
-            <span className={i === crumbs.length - 1 ? 'text-slate-800 font-medium' : ''}>{c}</span>
+          <span key={i} className="flex items-center gap-1.5 shrink-0">
+            {i > 0 && <ChevronRight size={13} className="text-slate-300" />}
+            <span
+              className={`truncate max-w-[120px] sm:max-w-none ${
+                i === crumbs.length - 1 ? 'text-slate-900 font-bold' : 'text-slate-500'
+              }`}
+            >
+              {c}
+            </span>
           </span>
         ))}
       </div>
 
-      <div className="flex items-center gap-3">
+      {/* Right Controls */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        
+        {/* Notification Bell */}
         <button
           onClick={() => navigate('/dashboard/notifications')}
-          className="relative p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600"
+          className="relative flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition active:scale-95"
+          aria-label="View notifications"
         >
           <Bell size={18} />
           {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 w-4 h-4 bg-amber-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">
+            <span className="absolute top-2 right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-black text-white shadow-xs animate-pulse">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
         </button>
+
+        {/* User Profile Avatar */}
         <button
           onClick={() => navigate('/dashboard/profile')}
-          className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-sm hover:bg-teal-200 transition-colors"
+          className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl hover:bg-slate-100 text-slate-700 transition active:scale-95"
         >
-          {user?.name.charAt(0).toUpperCase()}
+          <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-800 font-black text-xs flex items-center justify-center shadow-2xs">
+            {user?.name ? user.name.charAt(0).toUpperCase() : <User size={14} />}
+          </div>
+          <span className="hidden sm:inline text-xs font-bold text-slate-800 max-w-[100px] truncate">
+            {user?.name?.split(' ')[0]}
+          </span>
         </button>
+
       </div>
     </header>
   );

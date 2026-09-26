@@ -1,5 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Mail, Phone, FileText, Plus, X, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  User,
+  Mail,
+  Phone,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Star,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Lock,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getAvailability } from '../../services/courtService';
 import { api } from '../../services/api';
@@ -31,9 +45,11 @@ const isFixedSlot = (slot: TimeSlot): boolean => {
 };
 
 const isRemovedSlot = (slot: TimeSlot): boolean => {
-  return (slot.startTime === '16:00' && slot.endTime === '17:00') ||
-         (slot.startTime === '17:00' && slot.endTime === '18:00') ||
-         (slot.startTime === '18:00' && slot.endTime === '19:00');
+  return (
+    (slot.startTime === '16:00' && slot.endTime === '17:00') ||
+    (slot.startTime === '17:00' && slot.endTime === '18:00') ||
+    (slot.startTime === '18:00' && slot.endTime === '19:00')
+  );
 };
 
 interface Props {
@@ -58,13 +74,17 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
   const visibleDates = dates.slice(dateOffset, Math.min(dateOffset + 7, dates.length));
 
   useEffect(() => {
-    if (open) { getAvailability(selectedDate).then(setAvailability); setSelectedSlots([]); setStep('slots'); }
+    if (open) {
+      getAvailability(selectedDate).then(setAvailability);
+      setSelectedSlots([]);
+      setStep('slots');
+    }
   }, [selectedDate, open]);
 
   // Process availability with 2hr fixed slot
   const processedAvailability = (() => {
-    const filtered = availability.filter(slot => !isRemovedSlot(slot));
-    const has4to6 = filtered.some(slot => isFixedSlot(slot));
+    const filtered = availability.filter((slot) => !isRemovedSlot(slot));
+    const has4to6 = filtered.some((slot) => isFixedSlot(slot));
     if (!has4to6) {
       const basePrice = availability[0]?.price || 0;
       const fixedSlot: TimeSlot = {
@@ -82,109 +102,284 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
 
   const toggleSlot = (slot: TimeSlot) => {
     if (!slot.isAvailable) return;
-    setSelectedSlots(prev => prev.find(s => s.id === slot.id) ? prev.filter(s => s.id !== slot.id) : [...prev, slot]);
+    setSelectedSlots((prev) =>
+      prev.find((s) => s.id === slot.id) ? prev.filter((s) => s.id !== slot.id) : [...prev, slot]
+    );
   };
 
   const pricePerHour = availability[0]?.price || 0;
   const total = selectedSlots.reduce((sum, s) => sum + (s.price || pricePerHour), 0);
 
   const handleCreate = async () => {
-    if (!customerName.trim()) { toast.error('Name is required'); return; }
-    if (!customerEmail.trim()) { toast.error('Email is required'); return; }
+    if (!customerName.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    if (!customerEmail.trim()) {
+      toast.error('Email is required');
+      return;
+    }
     setSaving(true);
     try {
       await api.post('/bookings/admin-create', {
-        customerName, customerEmail, customerPhone: customerPhone || undefined,
-        date: selectedDate, slots: selectedSlots.map(s => ({ startTime: s.startTime, endTime: s.endTime })),
-        totalAmount: total, notes: notes || undefined, status: 'confirmed',
+        customerName,
+        customerEmail,
+        customerPhone: customerPhone || undefined,
+        date: selectedDate,
+        slots: selectedSlots.map((s) => ({ startTime: s.startTime, endTime: s.endTime })),
+        totalAmount: total,
+        notes: notes || undefined,
+        status: 'confirmed',
       });
-      toast.success('Booking created!'); onCreated(); onClose();
-    } catch { toast.error('Failed to create booking'); }
-    finally { setSaving(false); }
+      toast.success('Manual booking created!');
+      onCreated();
+      onClose();
+    } catch {
+      toast.error('Failed to create booking');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const stepClass = (active: boolean) => `flex items-center gap-2 text-sm font-semibold ${active ? 'text-teal-600' : 'text-slate-400'}`;
-  const stepCircle = (active: boolean) => `w-6 h-6 rounded-full flex items-center justify-center text-xs ${active ? 'bg-teal-600 text-white' : 'bg-slate-200 text-slate-500'}`;
-
   return (
-    <Modal open={open} onClose={onClose} title="Create Manual Booking" size="lg">
+    <Modal open={open} onClose={onClose} title="Manual Walk-in / Phone Booking" size="lg">
       <div className="space-y-4">
-        <div className="flex items-center gap-3 mb-4">
-          <div className={stepClass(step === 'slots')}><span className={stepCircle(step === 'slots')}>1</span>Pick Slots</div>
-          <div className="w-6 h-px bg-slate-200" />
-          <div className={stepClass(step === 'details')}><span className={stepCircle(step === 'details')}>2</span>Details</div>
+        {/* Step Indicator */}
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+          <div
+            className={`flex items-center gap-2 text-xs font-bold ${
+              step === 'slots' ? 'text-teal-600' : 'text-slate-400'
+            }`}
+          >
+            <span
+              className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black ${
+                step === 'slots' ? 'bg-teal-600 text-white' : 'bg-slate-200 text-slate-500'
+              }`}
+            >
+              1
+            </span>
+            <span>Select Hours</span>
+          </div>
+
+          <div className="h-px w-6 bg-slate-200" />
+
+          <div
+            className={`flex items-center gap-2 text-xs font-bold ${
+              step === 'details' ? 'text-teal-600' : 'text-slate-400'
+            }`}
+          >
+            <span
+              className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black ${
+                step === 'details' ? 'bg-teal-600 text-white' : 'bg-slate-200 text-slate-500'
+              }`}
+            >
+              2
+            </span>
+            <span>Player Details</span>
+          </div>
         </div>
 
         {step === 'slots' ? (
           <>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setDateOffset(Math.max(0, dateOffset - 1))} disabled={dateOffset === 0} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-30"><ChevronLeft size={14} /></button>
-              <div className="flex gap-1 flex-1 overflow-x-auto">
-                {visibleDates.map(d => {
+            {/* Date Navigator */}
+            <div className="flex items-center gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
+              <button
+                onClick={() => setDateOffset(Math.max(0, dateOffset - 1))}
+                disabled={dateOffset === 0}
+                className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 disabled:opacity-25 transition"
+                aria-label="Previous day"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <div className="-mx-1 flex flex-1 gap-1 overflow-x-auto no-scrollbar snap-x px-1">
+                {visibleDates.map((d) => {
                   const isSelected = d === selectedDate;
                   const dateObj = new Date(d + 'T12:00:00');
                   const isToday = d === new Date().toISOString().split('T')[0];
+
                   return (
-                    <button key={d} onClick={() => setSelectedDate(d)}
-                      className={`flex-shrink-0 flex flex-col items-center py-1.5 px-2 rounded-lg text-xs transition-all ${isSelected ? 'bg-teal-600 text-white' : 'hover:bg-slate-100 text-slate-600'}`}>
-                      <span>{dateObj.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                      <span className="font-bold">{dateObj.getDate()}</span>
-                      {isToday && <span className="text-[8px] text-teal-600">TODAY</span>}
+                    <button
+                      key={d}
+                      onClick={() => setSelectedDate(d)}
+                      className={`flex min-w-[50px] flex-1 snap-center flex-col items-center justify-center rounded-lg py-1.5 px-1 transition-all ${
+                        isSelected
+                          ? 'bg-teal-600 text-white font-bold shadow-xs'
+                          : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200/70'
+                      }`}
+                    >
+                      <span className="text-[9px] font-semibold uppercase leading-none">
+                        {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
+                      </span>
+                      <span className="text-sm font-black leading-tight my-0.5">
+                        {dateObj.getDate()}
+                      </span>
+                      {isToday && (
+                        <span
+                          className={`text-[7px] font-black uppercase ${
+                            isSelected ? 'text-teal-100' : 'text-teal-600'
+                          }`}
+                        >
+                          TODAY
+                        </span>
+                      )}
                     </button>
                   );
                 })}
               </div>
-              <button onClick={() => setDateOffset(Math.min(dates.length - 7, dateOffset + 1))} disabled={dateOffset >= dates.length - 7} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-30"><ChevronRight size={14} /></button>
+
+              <button
+                onClick={() => setDateOffset(Math.min(dates.length - 7, dateOffset + 1))}
+                disabled={dateOffset >= dates.length - 7}
+                className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 disabled:opacity-25 transition"
+                aria-label="Next day"
+              >
+                <ChevronRight size={16} />
+              </button>
             </div>
 
-            {/* Slots Grid with 2hr Fixed */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {processedAvailability.map(slot => {
-                const isSelected = selectedSlots.some(s => s.id === slot.id);
+            {/* Slots Grid */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[45vh] overflow-y-auto pr-1">
+              {processedAvailability.map((slot) => {
+                const isSelected = selectedSlots.some((s) => s.id === slot.id);
                 const fixed = isFixedSlot(slot);
+
                 return (
-                  <button key={slot.id} onClick={() => toggleSlot(slot)}
-                    className={`relative p-2 rounded-lg text-xs font-semibold transition-all border ${
-                      isSelected ? 'bg-teal-600 text-white border-teal-600'
-                      : !slot.isAvailable ? 'bg-slate-100 border-slate-100 text-slate-300 cursor-not-allowed'
-                      : fixed ? 'border-amber-400/50 bg-amber-50 text-slate-700 hover:border-amber-400 hover:bg-amber-100'
-                      : 'border-slate-200 text-slate-600 hover:border-teal-400'}`}>
+                  <button
+                    key={slot.id}
+                    onClick={() => toggleSlot(slot)}
+                    disabled={!slot.isAvailable}
+                    className={`relative flex min-h-[54px] flex-col items-center justify-center rounded-xl p-2 text-center text-xs font-semibold transition-all border ${
+                      isSelected
+                        ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
+                        : !slot.isAvailable
+                        ? 'bg-slate-100 border-slate-100 text-slate-300 cursor-not-allowed'
+                        : fixed
+                        ? 'border-amber-300 bg-amber-50 text-slate-800 hover:bg-amber-100'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-teal-500'
+                    }`}
+                  >
                     {fixed && (
-                      <span className="absolute top-0.5 right-0.5 flex items-center gap-0.5 bg-amber-400 text-white text-[8px] font-bold px-1 py-0.5 rounded-full">
-                        <Star size={8} fill="currentColor" /> 2hr
+                      <span className="absolute -top-1.5 right-1.5 flex items-center gap-0.5 bg-amber-400 text-white text-[7px] font-black px-1 rounded-full shadow-2xs">
+                        <Star size={7} fill="currentColor" /> 2hr
                       </span>
                     )}
-                    <div className={fixed && !isSelected ? 'text-amber-600' : ''}>{format12h(slot.startTime)}</div>
-                    <div className="text-[10px] opacity-60">₱{slot.price || pricePerHour}</div>
+
+                    <div className="font-bold leading-tight">{format12h(slot.startTime)}</div>
+                    <div
+                      className={`text-[10px] mt-0.5 ${
+                        isSelected ? 'text-teal-100' : fixed ? 'text-amber-700 font-bold' : 'text-slate-400'
+                      }`}
+                    >
+                      ₱{slot.price || pricePerHour}
+                    </div>
+
+                    {isSelected && (
+                      <Check size={11} className="absolute top-1 right-1 text-white" />
+                    )}
+                    {!slot.isAvailable && (
+                      <Lock size={10} className="absolute top-1 right-1 text-slate-300" />
+                    )}
                   </button>
                 );
               })}
             </div>
 
+            {/* Selection Overview Banner */}
             {selectedSlots.length > 0 && (
-              <div className="bg-slate-50 rounded-xl p-3 text-sm border border-slate-200">
-                <div className="flex justify-between text-slate-600">
-                  <span>{selectedSlots.length} hour{selectedSlots.length > 1 ? 's' : ''}</span>
-                  <span className="text-teal-600 font-bold">₱{total}</span>
+              <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs border border-slate-200">
+                <div>
+                  <p className="font-bold text-slate-800">
+                    {selectedSlots.length} hour{selectedSlots.length > 1 ? 's' : ''} selected
+                  </p>
+                  <p className="text-[10px] text-slate-400">
+                    {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </p>
                 </div>
-                <div className="text-slate-400 text-xs mt-1">{new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                <span className="text-base font-black text-teal-600">₱{total}</span>
               </div>
             )}
 
-            <Button variant="neon" size="sm" className="w-full" disabled={selectedSlots.length === 0} onClick={() => setStep('details')}>Continue to Details</Button>
+            <Button
+              variant="neon"
+              size="md"
+              className="w-full font-bold"
+              disabled={selectedSlots.length === 0}
+              onClick={() => setStep('details')}
+              rightIcon={<ArrowRight size={14} />}
+            >
+              Continue to Details
+            </Button>
           </>
         ) : (
+          /* Step 2: Customer Input Form */
           <>
-            <div className="bg-slate-50 rounded-xl p-3 mb-2 text-sm text-slate-500 border border-slate-200">
-              {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {selectedSlots.length}h · ₱{total}
+            <div className="flex items-center justify-between rounded-xl border border-teal-100 bg-teal-50/50 p-2.5 text-xs text-slate-600">
+              <span>
+                {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                })}{' '}
+                · {selectedSlots.length}h
+              </span>
+              <span className="font-bold text-teal-700">Total: ₱{total}</span>
             </div>
-            <Input label="Full Name *" value={customerName} onChange={e => setCustomerName(e.target.value)} leftIcon={<User size={16} className="text-slate-500" />} />
-            <Input label="Email *" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} leftIcon={<Mail size={16} className="text-slate-500" />} />
-            <Input label="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} leftIcon={<Phone size={16} className="text-slate-500" />} />
-            <Input label="Notes (e.g., Messenger booking, Walk-in)" value={notes} onChange={e => setNotes(e.target.value)} leftIcon={<FileText size={16} className="text-slate-500" />} />
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setStep('slots')}>← Back</Button>
-              <Button variant="neon" size="sm" className="flex-1" loading={saving} onClick={handleCreate}>Create Booking</Button>
+
+            <div className="space-y-3">
+              <Input
+                label="Customer / Group Name *"
+                placeholder="Walk-in Customer Name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                leftIcon={<User size={15} className="text-slate-400" />}
+              />
+              <Input
+                label="Email Address *"
+                type="email"
+                placeholder="customer@email.com"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                leftIcon={<Mail size={15} className="text-slate-400" />}
+              />
+              <Input
+                label="Contact Phone"
+                placeholder="09xx-xxx-xxxx"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                leftIcon={<Phone size={15} className="text-slate-400" />}
+              />
+              <Input
+                label="Administrative Notes"
+                placeholder="e.g. Paid in Cash, Messenger Reservation, Walk-in"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                leftIcon={<FileText size={15} className="text-slate-400" />}
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-slate-100">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => setStep('slots')}
+                leftIcon={<ArrowLeft size={14} />}
+              >
+                Back
+              </Button>
+              <Button
+                variant="neon"
+                size="md"
+                className="flex-1 font-bold shadow-md"
+                loading={saving}
+                onClick={handleCreate}
+              >
+                Confirm &amp; Create Booking
+              </Button>
             </div>
           </>
         )}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Eye, Plus, ArrowUpDown, Calendar as CalendarIcon } from 'lucide-react';
+import { Search, Eye, Plus, ArrowUpDown, Calendar as CalendarIcon, X } from 'lucide-react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { toast } from 'react-hot-toast';
@@ -43,7 +43,7 @@ function calculateDuration(slots: any[]): string {
     const startMinutes = startParts[0] * 60 + startParts[1];
     const endMinutes = endParts[0] * 60 + endParts[1];
     const diffHours = (endMinutes - startMinutes) / 60;
-    return `${diffHours}h`;  // ✅ Change diff to diffHours
+    return `${diffHours}h`;
   }
   return `${slots.length}h`;
 }
@@ -79,6 +79,7 @@ export function AdminBookings() {
   const [selectedDayBookings, setSelectedDayBookings] = useState<Booking[]>([]);
   const [showDayModal, setShowDayModal] = useState(false);
   const [selectedDayLabel, setSelectedDayLabel] = useState('');
+  const [showScreenshot, setShowScreenshot] = useState(false);
 
   useEffect(() => { fetchAllBookings(); }, []);
 
@@ -101,18 +102,18 @@ export function AdminBookings() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // FIX 4: Refresh bookings after action to update availability
- const handleAction = async (id: string, status: BookingStatus) => {
-    try { 
-        await manageBooking(id, status); 
-        toast.success(`Booking ${status}`);
-        setSelected(null);
-        // ✅ IMPORTANT: Refresh bookings to update availability
-        await fetchAllBookings(); 
+  const handleAction = async (id: string, status: BookingStatus) => {
+    try {
+      await manageBooking(id, status);
+      toast.success(`Booking ${status}`);
+      setSelected(null);
+      // ✅ IMPORTANT: Refresh bookings to update availability
+      await fetchAllBookings();
     }
-    catch { 
-        toast.error('Action failed'); 
+    catch {
+      toast.error('Action failed');
     }
-};
+  };
 
   return (
     <div className="space-y-5">
@@ -134,9 +135,9 @@ export function AdminBookings() {
       <div className="flex flex-col sm:flex-row gap-3">
         <Input placeholder="Search by name, reference, or ID..." value={search}
           onChange={e => { setSearch(e.target.value); setPage(1); }} leftIcon={<Search size={16} />} className="sm:w-56" />
-        <input 
-          type="date" 
-          value={dateFilter} 
+        <input
+          type="date"
+          value={dateFilter}
           onChange={e => { setDateFilter(e.target.value); setPage(1); }}
           className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 bg-white focus:outline-none focus:border-teal-500"
         />
@@ -187,31 +188,31 @@ export function AdminBookings() {
             onClickDay={(value: Date) => {
               // FIX: Use local date instead of UTC
               const dateStr = formatLocalDate(value);
-              const dayBookings = bookings.filter(b => 
-                b.date === dateStr && 
-                b.status !== 'cancelled' && 
-                b.status !== 'expired' && 
+              const dayBookings = bookings.filter(b =>
+                b.date === dateStr &&
+                b.status !== 'cancelled' &&
+                b.status !== 'expired' &&
                 b.status !== 'refunded'
               );
               setSelectedDayBookings(dayBookings);
-              setSelectedDayLabel(value.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                month: 'long', 
-                day: 'numeric', 
-                year: 'numeric' 
+              setSelectedDayLabel(value.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
               }));
               setShowDayModal(true);
             }}
             tileContent={({ date, view }) => {
               // Only show content for month view
               if (view !== 'month') return null;
-              
+
               // FIX: Use local date instead of UTC
               const dateStr = formatLocalDate(date);
-              const dayBookings = bookings.filter(b => 
-                b.date === dateStr && 
-                b.status !== 'cancelled' && 
-                b.status !== 'expired' && 
+              const dayBookings = bookings.filter(b =>
+                b.date === dateStr &&
+                b.status !== 'cancelled' &&
+                b.status !== 'expired' &&
                 b.status !== 'refunded'
               );
               if (dayBookings.length === 0) return null;
@@ -335,13 +336,23 @@ export function AdminBookings() {
       {/* ============================================================
           BOOKING DETAILS MODAL - FIXED
           ============================================================ */}
-      <Modal open={!!selected} onClose={() => setSelected(null)} title="Booking Details" size="md">
+      <Modal
+        open={!!selected}
+        onClose={() => { setSelected(null); setShowScreenshot(false); }}
+        title="Booking Details"
+        size="md"
+      >
         {selected && (
           <div className="space-y-3 text-sm">
             {selected.paymentScreenshot && (
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                <div className="text-slate-400 text-xs mb-2">Payment Screenshot</div>
-                <img src={selected.paymentScreenshot} alt="Payment proof" className="rounded-lg max-h-48 w-full object-cover" />
+                <div className="text-slate-400 text-xs mb-2">Payment Screenshot (click to enlarge)</div>
+                <img
+                  src={selected.paymentScreenshot}
+                  alt="Payment proof"
+                  className="rounded-lg max-h-48 w-full object-cover cursor-pointer hover:opacity-90 hover:ring-2 hover:ring-teal-500 transition-all"
+                  onClick={() => setShowScreenshot(true)}
+                />
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
@@ -377,6 +388,31 @@ export function AdminBookings() {
           </div>
         )}
       </Modal>
+
+      {/* ============================================================
+          SCREENSHOT LIGHTBOX
+          ============================================================ */}
+      {showScreenshot && selected?.paymentScreenshot && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowScreenshot(false)}
+        >
+          <button
+            onClick={() => setShowScreenshot(false)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            aria-label="Close"
+          >
+            <X size={24} />
+          </button>
+          <img
+            src={selected.paymentScreenshot}
+            alt="Payment proof enlarged"
+            className="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       <AdminCreateBooking open={showCreateModal} onClose={() => setShowCreateModal(false)} onCreated={fetchAllBookings} />
     </div>
   );
