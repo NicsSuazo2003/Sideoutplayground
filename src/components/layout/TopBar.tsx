@@ -1,14 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Bell, ChevronRight, User, Menu } from 'lucide-react';
+import { Bell, ChevronRight, User } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useNotificationStore } from '../../stores/notificationStore';
 
 interface TopBarProps {
-  /** Optional handler for the mobile drawer toggle (admin layout only) */
-  onMenuClick?: () => void;
-  /** Where the notification bell navigates. Defaults to dashboard route. */
   notificationsPath?: string;
-  /** Where the avatar navigates. Defaults to dashboard route. */
   profilePath?: string;
 }
 
@@ -18,7 +14,6 @@ function getBreadcrumbs(pathname: string): string[] {
 }
 
 export function TopBar({
-  onMenuClick,
   notificationsPath = '/dashboard/notifications',
   profilePath = '/dashboard/profile',
 }: TopBarProps) {
@@ -30,41 +25,29 @@ export function TopBar({
 
   return (
     <header className="h-14 sm:h-16 bg-white border-b border-slate-200 flex items-center justify-between gap-2 px-4 sm:px-6 sticky top-0 z-30 pt-[env(safe-area-inset-top)]">
-      {/* Left: menu (admin mobile) + breadcrumbs */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        {onMenuClick && (
-          <button
-            onClick={onMenuClick}
-            className="md:hidden p-2 -ml-1 rounded-lg hover:bg-slate-100 text-slate-500 shrink-0"
-            aria-label="Open menu"
-          >
-            <Menu size={20} />
-          </button>
-        )}
-
-        <div className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-400 overflow-x-auto no-scrollbar py-1 min-w-0">
-          {crumbs.length === 0 ? (
-            <span className="text-slate-900 font-bold">Home</span>
-          ) : (
-            crumbs.map((c, i) => (
-              <span key={i} className="flex items-center gap-1.5 shrink-0">
-                {i > 0 && <ChevronRight size={13} className="text-slate-300 shrink-0" />}
-                <span
-                  className={`truncate ${
-                    i === crumbs.length - 1
-                      ? 'text-slate-900 font-bold'
-                      : 'text-slate-500'
-                  }`}
-                >
-                  {c}
-                </span>
+      {/* Breadcrumbs */}
+      <div className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-400 overflow-x-auto no-scrollbar py-1 min-w-0 flex-1">
+        {crumbs.length === 0 ? (
+          <span className="text-slate-900 font-bold">Home</span>
+        ) : (
+          crumbs.map((c, i) => (
+            <span key={i} className="flex items-center gap-1.5 shrink-0">
+              {i > 0 && <ChevronRight size={13} className="text-slate-300 shrink-0" />}
+              <span
+                className={`truncate ${
+                  i === crumbs.length - 1
+                    ? 'text-slate-900 font-bold'
+                    : 'text-slate-500'
+                }`}
+              >
+                {c}
               </span>
-            ))
-          )}
-        </div>
+            </span>
+          ))
+        )}
       </div>
 
-      {/* Right: notifications + avatar */}
+      {/* Right controls */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <button
           onClick={() => navigate(notificationsPath)}
