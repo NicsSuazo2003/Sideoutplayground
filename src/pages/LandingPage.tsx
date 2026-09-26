@@ -208,7 +208,7 @@ export function LandingPage() {
   const subtotal = selectedSlots.reduce((sum, slot) => sum + (slot.price || pricePerHour), 0);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <div className="min-h-screen bg-slate-50 text-slate-800 overflow-x-hidden">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-teal-800 text-white min-h-[85vh] flex items-center pt-20 pb-16">
         <div className="absolute inset-0 z-0">
@@ -304,9 +304,9 @@ export function LandingPage() {
 
           {!showDetailsForm ? (
             <div className="grid lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-5">
+              <div className="lg:col-span-2 space-y-5 min-w-0">
                 {/* Responsive Date Strip */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm overflow-hidden">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <CalendarDays className="h-4 w-4 text-teal-600" />
@@ -358,9 +358,9 @@ export function LandingPage() {
                     </div>
                   </div>
 
-                  {/* Horizontal Scroll on Mobile */}
-                  <div className="-mx-4 px-4 overflow-x-auto sm:mx-0 sm:px-0 no-scrollbar">
-                    <div className="flex gap-2 sm:grid sm:grid-cols-7 snap-x">
+                  {/* Horizontal Scroll on Mobile — properly clipped */}
+                  <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar">
+                    <div className="flex gap-2 sm:grid sm:grid-cols-7 snap-x snap-mandatory">
                       {visibleDates.map((d) => {
                         const isSelected = d === selectedDate;
                         const dateObj = new Date(d + 'T12:00:00');
@@ -370,7 +370,7 @@ export function LandingPage() {
                           <button
                             key={d}
                             onClick={() => setSelectedDate(d)}
-                            className={`flex min-w-[56px] flex-1 snap-center flex-col items-center justify-center rounded-xl py-2 px-1 transition-all ${
+                            className={`flex w-[56px] sm:w-auto shrink-0 snap-start flex-col items-center justify-center rounded-xl py-2 px-1 transition-all ${
                               isSelected
                                 ? 'bg-teal-600 text-white font-bold shadow-md ring-2 ring-teal-600 ring-offset-2'
                                 : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/80'
@@ -417,7 +417,7 @@ export function LandingPage() {
                     </div>
 
                     {/* Dot Legend */}
-                    <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
                       <span className="flex items-center gap-1.5">
                         <span className="h-2 w-2 rounded-full border border-slate-300 bg-white" />
                         Open
@@ -465,7 +465,7 @@ export function LandingPage() {
                               </span>
                             )}
 
-                            <div className="text-xs font-bold leading-tight">
+                            <div className="text-[11px] sm:text-xs font-bold leading-tight">
                               {formatTimeRange(slot.startTime, slot.endTime)}
                             </div>
                             <div
@@ -693,9 +693,9 @@ export function LandingPage() {
                   alt={court.name}
                   className="h-full w-full object-cover"
                 />
-                <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-xs font-bold text-slate-700 shadow-md backdrop-blur-sm">
-                  <MapPin size={15} className="text-teal-600" />
-                  <span>Purok Million, Dawis, Tandag City</span>
+                <div className="absolute bottom-3 left-3 right-3 sm:right-auto flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-xs font-bold text-slate-700 shadow-md backdrop-blur-sm">
+                  <MapPin size={15} className="text-teal-600 shrink-0" />
+                  <span className="truncate">Purok Million, Dawis, Tandag City</span>
                 </div>
               </div>
             </div>
@@ -742,11 +742,11 @@ export function LandingPage() {
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3.5 shadow-2xl backdrop-blur-md sm:hidden"
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3.5 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] shadow-2xl backdrop-blur-md sm:hidden"
           >
             <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-medium text-slate-500">
+              <div className="min-w-0">
+                <p className="text-[11px] font-medium text-slate-500 truncate">
                   {selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''} selected
                 </p>
                 <p className="text-lg font-black leading-tight text-teal-600">₱{subtotal}</p>
