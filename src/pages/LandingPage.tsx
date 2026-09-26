@@ -238,12 +238,12 @@ export function LandingPage() {
             </div>
 
             <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.1] mb-4">
-              Book Your Court <br />
-              <span className="text-amber-300">Play Your Best</span>
+              Sideout <br />
+              <span className="text-amber-300">Playground</span>
             </h1>
 
             <p className="text-teal-100 text-sm sm:text-lg mb-8 max-w-lg leading-relaxed">
-              Experience premier pickleball action at Side Out Playground. Pick your preferred slots, pay seamlessly via GCash, and hit the court.
+              Experience premier pickleball action at Side Out Playground. Pick your preferred slots, pay seamlessly via Online Payment, and hit the court.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
