@@ -31,7 +31,7 @@ export function AdminSidebar() {
   const isActive = useIsActive();
 
   return (
-    <aside className="hidden md:flex flex-col w-64 h-full bg-white border-r border-slate-200 p-4 shrink-0 select-none">
+    <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 z-20 bg-white border-r border-slate-200 p-4 shrink-0 select-none">
       {/* Brand */}
       <Link to="/admin" className="flex items-center gap-2.5 mb-6 px-2 py-1">
         <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center shadow-xs">
@@ -48,7 +48,7 @@ export function AdminSidebar() {
       </Link>
 
       {/* Links */}
-      <nav className="flex-1 space-y-1">
+      <nav className="flex-1 space-y-1 overflow-y-auto">
         {links.map((link) => {
           const active = isActive(link.href);
           const Icon = link.icon;
