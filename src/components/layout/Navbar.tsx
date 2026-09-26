@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, CalendarDays, User, LogOut } from 'lucide-react';
+import { Menu, X, CalendarDays, LogOut } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../ui/Button';
 
@@ -36,9 +36,9 @@ export function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-teal-700/95 backdrop-blur-md shadow-md shadow-teal-950/15 py-0'
+          ? 'bg-teal-700 shadow-md shadow-teal-950/15 py-0'
           : 'bg-teal-600 py-1 sm:py-0'
       }`}
     >
@@ -129,7 +129,7 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden overflow-hidden border-t border-teal-500/60 bg-teal-800/98 backdrop-blur-xl shadow-xl"
+            className="md:hidden overflow-hidden border-t border-teal-500/60 bg-teal-800 shadow-xl"
           >
             <nav className="p-4 space-y-1.5">
               {navLinks.map((link) => {

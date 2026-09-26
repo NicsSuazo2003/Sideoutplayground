@@ -16,7 +16,7 @@ export function TopBar() {
   const crumbs = getBreadcrumbs(location.pathname);
 
   return (
-    <header className="h-14 sm:h-16 bg-white/95 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30">
+    <header className="h-14 sm:h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30">
       
       {/* Scrollable Breadcrumbs on Mobile */}
       <div className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-400 overflow-x-auto no-scrollbar py-1 pr-2 max-w-[65%] sm:max-w-none">
