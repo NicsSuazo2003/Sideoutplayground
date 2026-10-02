@@ -52,7 +52,7 @@ export interface Booking {
   notes?: string;
   referenceCode: string;
   paymentScreenshot?: string;
-  paymentExpiresAt?: string;
+  paymentExpiresAt?: string | null; 
 }
 
 export interface Analytics {

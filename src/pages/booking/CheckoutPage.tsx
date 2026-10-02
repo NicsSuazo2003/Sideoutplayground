@@ -50,7 +50,7 @@ export function CheckoutPage() {
   const [step, setStep] = useState<'summary' | 'payment' | 'upload'>('summary');
   const [loading, setLoading] = useState(false);
   const [booking, setBooking] = useState<any>(null);
-  const [timeLeft, setTimeLeft] = useState(PAYMENT_MINUTES * 60);
+ const [timeLeft, setTimeLeft] = useState(PAYMENT_MINUTES * 60);
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -64,6 +64,17 @@ export function CheckoutPage() {
       navigate('/book');
     }
   }, []);
+
+  // If the hold has already expired (e.g. page refresh after the window), bail out
+useEffect(() => {
+  if (!booking?.paymentExpiresAt) return;
+  const expiresAt = new Date(booking.paymentExpiresAt).getTime();
+  if (Date.now() >= expiresAt) {
+    toast.error('Payment window expired. Slot released.');
+    clearSelection();
+    navigate('/book');
+  }
+}, [booking]);
 
   // Timer lifecycle during payment / upload phases
   useEffect(() => {
@@ -115,29 +126,36 @@ export function CheckoutPage() {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const handleCreateBooking = async () => {
-    setLoading(true);
-    try {
-      const result = await createBooking({
-        customerName,
-        customerEmail,
-        customerPhone: customerPhone || undefined,
-        date: selectedDate,
-        slots: selectedSlots.map((s) => ({ startTime: s.startTime, endTime: s.endTime })),
-        totalAmount: total,
-        notes: notes || undefined,
-      });
-      setBooking(result);
-      setStep('payment');
-      toast.success('Reservation held! Complete GCash transfer.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Booking failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+ const handleCreateBooking = async () => {
+  setLoading(true);
+  try {
+    const result = await createBooking({
+      customerName,
+      customerEmail,
+      customerPhone: customerPhone || undefined,
+      date: selectedDate,
+      slots: selectedSlots.map((s) => ({ startTime: s.startTime, endTime: s.endTime })),
+      totalAmount: total,
+      notes: notes || undefined,
+    });
+    setBooking(result);
 
+    // Sync local timer with backend's authoritative expiry time
+    if (result.paymentExpiresAt) {
+      const expiresAt = new Date(result.paymentExpiresAt).getTime();
+      const secondsLeft = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+      setTimeLeft(secondsLeft);
+    }
+
+    setStep('payment');
+    toast.success('Reservation held! Complete GCash transfer.');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err: unknown) {
+    toast.error(err instanceof Error ? err.message : 'Booking failed');
+  } finally {
+    setLoading(false);
+  }
+};
   const handleUploadScreenshot = async () => {
     if (!screenshot || !booking) return;
     setUploading(true);
