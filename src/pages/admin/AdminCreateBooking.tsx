@@ -29,6 +29,11 @@ function format12h(time: string): string {
   return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
+// ── NEW: shared range formatter, matches the public pages
+function formatTimeRange(start: string, end: string): string {
+  return `${format12h(start)} – ${format12h(end)}`;
+}
+
 function getDateStrip(): string[] {
   const dates: string[] = [];
   const now = new Date();
@@ -80,8 +85,6 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
     }
   }, [selectedDate, open]);
 
-  // Process availability: merge 16–17 + 17–18 into a single bookable 16–18 prime slot.
-  // The prime slot is only bookable when BOTH underlying hours are actually available.
   const processedAvailability = useMemo(() => {
     const filtered = availability.filter((slot) => !isPrimeSubSlot(slot));
     const has4to6 = filtered.some((slot) => isFixedSlot(slot));
@@ -94,8 +97,6 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
       (s) => s.startTime === '17:00' && s.endTime === '18:00'
     );
 
-    // If the backend no longer returns either hour (e.g. filtered out because booked),
-    // do NOT synthesize a bookable prime slot.
     if (!slot4to5 && !slot5to6) return filtered;
 
     const is4to6Available =
@@ -142,8 +143,6 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
     }
     setSaving(true);
     try {
-      // Expand any selected prime (16:00–18:00) slot into two real 1-hour slots
-      // so the backend marks both 16–17 and 17–18 as taken.
       const apiSlots = selectedSlots.flatMap((s) => {
         if (isFixedSlot(s)) {
           const half = (s.price || 0) / 2;
@@ -283,7 +282,7 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
                     key={slot.id}
                     onClick={() => toggleSlot(slot)}
                     disabled={!slot.isAvailable}
-                    className={`relative flex min-h-[54px] flex-col items-center justify-center rounded-xl p-2 text-center text-xs font-semibold transition-all border ${
+                    className={`relative flex min-h-[64px] flex-col items-center justify-center rounded-xl p-2 text-center transition-all border ${
                       isSelected
                         ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
                         : !slot.isAvailable
@@ -299,10 +298,12 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
                       </span>
                     )}
 
-                    <div className="font-bold leading-tight">{format12h(slot.startTime)}</div>
+                    <div className="text-[10px] sm:text-[11px] font-bold leading-tight">
+                      {formatTimeRange(slot.startTime, slot.endTime)}
+                    </div>
                     <div
-                      className={`text-[10px] mt-0.5 ${
-                        isSelected ? 'text-teal-100' : fixed ? 'text-amber-700 font-bold' : 'text-slate-400'
+                      className={`text-[10px] font-semibold mt-0.5 ${
+                        isSelected ? 'text-teal-100' : fixed ? 'text-amber-700' : 'text-slate-400'
                       }`}
                     >
                       ₱{slot.price || pricePerHour}
