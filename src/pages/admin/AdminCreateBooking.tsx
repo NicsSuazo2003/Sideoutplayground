@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Calendar,
   Clock,
@@ -44,11 +44,10 @@ const isFixedSlot = (slot: TimeSlot): boolean => {
   return slot.startTime === '16:00' && slot.endTime === '18:00';
 };
 
-const isRemovedSlot = (slot: TimeSlot): boolean => {
+const isPrimeSubSlot = (slot: TimeSlot): boolean => {
   return (
     (slot.startTime === '16:00' && slot.endTime === '17:00') ||
-    (slot.startTime === '17:00' && slot.endTime === '18:00') ||
-    (slot.startTime === '18:00' && slot.endTime === '19:00')
+    (slot.startTime === '17:00' && slot.endTime === '18:00')
   );
 };
 
@@ -81,24 +80,46 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
     }
   }, [selectedDate, open]);
 
-  // Process availability with 2hr fixed slot
-  const processedAvailability = (() => {
-    const filtered = availability.filter((slot) => !isRemovedSlot(slot));
+  // Process availability: merge 16–17 + 17–18 into a single bookable 16–18 prime slot.
+  // The prime slot is only bookable when BOTH underlying hours are actually available.
+  const processedAvailability = useMemo(() => {
+    const filtered = availability.filter((slot) => !isPrimeSubSlot(slot));
     const has4to6 = filtered.some((slot) => isFixedSlot(slot));
-    if (!has4to6) {
-      const basePrice = availability[0]?.price || 0;
-      const fixedSlot: TimeSlot = {
-        id: `fixed-${selectedDate}-16-18`,
-        date: selectedDate,
-        startTime: '16:00',
-        endTime: '18:00',
-        isAvailable: true,
-        price: basePrice * 2,
-      };
-      return [...filtered, fixedSlot].sort((a, b) => a.startTime.localeCompare(b.startTime));
-    }
-    return filtered;
-  })();
+    if (has4to6) return filtered;
+
+    const slot4to5 = availability.find(
+      (s) => s.startTime === '16:00' && s.endTime === '17:00'
+    );
+    const slot5to6 = availability.find(
+      (s) => s.startTime === '17:00' && s.endTime === '18:00'
+    );
+
+    // If the backend no longer returns either hour (e.g. filtered out because booked),
+    // do NOT synthesize a bookable prime slot.
+    if (!slot4to5 && !slot5to6) return filtered;
+
+    const is4to6Available =
+      slot4to5?.isAvailable === true && slot5to6?.isAvailable === true;
+
+    const basePrice =
+      slot4to5?.price ??
+      slot5to6?.price ??
+      availability[0]?.price ??
+      0;
+
+    const fixedSlot: TimeSlot = {
+      id: `fixed-${selectedDate}-16-18`,
+      date: selectedDate,
+      startTime: '16:00',
+      endTime: '18:00',
+      isAvailable: is4to6Available,
+      price: basePrice * 2,
+    };
+
+    return [...filtered, fixedSlot].sort((a, b) =>
+      a.startTime.localeCompare(b.startTime)
+    );
+  }, [availability, selectedDate]);
 
   const toggleSlot = (slot: TimeSlot) => {
     if (!slot.isAvailable) return;
@@ -121,12 +142,25 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
     }
     setSaving(true);
     try {
+      // Expand any selected prime (16:00–18:00) slot into two real 1-hour slots
+      // so the backend marks both 16–17 and 17–18 as taken.
+      const apiSlots = selectedSlots.flatMap((s) => {
+        if (isFixedSlot(s)) {
+          const half = (s.price || 0) / 2;
+          return [
+            { startTime: '16:00', endTime: '17:00', price: half },
+            { startTime: '17:00', endTime: '18:00', price: half },
+          ];
+        }
+        return [{ startTime: s.startTime, endTime: s.endTime, price: s.price }];
+      });
+
       await api.post('/bookings/admin-create', {
         customerName,
         customerEmail,
         customerPhone: customerPhone || undefined,
         date: selectedDate,
-        slots: selectedSlots.map((s) => ({ startTime: s.startTime, endTime: s.endTime })),
+        slots: apiSlots.map(({ startTime, endTime }) => ({ startTime, endTime })),
         totalAmount: total,
         notes: notes || undefined,
         status: 'confirmed',
