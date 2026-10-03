@@ -110,6 +110,13 @@ function timeLeft(deadline?: string | null): string | null {
   return `${hrs}h ${mins % 60}m left`;
 }
 
+// Pretty label for the custom date chip
+function formatChipDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 // ============================================================
 // CONFIG
 // ============================================================
@@ -130,13 +137,14 @@ const TABS: { key: TabKey; label: string; statuses: BookingStatus[] | null }[] =
   { key: 'all', label: 'All', statuses: null },
 ];
 
-type DateFilter = 'all' | 'today' | 'week' | 'upcoming';
+type DateFilter = 'all' | 'today' | 'week' | 'upcoming' | 'custom';
 
 const DATE_FILTERS: { value: DateFilter; label: string }[] = [
   { value: 'all', label: 'All dates' },
   { value: 'today', label: 'Today' },
   { value: 'week', label: 'Next 7 days' },
   { value: 'upcoming', label: 'Upcoming' },
+  // 'custom' is not listed here — it's set via the calendar popover
 ];
 
 type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger';
@@ -298,7 +306,6 @@ type BookingExtras = {
   status_reason?: string | null;
 };
 
-// Map our abstract variants → this project's Button variants.
 const variantToButton: Record<ButtonVariant, 'neon' | 'outline' | 'destructive' | 'ghost'> = {
   primary: 'neon',
   success: 'neon',
@@ -312,11 +319,16 @@ const variantToButton: Record<ButtonVariant, 'neon' | 'outline' | 'destructive' 
 
 export function AdminBookings() {
   const { bookings, isLoading, fetchAllBookings, manageBooking, user } = useAdminStore();
-const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<TabKey>('all');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  // The chosen calendar day when dateFilter === 'custom'
+  const [customDate, setCustomDate] = useState<string>('');
+  // Popover visibility + ref for outside-click handling
+  const [showDatePopover, setShowDatePopover] = useState(false);
+  const datePopoverRef = useRef<HTMLDivElement>(null);
   const [sortNewest, setSortNewest] = useState(true);
   const [page, setPage] = useState(1);
 
@@ -344,6 +356,25 @@ const isAdmin = user?.role === 'admin';
     fetchAllBookings();
   }, [fetchAllBookings]);
 
+  // Close the date popover on outside click / Escape
+  useEffect(() => {
+    if (!showDatePopover) return;
+    const handleClick = (e: MouseEvent) => {
+      if (datePopoverRef.current && !datePopoverRef.current.contains(e.target as Node)) {
+        setShowDatePopover(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowDatePopover(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [showDatePopover]);
+
   // Tab counts
   const tabCounts = useMemo(() => {
     const counts: Record<TabKey, number> = { review: 0, unpaid: 0, confirmed: 0, history: 0, all: 0 };
@@ -354,6 +385,13 @@ const isAdmin = user?.role === 'admin';
       }
     }
     return counts;
+  }, [bookings]);
+
+  // Days that have at least one booking (used for dots in the date picker)
+  const bookingDays = useMemo(() => {
+    const set = new Set<string>();
+    for (const b of bookings as Booking[]) set.add(toDay(b.date));
+    return set;
   }, [bookings]);
 
   // Land on "Needs review" the first time data arrives, if work is waiting.
@@ -377,13 +415,15 @@ const isAdmin = user?.role === 'admin';
       if (dateFilter === 'today' && day !== today) return false;
       if (dateFilter === 'week' && (day < today || day > weekEnd)) return false;
       if (dateFilter === 'upcoming' && day < today) return false;
+      if (dateFilter === 'custom' && customDate && day !== customDate) return false;
 
       if (q) {
         return (
           b.customerName?.toLowerCase().includes(q) ||
           b.referenceCode?.toLowerCase().includes(q) ||
-          (b as any).customerEmail?.toLowerCase().includes(q) ||
-          (b as any).customerPhone?.toLowerCase().includes(q) ||
+          b.customerEmail?.toLowerCase().includes(q) ||
+          b.customerPhone?.toLowerCase().includes(q) ||
+          b.paymentReference?.toLowerCase().includes(q) ||
           b.id?.toLowerCase().includes(q)
         );
       }
@@ -395,7 +435,7 @@ const isAdmin = user?.role === 'admin';
       const tb = new Date(b.createdAt).getTime();
       return sortNewest ? tb - ta : ta - tb;
     });
-  }, [bookings, tab, dateFilter, search, sortNewest]);
+  }, [bookings, tab, dateFilter, customDate, search, sortNewest]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -403,13 +443,14 @@ const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     setPage(1);
-  }, [tab, dateFilter, search, sortNewest]);
+  }, [tab, dateFilter, customDate, search, sortNewest]);
 
   const hasActiveFilters = search.trim() !== '' || dateFilter !== 'all' || tab !== 'all';
 
   const clearFilters = () => {
     setSearch('');
     setDateFilter('all');
+    setCustomDate('');
     setTab('all');
   };
 
@@ -417,7 +458,6 @@ const isAdmin = user?.role === 'admin';
   const handleStatusUpdate = async (booking: Booking, status: BookingStatus, why?: string) => {
     setUpdatingStatus(status);
     try {
-      // If manageBooking accepts a third arg, add it in the store; UI is wired.
       await manageBooking(booking.id, status, why || undefined);
       toast.success(`Booking ${booking.referenceCode || ''} marked as ${status.replace(/_/g, ' ')}.`);
       setSelected(null);
@@ -425,7 +465,6 @@ const isAdmin = user?.role === 'admin';
     } catch (err) {
       const msg = err instanceof Error && err.message ? err.message : 'Action failed';
       toast.error(msg);
-      // Refresh in case the data was stale.
       fetchAllBookings();
     } finally {
       setUpdatingStatus(null);
@@ -474,7 +513,8 @@ const isAdmin = user?.role === 'admin';
     ? (ACTIONS[selected.status] ?? []).some((a) => a.adminOnly && !isAdmin)
     : false;
   const extra = selected as (Booking & BookingExtras) | null;
-  const deadline = extra?.payment_deadline ?? extra?.expires_at ?? null;
+  const deadline =
+    selected?.paymentExpiresAt ?? extra?.payment_deadline ?? extra?.expires_at ?? null;
 
   return (
     <div className="space-y-5">
@@ -534,18 +574,106 @@ const isAdmin = user?.role === 'admin';
           leftIcon={<Search size={16} />}
           className="sm:w-72"
         />
-        <select
-          aria-label="Filter by date"
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-          className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 bg-white focus:outline-none focus:border-teal-500"
-        >
-          {DATE_FILTERS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+
+        {/* Date filter dropdown + calendar picker */}
+        <div className="flex items-stretch gap-2">
+          <select
+            aria-label="Filter by date"
+            value={dateFilter}
+            onChange={(e) => {
+              const next = e.target.value as DateFilter;
+              setDateFilter(next);
+              if (next !== 'custom') setCustomDate('');
+            }}
+            className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 bg-white focus:outline-none focus:border-teal-500"
+          >
+            {DATE_FILTERS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+            {dateFilter === 'custom' && <option value="custom">Custom date…</option>}
+          </select>
+
+          <div className="relative" ref={datePopoverRef}>
+            <div
+              className={`flex h-full items-stretch rounded-xl border text-xs font-semibold transition ${
+                dateFilter === 'custom'
+                  ? 'border-teal-500 bg-teal-50 text-teal-700'
+                  : 'border-slate-200 bg-white text-slate-500 hover:border-teal-400 hover:text-teal-600'
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setShowDatePopover((v) => !v)}
+                className="flex items-center gap-1.5 px-3 py-2"
+                aria-label="Pick a specific game date"
+                aria-expanded={showDatePopover}
+                title="Pick a specific game date"
+              >
+                <CalendarIcon size={14} />
+                {dateFilter === 'custom' && customDate ? (
+                  <span className="font-bold">{formatChipDate(customDate)}</span>
+                ) : (
+                  <span>Pick date</span>
+                )}
+              </button>
+              {dateFilter === 'custom' && customDate && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomDate('');
+                    setDateFilter('all');
+                  }}
+                  className="pl-0.5 pr-2.5 text-teal-600 hover:text-teal-800"
+                  aria-label="Clear date filter"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            {showDatePopover && (
+              <div className="absolute left-0 top-full z-40 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                <Calendar
+                  value={customDate ? new Date(customDate + 'T12:00:00') : null}
+                  tileContent={({ date, view }) =>
+                    view === 'month' && bookingDays.has(formatLocalDate(date)) ? (
+                      <span className="mx-auto mt-0.5 block h-1.5 w-1.5 rounded-full bg-teal-500" />
+                    ) : null
+                  }
+                  onClickDay={(value: Date) => {
+                    setCustomDate(formatLocalDate(value));
+                    setDateFilter('custom');
+                    setShowDatePopover(false);
+                  }}
+                  className="!w-full !border-none"
+                />
+                <div className="mt-1 flex items-center justify-between border-t border-slate-100 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomDate('');
+                      setDateFilter('all');
+                      setShowDatePopover(false);
+                    }}
+                    className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowDatePopover(false)}
+                    className="rounded-lg px-2 py-1 text-xs font-semibold text-teal-600 hover:bg-teal-50"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         <button
           onClick={() => setSortNewest(!sortNewest)}
           className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all"
@@ -625,18 +753,16 @@ const isAdmin = user?.role === 'admin';
                     >
                       <td className="p-4 text-teal-600 text-xs font-mono">
                         {b.referenceCode}
-                        {(b as any).paymentReference && (
+                        {b.paymentReference && (
                           <div className="text-slate-400 text-[11px] mt-0.5">
                             Pay ref:{' '}
-                            <span className="font-mono text-slate-600">
-                              {(b as any).paymentReference}
-                            </span>
+                            <span className="font-mono text-slate-600">{b.paymentReference}</span>
                           </div>
                         )}
                       </td>
                       <td className="p-4">
                         <div className="text-slate-800 font-medium">{b.customerName}</div>
-                        <div className="text-slate-400 text-xs">{(b as any).customerEmail}</div>
+                        <div className="text-slate-400 text-xs">{b.customerEmail}</div>
                       </td>
                       <td className="p-4 text-slate-600 font-medium">{b.date}</td>
                       <td className="p-4 text-slate-600">
@@ -829,7 +955,7 @@ const isAdmin = user?.role === 'admin';
                     <span className="text-slate-400">Customer:</span> {b.customerName}
                   </div>
                   <div>
-                    <span className="text-slate-400">Email:</span> {(b as any).customerEmail}
+                    <span className="text-slate-400">Email:</span> {b.customerEmail}
                   </div>
                   <div>
                     <span className="text-slate-400">Time:</span> {getTimeRange(b.slots)}
@@ -900,18 +1026,18 @@ const isAdmin = user?.role === 'admin';
                 Payment Details
               </div>
 
-              {(selected as any).paymentReference && (
+              {selected.paymentReference && (
                 <div className="mb-2 flex items-center justify-between rounded-lg border border-slate-200 bg-white p-2.5">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                       Reference Number
                     </p>
                     <p className="mt-0.5 font-mono text-sm font-bold text-teal-700">
-                      {(selected as any).paymentReference}
+                      {selected.paymentReference}
                     </p>
                   </div>
                   <button
-                    onClick={() => copyReference((selected as any).paymentReference || '')}
+                    onClick={() => copyReference(selected.paymentReference || '')}
                     className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-500 hover:border-teal-400 hover:text-teal-600 active:scale-95 transition"
                     aria-label="Copy payment reference number"
                   >
@@ -971,20 +1097,20 @@ const isAdmin = user?.role === 'admin';
                   Customer
                 </div>
                 <div className="text-slate-800 font-bold text-sm">{selected.customerName}</div>
-                {(selected as any).customerEmail && (
+                {selected.customerEmail && (
                   <a
-                    href={`mailto:${(selected as any).customerEmail}`}
+                    href={`mailto:${selected.customerEmail}`}
                     className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 hover:text-teal-600"
                   >
-                    <Mail size={12} /> {(selected as any).customerEmail}
+                    <Mail size={12} /> {selected.customerEmail}
                   </a>
                 )}
-                {(selected as any).customerPhone && (
+                {selected.customerPhone && (
                   <a
-                    href={`tel:${(selected as any).customerPhone}`}
+                    href={`tel:${selected.customerPhone}`}
                     className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 hover:text-teal-600"
                   >
-                    <Phone size={12} /> {(selected as any).customerPhone}
+                    <Phone size={12} /> {selected.customerPhone}
                   </a>
                 )}
               </div>

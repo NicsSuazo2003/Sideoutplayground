@@ -51,8 +51,9 @@ export interface Booking {
   createdAt: string;
   notes?: string;
   referenceCode: string;
+  paymentReference?: string;
   paymentScreenshot?: string;
-  paymentExpiresAt?: string | null; 
+  paymentExpiresAt?: string | null;
 }
 
 export interface Analytics {
