@@ -68,19 +68,22 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   to={link.href}
-                  className={`relative px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     isActive
                       ? 'bg-white/20 text-white shadow-xs'
                       : 'text-teal-100 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  {link.label}
-                  {showDot && (
-                    <span
-                      aria-label="You have a pending booking"
-                      className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-400 animate-pulse"
-                    />
-                  )}
+                  {/* Wrap text in relative span to anchor dot correctly */}
+                  <span className="relative">
+                    {link.label}
+                    {showDot && (
+                      <span
+                        aria-label="You have a pending booking"
+                        className="absolute -top-1 -right-2.5 h-2 w-2 rounded-full bg-amber-400 animate-pulse"
+                      />
+                    )}
+                  </span>
                 </Link>
               );
             })}

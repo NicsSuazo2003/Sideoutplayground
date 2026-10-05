@@ -24,14 +24,12 @@ import {
   Clock,
   CheckCircle,
   ArrowRight,
-  Sparkles,
   X,
   AlertCircle,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useBookingStore } from '../stores/bookingStore';
 import { Button } from '../components/ui/Button';
-import { StarRating } from '../components/ui/StarRating';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Input } from '../components/ui/Input';
 import {
@@ -218,14 +216,14 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 overflow-x-hidden">
-      {/* 🔵 Pending booking banner (right under the sticky navbar) */}
+      {/* 🔵 Pending booking banner (fixed inset-x-0 to float over hero) */}
       <AnimatePresence>
         {showPendingBanner && pendingBooking && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="sticky top-14 sm:top-16 z-40 border-b border-amber-200 bg-amber-50/95 backdrop-blur-md"
+            className="fixed inset-x-0 top-14 sm:top-16 z-40 border-b border-amber-200 bg-amber-50/95 backdrop-blur-md shadow-sm"
           >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
               <div className="flex flex-wrap items-center gap-3">
@@ -260,8 +258,12 @@ export function LandingPage() {
         )}
       </AnimatePresence>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-teal-800 text-white min-h-[85vh] flex items-center pt-20 pb-16">
+      {/* Hero Section (Padding adjusts dynamically so floating banner doesn't cover text) */}
+      <section 
+        className={`relative overflow-hidden bg-teal-800 text-white min-h-[85vh] flex items-center pb-16 transition-all duration-300 ${
+          showPendingBanner ? 'pt-32 sm:pt-36' : 'pt-20'
+        }`}
+      >
         <div className="absolute inset-0 z-0">
           <img
             src={
@@ -341,7 +343,7 @@ export function LandingPage() {
       </section>
 
       {/* Main Reservation Section */}
-      <section ref={bookingSectionRef} className="py-10 sm:py-16">
+      <section ref={bookingSectionRef} className="py-10 sm:py-16 scroll-mt-24 sm:scroll-mt-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6">
             <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
