@@ -9,6 +9,7 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { CheckoutPage } from './pages/booking/CheckoutPage';
 import { BookingSuccessPage } from './pages/booking/BookingSuccessPage';
 import { TrackBookingPage } from './pages/booking/TrackBookingPage';
+import { MyBookingsPage } from './pages/booking/MyBookingsPage';
 
 import { OpenPlayPage } from './pages/booking/OpenPlayPage';
 import { OpenPlayRegisterPage } from './pages/booking/OpenPlayRegisterPage';
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/book/checkout" element={<CheckoutPage />} />
           <Route path="/book/success" element={<BookingSuccessPage />} />
+          <Route path="/my-bookings" element={<MyBookingsPage />} />
           <Route path="/track" element={<TrackBookingPage />} />
           <Route path="/openplay" element={<OpenPlayPage />} />
           <Route path="/openplay/register/:sessionId" element={<OpenPlayRegisterPage />} />
