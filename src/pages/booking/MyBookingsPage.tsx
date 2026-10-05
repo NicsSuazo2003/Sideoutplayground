@@ -87,7 +87,7 @@ export function MyBookingsPage() {
                       Upload your payment receipt to confirm{' '}
                       {booking.slots.length} slot
                       {booking.slots.length !== 1 && 's'} ·{' '}
-                      ₱{booking.totalAmount.toFixed(2)}
+                      ₱{(booking.totalAmount ?? 0).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -130,17 +130,17 @@ export function MyBookingsPage() {
               <div className="space-y-3 p-4 sm:p-5">
                 {/* Court + Date + Amount row */}
                 <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                 <div className="min-w-0">
-  <p className="truncate text-sm font-bold text-slate-800">
-    Sideout Playground
-  </p>
-  <p className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
-    <Calendar size={12} className="text-teal-600 shrink-0" />
-    {formatDateLong(booking.date)}
-  </p>
-</div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-slate-800">
+                      Sideout Playground
+                    </p>
+                    <p className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
+                      <Calendar size={12} className="text-teal-600 shrink-0" />
+                      {formatDateLong(booking.date)}
+                    </p>
+                  </div>
                   <p className="text-sm font-black text-teal-600 shrink-0">
-                    ₱{booking.totalAmount.toFixed(2)}
+                    ₱{(booking.totalAmount ?? 0).toFixed(2)}
                   </p>
                 </div>
 
@@ -163,7 +163,7 @@ export function MyBookingsPage() {
                           </span>
                         </div>
                         <span className="font-bold text-teal-600">
-                          ₱{slot.price.toFixed(2)}
+                          ₱{(slot.price ?? 0).toFixed(2)}
                         </span>
                       </div>
                     ))}
