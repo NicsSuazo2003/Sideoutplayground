@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Smartphone,
   Calendar,
@@ -21,6 +21,14 @@ import {
 import { toast } from 'react-hot-toast';
 import { useBookingStore } from '../../stores/bookingStore';
 import { Button } from '../../components/ui/Button';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { trackBooking } from '../../services/bookingService';
+import {
+  savePendingBooking,
+  clearPendingBooking,
+  getPendingBooking,
+} from '../../hooks/usePendingBooking';
+import type { Booking } from '../../types';
 
 function format12h(time: string): string {
   const [h, m] = time.split(':').map(Number);
@@ -49,32 +57,89 @@ export function CheckoutPage() {
 
   const [step, setStep] = useState<'summary' | 'payment' | 'upload'>('summary');
   const [loading, setLoading] = useState(false);
-  const [booking, setBooking] = useState<any>(null);
- const [timeLeft, setTimeLeft] = useState(PAYMENT_MINUTES * 60);
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [timeLeft, setTimeLeft] = useState(PAYMENT_MINUTES * 60);
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
+  // ─────────────────────────────────────────────────────────────
+  // Restore-on-refresh: if store is empty but a pending booking
+  // exists in localStorage, rehydrate and jump straight to payment.
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (selectedSlots.length === 0 || !customerName || !customerEmail) {
-      navigate('/book');
+    // Already have in-memory booking (came from step 1)
+    if (booking) {
+      setRestoring(false);
+      return;
     }
+
+    // Store still has slots + customer info — normal flow, no restore needed
+    if (selectedSlots.length > 0 && customerName && customerEmail) {
+      setRestoring(false);
+      return;
+    }
+
+    const pending = getPendingBooking();
+    if (!pending) {
+      setRestoring(false);
+      navigate('/book');
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const fetched = await trackBooking(pending.reference, pending.email);
+        if (cancelled) return;
+
+        if (fetched.status !== 'pending_payment') {
+          // Already paid, expired, cancelled — nothing to resume.
+          clearPendingBooking();
+          navigate('/book');
+          return;
+        }
+
+        // Sync local timer to backend's authoritative expiry
+        setBooking(fetched);
+        if (fetched.paymentExpiresAt) {
+          const expiresAt = new Date(fetched.paymentExpiresAt).getTime();
+          setTimeLeft(Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)));
+        }
+        setStep('payment');
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Failed to restore pending booking:', err);
+        clearPendingBooking();
+        navigate('/book');
+      } finally {
+        if (!cancelled) setRestoring(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // If the hold has already expired (e.g. page refresh after the window), bail out
-useEffect(() => {
-  if (!booking?.paymentExpiresAt) return;
-  const expiresAt = new Date(booking.paymentExpiresAt).getTime();
-  if (Date.now() >= expiresAt) {
-    toast.error('Payment window expired. Slot released.');
-    clearSelection();
-    navigate('/book');
-  }
-}, [booking]);
+  // If the hold has already expired on mount (e.g. rehydrated from ref)
+  useEffect(() => {
+    if (!booking?.paymentExpiresAt) return;
+    const expiresAt = new Date(booking.paymentExpiresAt).getTime();
+    if (Date.now() >= expiresAt) {
+      clearPendingBooking();
+      toast.error('Payment window expired. Slot released.');
+      clearSelection();
+      navigate('/book');
+    }
+  }, [booking, clearSelection, navigate]);
 
   // Timer lifecycle during payment / upload phases
   useEffect(() => {
@@ -83,6 +148,7 @@ useEffect(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timerRef.current);
+            clearPendingBooking();
             toast.error('Payment window expired. Slot released.');
             clearSelection();
             navigate('/book');
@@ -95,7 +161,7 @@ useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [step, booking]);
+  }, [step, booking, clearSelection, navigate]);
 
   // Clean object URL memory
   useEffect(() => {
@@ -108,10 +174,24 @@ useEffect(() => {
     return () => URL.revokeObjectURL(url);
   }, [screenshot]);
 
-  if (selectedSlots.length === 0) return null;
+  // Guard render: show spinner while restoring, null only if truly empty
+  if (restoring && !booking) {
+    return (
+      <div className="min-h-screen bg-slate-50 pt-16 sm:pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size={32} />
+          <p className="mt-3 text-xs text-slate-400">Restoring your booking…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedSlots.length === 0 && !booking) return null;
 
   const pricePerHour = court?.pricePerHour || 20;
-  const total = selectedSlots.reduce((sum, s) => sum + (s.price || pricePerHour), 0);
+  const total = booking
+    ? booking.totalAmount
+    : selectedSlots.reduce((sum, s) => sum + (s.price || pricePerHour), 0);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -126,36 +206,42 @@ useEffect(() => {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
- const handleCreateBooking = async () => {
-  setLoading(true);
-  try {
-    const result = await createBooking({
-      customerName,
-      customerEmail,
-      customerPhone: customerPhone || undefined,
-      date: selectedDate,
-      slots: selectedSlots.map((s) => ({ startTime: s.startTime, endTime: s.endTime })),
-      totalAmount: total,
-      notes: notes || undefined,
-    });
-    setBooking(result);
+  const handleCreateBooking = async () => {
+    setLoading(true);
+    try {
+      const result = await createBooking({
+        customerName,
+        customerEmail,
+        customerPhone: customerPhone || undefined,
+        date: selectedDate,
+        slots: selectedSlots.map((s) => ({ startTime: s.startTime, endTime: s.endTime })),
+        totalAmount: total,
+        notes: notes || undefined,
+      });
+      setBooking(result);
 
-    // Sync local timer with backend's authoritative expiry time
-    if (result.paymentExpiresAt) {
-      const expiresAt = new Date(result.paymentExpiresAt).getTime();
-      const secondsLeft = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
-      setTimeLeft(secondsLeft);
+      // 🔵 Save ref + email so we can restore on refresh
+      if (result.referenceCode) {
+  savePendingBooking(result.referenceCode, result.customerEmail || customerEmail);
+}
+
+      // Sync local timer with backend's authoritative expiry time
+      if (result.paymentExpiresAt) {
+        const expiresAt = new Date(result.paymentExpiresAt).getTime();
+        const secondsLeft = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+        setTimeLeft(secondsLeft);
+      }
+
+      setStep('payment');
+      toast.success('Reservation held! Complete GCash transfer.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Booking failed');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    setStep('payment');
-    toast.success('Reservation held! Complete GCash transfer.');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } catch (err: unknown) {
-    toast.error(err instanceof Error ? err.message : 'Booking failed');
-  } finally {
-    setLoading(false);
-  }
-};
   const handleUploadScreenshot = async () => {
     if (!screenshot || !booking) return;
     setUploading(true);
@@ -167,9 +253,11 @@ useEffect(() => {
         { method: 'POST', body: formData }
       );
       if (res.ok) {
+        clearPendingBooking();
+        const updated = await res.json();
         toast.success('Receipt verified! Booking confirmed.');
         clearSelection();
-        navigate('/book/success', { state: { booking: await res.json() } });
+        navigate('/book/success', { state: { booking: updated } });
       } else {
         toast.error('Upload failed. Try again.');
       }
@@ -275,7 +363,6 @@ useEffect(() => {
                 </button>
               </div>
 
-              {/* Court Badge Mini */}
               <div className="mb-4 flex items-center gap-3 rounded-xl bg-slate-50 p-3 border border-slate-100">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-700">
                   <Building size={20} />
@@ -293,7 +380,6 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* Schedule Details */}
               <div className="space-y-2.5 text-xs sm:text-sm">
                 <div className="flex justify-between py-1 border-b border-slate-50">
                   <span className="text-slate-500">Date</span>
@@ -344,7 +430,6 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Note banner */}
             <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-800">
               <Clock className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
               <div>
@@ -356,7 +441,6 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Desktop Action */}
             <div className="hidden sm:block pt-2">
               <Button
                 variant="neon"
@@ -370,7 +454,6 @@ useEffect(() => {
               </Button>
             </div>
 
-            {/* Mobile Sticky Bar */}
             <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3.5 shadow-2xl backdrop-blur-md sm:hidden">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -400,7 +483,6 @@ useEffect(() => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-4"
           >
-            {/* Countdown card on Desktop */}
             <div
               className={`hidden sm:flex items-center justify-between rounded-2xl border p-4 shadow-sm ${
                 timeLeft <= 120
@@ -418,7 +500,6 @@ useEffect(() => {
               <div className="text-2xl font-black">{formatTime(timeLeft)}</div>
             </div>
 
-            {/* Main GCash Card */}
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
@@ -435,9 +516,7 @@ useEffect(() => {
                 </span>
               </div>
 
-              {/* Account Quick-Copy Blocks */}
               <div className="space-y-2.5">
-                {/* Number Block */}
                 <div className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-slate-50/70 p-3">
                   <div>
                     <span className="text-[10px] font-bold uppercase text-slate-400">GCash Mobile Number</span>
@@ -462,7 +541,6 @@ useEffect(() => {
                   </button>
                 </div>
 
-                {/* Reference Code Block */}
                 <div className="flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50/50 p-3">
                   <div>
                     <span className="text-[10px] font-bold uppercase text-teal-700">Booking Reference</span>
@@ -473,7 +551,8 @@ useEffect(() => {
                   </div>
                   <button
                     onClick={() =>
-                      copyToClipboard(booking?.referenceCode, 'ref', 'Reference code')
+                      booking?.referenceCode &&
+                      copyToClipboard(booking.referenceCode, 'ref', 'Reference code')
                     }
                     className="flex h-9 items-center gap-1 rounded-lg border border-teal-200 bg-white px-2.5 text-xs font-bold text-teal-700 shadow-sm transition hover:border-teal-400 active:scale-95"
                   >
@@ -491,7 +570,6 @@ useEffect(() => {
                   </button>
                 </div>
 
-                {/* Amount Due Pill */}
                 <div className="flex items-center justify-between rounded-xl bg-slate-800 p-3 text-white">
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Exact Amount to Send</p>
@@ -501,7 +579,6 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* Instructions Steps */}
               <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 text-xs text-slate-600 space-y-1.5">
                 <p className="font-bold text-slate-700">Quick 3-step payment:</p>
                 <ol className="list-decimal pl-4 space-y-1 text-slate-500">
@@ -512,7 +589,6 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Desktop Action Buttons */}
             <div className="hidden sm:flex gap-3 pt-2">
               <Button
                 variant="outline"
@@ -533,7 +609,6 @@ useEffect(() => {
               </Button>
             </div>
 
-            {/* Mobile Sticky Bar */}
             <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3.5 shadow-2xl backdrop-blur-md sm:hidden">
               <div className="flex gap-2">
                 <Button
@@ -570,11 +645,11 @@ useEffect(() => {
               <div className="border-b border-slate-100 pb-3">
                 <h2 className="text-base font-bold text-slate-800 sm:text-lg">Submit GCash Receipt</h2>
                 <p className="text-xs text-slate-400">
-                  Upload screenshot for Booking Ref <span className="font-mono font-bold text-teal-600">{booking?.referenceCode}</span>
+                  Upload screenshot for Booking Ref{' '}
+                  <span className="font-mono font-bold text-teal-600">{booking?.referenceCode}</span>
                 </p>
               </div>
 
-              {/* Upload Dropzone with Live Preview */}
               <div
                 onClick={() => fileInputRef.current?.click()}
                 className={`relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-4 text-center transition-all ${
@@ -618,14 +693,12 @@ useEffect(() => {
                 />
               </div>
 
-              {/* Security confirmation badge */}
               <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-2.5 text-[11px] text-slate-500 border border-slate-100">
                 <ShieldCheck size={16} className="text-teal-600 shrink-0" />
                 <span>Our admins will cross-check the reference number on your slip.</span>
               </div>
             </div>
 
-            {/* Desktop Actions */}
             <div className="hidden sm:flex gap-3 pt-2">
               <Button
                 variant="outline"
@@ -648,7 +721,6 @@ useEffect(() => {
               </Button>
             </div>
 
-            {/* Mobile Sticky Action Bar */}
             <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3.5 shadow-2xl backdrop-blur-md sm:hidden">
               <div className="flex gap-2">
                 <Button

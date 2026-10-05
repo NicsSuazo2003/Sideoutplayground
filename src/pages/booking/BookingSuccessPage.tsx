@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Button } from '../../components/ui/Button';
+import { clearPendingBooking } from '../../hooks/usePendingBooking';
 import type { Booking } from '../../types';
 
 function format12h(time: string): string {
@@ -30,6 +31,11 @@ export function BookingSuccessPage() {
   const location = useLocation();
   const booking = (location.state as { booking?: Booking })?.booking;
   const [copied, setCopied] = useState(false);
+
+  // 🔵 Clear the pending ref as soon as we land here — payment proof was submitted
+  useEffect(() => {
+    clearPendingBooking();
+  }, []);
 
   if (!booking) {
     navigate('/book');
@@ -48,7 +54,6 @@ export function BookingSuccessPage() {
   return (
     <div className="min-h-screen bg-slate-50 pt-16 pb-24 sm:py-20 sm:flex sm:items-center sm:justify-center">
       <div className="mx-auto max-w-lg w-full px-4 sm:px-6">
-        {/* Animated Celebration Icon */}
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -64,7 +69,6 @@ export function BookingSuccessPage() {
           transition={{ delay: 0.2 }}
           className="space-y-4 text-center"
         >
-          {/* Status Badge & Heading */}
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-bold text-teal-700">
               <Hourglass size={12} className="animate-spin" />
@@ -80,7 +84,6 @@ export function BookingSuccessPage() {
             </p>
           </div>
 
-          {/* Reference Code Card (Touch-friendly tap to copy) */}
           <div
             onClick={copyReference}
             className="group relative mx-auto flex max-w-sm cursor-pointer items-center justify-between rounded-2xl border border-teal-200 bg-teal-50/60 p-3.5 shadow-sm transition hover:border-teal-400 hover:bg-teal-50 active:scale-98"
@@ -109,7 +112,6 @@ export function BookingSuccessPage() {
             </div>
           </div>
 
-          {/* Reservation Breakdown Card */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm sm:p-5">
             <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">
               Schedule Summary
@@ -160,7 +162,6 @@ export function BookingSuccessPage() {
             </div>
           </div>
 
-          {/* Verification Timeline Card */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm sm:p-5 space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
               What Happens Next
@@ -197,7 +198,6 @@ export function BookingSuccessPage() {
             </div>
           </div>
 
-          {/* Desktop Actions */}
           <div className="hidden gap-3 sm:flex pt-2">
             <Button
               variant="outline"
@@ -221,7 +221,6 @@ export function BookingSuccessPage() {
         </motion.div>
       </div>
 
-      {/* Sticky Mobile Bottom Floating Action Bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3.5 shadow-2xl backdrop-blur-md sm:hidden">
         <div className="flex gap-2">
           <Button

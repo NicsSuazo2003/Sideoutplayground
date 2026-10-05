@@ -13,18 +13,20 @@ import {
   Check,
   CheckCircle2,
   AlertCircle,
-  FileImage,
   Building,
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { trackBooking } from '../../services/bookingService';
+import { trackBooking, uploadPaymentScreenshot } from '../../services/bookingService';
+import {
+  savePendingBooking,
+  clearPendingBooking,
+} from '../../hooks/usePendingBooking';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { StatusBadge } from '../../components/ui/Badge';
 import type { Booking } from '../../types';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5154/api';
 const GCASH_NUMBER = '09058100973';
 
 function format12h(time: string): string {
@@ -53,6 +55,13 @@ export function TrackBookingPage() {
     try {
       const result = await trackBooking(reference.trim(), email.trim());
       setBooking(result);
+
+      // 🔵 If this booking is still unpaid, remember it locally so the
+      // navbar badge / landing banner / checkout restore all pick it up.
+      if (result.status === 'pending_payment' && result.referenceCode) {
+        savePendingBooking(result.referenceCode, result.customerEmail || email.trim());
+      }
+
       toast.success('Booking located!');
     } catch {
       toast.error('Booking not found. Check your reference code and try again.');
@@ -74,23 +83,21 @@ export function TrackBookingPage() {
     if (!file || !booking) return;
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('screenshot', file);
-      const res = await fetch(`${API_BASE}/bookings/${booking.id}/upload-payment`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        setBooking(updated);
-        toast.success('Payment slip uploaded! Awaiting verification.');
-      } else {
-        toast.error('Upload failed. Try again.');
-      }
+      const updated = await uploadPaymentScreenshot(booking.id, file);
+      setBooking(updated);
+
+      // 🔵 Payment proof submitted — clear local pending trace.
+      // The booking may already be 'payment_submitted' or still 'pending_payment'
+      // depending on backend semantics; either way the user has done their part.
+      clearPendingBooking();
+
+      toast.success('Payment slip uploaded! Awaiting verification.');
     } catch {
       toast.error('Upload failed. Check network connection.');
     } finally {
       setUploading(false);
+      // Allow re-selecting the same file if they retry
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -237,7 +244,6 @@ export function TrackBookingPage() {
 
               {/* Digital Pass / Reservation Ticket */}
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                {/* Header Ticket Banner */}
                 <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-5">
                   <div className="flex items-center gap-2">
                     <Building size={16} className="text-teal-600" />
@@ -249,7 +255,6 @@ export function TrackBookingPage() {
                 </div>
 
                 <div className="p-4 sm:p-5 space-y-4">
-                  {/* Reference & Copy Card */}
                   <div className="flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50/50 p-3">
                     <div>
                       <span className="text-[10px] font-bold uppercase text-teal-700">
@@ -279,7 +284,6 @@ export function TrackBookingPage() {
                     </button>
                   </div>
 
-                  {/* Booking Metadata Breakdown */}
                   <div className="space-y-2.5 text-xs sm:text-sm">
                     <div className="flex justify-between py-1 border-b border-slate-50">
                       <span className="flex items-center gap-1.5 text-slate-500">

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, CalendarDays, LogOut } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
+import { usePendingBooking } from '../../hooks/usePendingBooking';
 import { Button } from '../ui/Button';
 
 const navLinks = [
@@ -16,6 +17,8 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { isAuthenticated, user, logout } = useAuthStore();
+  const { booking: pendingBooking } = usePendingBooking();
+  const hasPending = !!pendingBooking;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,7 +47,6 @@ export function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16">
-          
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-2.5 text-white group">
             <div className="w-8 h-8 rounded-lg overflow-hidden bg-white/10 p-1 border border-white/20 shadow-xs transition group-hover:scale-105">
@@ -60,17 +62,24 @@ export function Navbar() {
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.href;
+              const showDot = link.href === '/book' && hasPending;
               return (
                 <Link
                   key={link.href}
                   to={link.href}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`relative px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     isActive
                       ? 'bg-white/20 text-white shadow-xs'
                       : 'text-teal-100 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   {link.label}
+                  {showDot && (
+                    <span
+                      aria-label="You have a pending booking"
+                      className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-400 animate-pulse"
+                    />
+                  )}
                 </Link>
               );
             })}
@@ -111,13 +120,16 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Button ($44px Touch Target) */}
+          {/* Mobile Menu Button */}
           <button
-            className="md:hidden flex items-center justify-center w-11 h-11 text-teal-100 hover:text-white active:bg-white/10 rounded-xl transition"
+            className="md:hidden flex items-center justify-center w-11 h-11 text-teal-100 hover:text-white active:bg-white/10 rounded-xl transition relative"
             onClick={() => setMenuOpen((o) => !o)}
             aria-label="Toggle Navigation Menu"
           >
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
+            {!menuOpen && hasPending && (
+              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+            )}
           </button>
         </div>
       </div>
@@ -134,6 +146,7 @@ export function Navbar() {
             <nav className="p-4 space-y-1.5">
               {navLinks.map((link) => {
                 const isActive = location.pathname === link.href;
+                const showDot = link.href === '/book' && hasPending;
                 return (
                   <Link
                     key={link.href}
@@ -144,7 +157,12 @@ export function Navbar() {
                         : 'text-teal-100 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    <span>{link.label}</span>
+                    <span className="flex items-center gap-2">
+                      {link.label}
+                      {showDot && (
+                        <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                      )}
+                    </span>
                     {isActive && <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />}
                   </Link>
                 );

@@ -26,6 +26,7 @@ import {
   ArrowRight,
   Sparkles,
   X,
+  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useBookingStore } from '../stores/bookingStore';
@@ -33,6 +34,10 @@ import { Button } from '../components/ui/Button';
 import { StarRating } from '../components/ui/StarRating';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Input } from '../components/ui/Input';
+import {
+  usePendingBooking,
+  dismissPendingBanner,
+} from '../hooks/usePendingBooking';
 import type { TimeSlot } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5154';
@@ -95,6 +100,10 @@ export function LandingPage() {
   const [showDetailsForm, setShowDetailsForm] = useState(false);
   const [currentImg, setCurrentImg] = useState(0);
   const [isHoveringImg, setIsHoveringImg] = useState(false);
+
+  // 🔵 Pending booking banner
+  const { booking: pendingBooking, dismissed } = usePendingBooking();
+  const showPendingBanner = !!pendingBooking && !dismissed;
 
   const {
     court,
@@ -209,6 +218,48 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 overflow-x-hidden">
+      {/* 🔵 Pending booking banner (right under the sticky navbar) */}
+      <AnimatePresence>
+        {showPendingBanner && pendingBooking && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="sticky top-14 sm:top-16 z-40 border-b border-amber-200 bg-amber-50/95 backdrop-blur-md"
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                  <AlertCircle size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-amber-900">You have an unpaid booking</p>
+                  <p className="text-xs text-amber-800 truncate">
+                    Ref {pendingBooking.referenceCode} · ₱{pendingBooking.totalAmount.toFixed(2)}
+                  </p>
+                </div>
+                <Button
+                  variant="neon"
+                  size="sm"
+                  onClick={() => navigate('/book/checkout')}
+                  className="shrink-0 font-bold"
+                  rightIcon={<ArrowRight size={14} />}
+                >
+                  Pay now
+                </Button>
+                <button
+                  onClick={dismissPendingBanner}
+                  aria-label="Dismiss"
+                  className="shrink-0 rounded-lg border border-amber-200 bg-white p-2 text-amber-700 transition hover:bg-amber-100"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-teal-800 text-white min-h-[85vh] flex items-center pt-20 pb-16">
         <div className="absolute inset-0 z-0">
@@ -266,7 +317,6 @@ export function LandingPage() {
               </Button>
             </div>
 
-            {/* Quick Specs Pill Row */}
             <div className="mt-10 pt-6 border-t border-white/15 grid grid-cols-3 gap-3 sm:gap-6 max-w-md">
               <div>
                 <p className="text-xl sm:text-2xl font-black text-amber-300">₱{pricePerHour}</p>
@@ -358,7 +408,6 @@ export function LandingPage() {
                     </div>
                   </div>
 
-                  {/* Horizontal Scroll on Mobile — properly clipped */}
                   <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar">
                     <div className="flex gap-2 sm:grid sm:grid-cols-7 snap-x snap-mandatory">
                       {visibleDates.map((d) => {
@@ -416,7 +465,6 @@ export function LandingPage() {
                       </p>
                     </div>
 
-                    {/* Dot Legend */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
                       <span className="flex items-center gap-1.5">
                         <span className="h-2 w-2 rounded-full border border-slate-300 bg-white" />
@@ -682,7 +730,6 @@ export function LandingPage() {
                 </div>
               </div>
 
-              {/* Court Media Card */}
               <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md h-72 sm:h-96">
                 <img
                   src={
