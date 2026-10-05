@@ -9,6 +9,7 @@ import { Button } from '../ui/Button';
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Book Court', href: '/book' },
+  { label: 'My Bookings', href: '/my-bookings' },
   { label: 'Open Play', href: '/openplay' },
   { label: 'Track Booking', href: '/track' },
 ];
@@ -62,7 +63,7 @@ export function Navbar() {
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.href;
-              const showDot = link.href === '/book' && hasPending;
+              const showDot = link.href === '/my-bookings' && hasPending;
               return (
                 <Link
                   key={link.href}
@@ -146,7 +147,7 @@ export function Navbar() {
             <nav className="p-4 space-y-1.5">
               {navLinks.map((link) => {
                 const isActive = location.pathname === link.href;
-                const showDot = link.href === '/book' && hasPending;
+                const showDot = link.href === '/my-bookings' && hasPending;
                 return (
                   <Link
                     key={link.href}
