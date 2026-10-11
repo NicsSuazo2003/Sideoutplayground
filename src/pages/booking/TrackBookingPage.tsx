@@ -248,7 +248,7 @@ export function TrackBookingPage() {
                   <div className="flex items-center gap-2">
                     <Building size={16} className="text-teal-600" />
                     <span className="text-xs font-bold text-slate-800">
-                      Center Court Facility
+                      Sideout Playground Facility
                     </span>
                   </div>
                   <StatusBadge status={booking.status} />
