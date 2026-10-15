@@ -188,10 +188,17 @@ export function CheckoutPage() {
 
   if (selectedSlots.length === 0 && !booking) return null;
 
-  const pricePerHour = court?.pricePerHour || 20;
-  const total = booking
-    ? booking.totalAmount
-    : selectedSlots.reduce((sum, s) => sum + (s.price || pricePerHour), 0);
+  const pricePerHour = court?.pricePerHour || 150;
+
+const getSlotPrice = (slot: { startTime: string; endTime: string; price?: number }) => {
+  if (typeof slot.price === 'number' && slot.price > 0) return slot.price;
+  if (slot.startTime === '16:00' && slot.endTime === '18:00') return pricePerHour * 2;
+  return pricePerHour;
+};
+
+const total = booking
+  ? booking.totalAmount
+  : selectedSlots.reduce((sum, s) => sum + getSlotPrice(s), 0);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);

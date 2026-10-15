@@ -4,6 +4,8 @@ import * as courtService from '../services/courtService';
 import * as bookingService from '../services/bookingService';
 import type { CreateBookingPayload } from '../services/bookingService';
 
+const DEFAULT_PRICE_PER_HOUR = 150;
+
 interface BookingState {
   court: Court | null;
   selectedDate: string;
@@ -29,7 +31,7 @@ interface BookingState {
   createBooking: (data: CreateBookingPayload) => Promise<Booking>;
 }
 
-export const useBookingStore = create<BookingState>((set) => ({
+export const useBookingStore = create<BookingState>((set, get) => ({
   court: null,
   selectedDate: new Date().toISOString().split('T')[0],
   selectedSlots: [],
@@ -62,11 +64,29 @@ export const useBookingStore = create<BookingState>((set) => ({
   },
 
   selectSlot: (slot) => {
-    set(state => ({ selectedSlots: [...state.selectedSlots, slot] }));
+    // 🔵 Defensive: never allow a slot with an undefined price into the cart.
+    const basePrice = get().court?.pricePerHour ?? DEFAULT_PRICE_PER_HOUR;
+    const isFixed2Hr = slot.startTime === '16:00' && slot.endTime === '18:00';
+    const normalizedPrice =
+      typeof slot.price === 'number' && slot.price > 0
+        ? slot.price
+        : isFixed2Hr
+        ? basePrice * 2
+        : basePrice;
+
+    const normalized: TimeSlot = { ...slot, price: normalizedPrice };
+
+    set((state) => {
+      const exists = state.selectedSlots.some((s) => s.id === normalized.id);
+      if (exists) return state;
+      return { selectedSlots: [...state.selectedSlots, normalized] };
+    });
   },
 
   deselectSlot: (slotId) => {
-    set(state => ({ selectedSlots: state.selectedSlots.filter(s => s.id !== slotId) }));
+    set((state) => ({
+      selectedSlots: state.selectedSlots.filter((s) => s.id !== slotId),
+    }));
   },
 
   clearSelection: () => {
