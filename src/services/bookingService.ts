@@ -1,12 +1,19 @@
 import { api } from './api';
 import type { Booking } from '../types';
 
+// ✅ price is now part of the slot payload type
+export type CreateBookingSlot = {
+  startTime: string;
+  endTime: string;
+  price?: number;
+};
+
 export interface CreateBookingPayload {
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
   date: string;
-  slots: { startTime: string; endTime: string }[];
+  slots: CreateBookingSlot[];
   totalAmount: number;
   notes?: string;
 }
@@ -30,6 +37,7 @@ export async function adminUpdateBooking(id: string, status: Booking['status']):
   const { data } = await api.put<Booking>(`/admin/bookings/${id}`, { status });
   return data;
 }
+
 export async function uploadPaymentScreenshot(bookingId: string, file: File): Promise<Booking> {
   const formData = new FormData();
   formData.append('screenshot', file);

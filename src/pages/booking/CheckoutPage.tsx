@@ -73,13 +73,11 @@ export function CheckoutPage() {
   // exists in localStorage, rehydrate and jump straight to payment.
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    // Already have in-memory booking (came from step 1)
     if (booking) {
       setRestoring(false);
       return;
     }
 
-    // Store still has slots + customer info — normal flow, no restore needed
     if (selectedSlots.length > 0 && customerName && customerEmail) {
       setRestoring(false);
       return;
@@ -100,13 +98,11 @@ export function CheckoutPage() {
         if (cancelled) return;
 
         if (fetched.status !== 'pending_payment') {
-          // Already paid, expired, cancelled — nothing to resume.
           clearPendingBooking();
           navigate('/book');
           return;
         }
 
-        // Sync local timer to backend's authoritative expiry
         setBooking(fetched);
         if (fetched.paymentExpiresAt) {
           const expiresAt = new Date(fetched.paymentExpiresAt).getTime();
@@ -190,15 +186,16 @@ export function CheckoutPage() {
 
   const pricePerHour = court?.pricePerHour || 150;
 
-const getSlotPrice = (slot: { startTime: string; endTime: string; price?: number }) => {
-  if (typeof slot.price === 'number' && slot.price > 0) return slot.price;
-  if (slot.startTime === '16:00' && slot.endTime === '18:00') return pricePerHour * 2;
-  return pricePerHour;
-};
+  // ✅ FIX: source of truth for per-slot price (300 for 16:00–18:00 prime, 150 otherwise)
+  const getSlotPrice = (slot: { startTime: string; endTime: string; price?: number }) => {
+    if (typeof slot.price === 'number' && slot.price > 0) return slot.price;
+    if (slot.startTime === '16:00' && slot.endTime === '18:00') return pricePerHour * 2;
+    return pricePerHour;
+  };
 
-const total = booking
-  ? booking.totalAmount
-  : selectedSlots.reduce((sum, s) => sum + getSlotPrice(s), 0);
+  const total = booking
+    ? booking.totalAmount
+    : selectedSlots.reduce((sum, s) => sum + getSlotPrice(s), 0);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -221,18 +218,20 @@ const total = booking
         customerEmail,
         customerPhone: customerPhone || undefined,
         date: selectedDate,
-        slots: selectedSlots.map((s) => ({ startTime: s.startTime, endTime: s.endTime })),
+       slots: selectedSlots.map((s) => ({
+  startTime: s.startTime,
+  endTime: s.endTime,
+  price: getSlotPrice(s),   // ← ADD THIS LINE
+})),
         totalAmount: total,
         notes: notes || undefined,
       });
       setBooking(result);
 
-      // 🔵 Save ref + email so we can restore on refresh
       if (result.referenceCode) {
-  savePendingBooking(result.referenceCode, result.customerEmail || customerEmail);
-}
+        savePendingBooking(result.referenceCode, result.customerEmail || customerEmail);
+      }
 
-      // Sync local timer with backend's authoritative expiry time
       if (result.paymentExpiresAt) {
         const expiresAt = new Date(result.paymentExpiresAt).getTime();
         const secondsLeft = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));

@@ -29,7 +29,6 @@ function format12h(time: string): string {
   return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
-// ── NEW: shared range formatter, matches the public pages
 function formatTimeRange(start: string, end: string): string {
   return `${format12h(start)} – ${format12h(end)}`;
 }
@@ -143,6 +142,7 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
     }
     setSaving(true);
     try {
+      // ✅ FIX: split prime slot into two 1-hr slots WITH price, then send them as-is
       const apiSlots = selectedSlots.flatMap((s) => {
         if (isFixedSlot(s)) {
           const half = (s.price || 0) / 2;
@@ -159,7 +159,8 @@ export function AdminCreateBooking({ open, onClose, onCreated }: Props) {
         customerEmail,
         customerPhone: customerPhone || undefined,
         date: selectedDate,
-        slots: apiSlots.map(({ startTime, endTime }) => ({ startTime, endTime })),
+        // ✅ FIX: keep price on each slot — do NOT strip it
+        slots: apiSlots,
         totalAmount: total,
         notes: notes || undefined,
         status: 'confirmed',
