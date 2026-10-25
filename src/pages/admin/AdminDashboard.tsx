@@ -24,6 +24,11 @@ import {
 import { useAdminStore } from '../../stores/adminStore';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { StatusBadge } from '../../components/ui/Badge';
+import type { Booking } from '../../types';
+
+// Slots are stripped server-side when a booking is cancelled/expired/refunded,
+// so we flag those rows to avoid rendering misleading "–" / "0 hrs" cells.
+const TERMINAL_STATUSES = new Set<string>(['cancelled', 'expired', 'refunded']);
 
 function format12h(time?: string): string {
   if (!time) return '';
@@ -31,6 +36,22 @@ function format12h(time?: string): string {
   const ampm = h >= 12 ? 'PM' : 'AM';
   const hour = h % 12 || 12;
   return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+function timeWindowFor(b: Booking): string | null {
+  if (!b.slots || b.slots.length === 0) return null;
+  const sorted = [...b.slots].sort((a, c) =>
+    a.startTime.localeCompare(c.startTime)
+  );
+  const start = sorted[0]?.startTime;
+  const end = sorted[sorted.length - 1]?.endTime;
+  if (!start || !end) return null;
+  return `${format12h(start)} – ${format12h(end)}`;
+}
+
+function durationLabelFor(b: Booking): string | null {
+  if (!b.slots || b.slots.length === 0) return null;
+  return `${b.slots.length} ${b.slots.length === 1 ? 'hr' : 'hrs'}`;
 }
 
 const CustomTooltip = ({
@@ -67,6 +88,10 @@ export function AdminDashboard() {
 
   const todayStr = new Date().toISOString().split('T')[0];
   const todayBookings = bookings.filter((b) => b.date === todayStr);
+  const activeTodayCount = todayBookings.filter(
+    (b) => !TERMINAL_STATUSES.has(b.status)
+  ).length;
+  const releasedTodayCount = todayBookings.length - activeTodayCount;
 
   const cards = [
     {
@@ -270,9 +295,16 @@ export function AdminDashboard() {
                   })}
                 </p>
               </div>
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600">
-                {todayBookings.length} scheduled
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-700 border border-teal-200/60">
+                  {activeTodayCount} active
+                </span>
+                {releasedTodayCount > 0 && (
+                  <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500">
+                    {releasedTodayCount} released
+                  </span>
+                )}
+              </div>
             </div>
 
             {todayBookings.length === 0 ? (
@@ -284,31 +316,59 @@ export function AdminDashboard() {
               <>
                 {/* Mobile Feed (< sm viewports) */}
                 <div className="space-y-2.5 sm:hidden">
-                  {todayBookings.map((b) => (
-                    <div
-                      key={b.id}
-                      className="rounded-xl border border-slate-200/70 bg-slate-50/60 p-3 flex items-center justify-between gap-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800">
-                          <Clock size={13} className="text-teal-600 shrink-0" />
-                          <span>
-                            {format12h(b.slots[0]?.startTime)} – {format12h(b.slots[b.slots.length - 1]?.endTime)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-600 truncate font-semibold mt-0.5">
-                          {b.customerName}
-                        </p>
-                        <p className="text-[10px] text-slate-400">
-                          {b.slots.length} {b.slots.length === 1 ? 'hour' : 'hours'} · Ref: {b.referenceCode}
-                        </p>
-                      </div>
+                  {todayBookings.map((b) => {
+                    const isTerminal = TERMINAL_STATUSES.has(b.status);
+                    const timeWindow = timeWindowFor(b);
+                    const durationLabel = durationLabelFor(b);
 
-                      <div className="shrink-0 text-right">
-                        <StatusBadge status={b.status} />
+                    return (
+                      <div
+                        key={b.id}
+                        className={`rounded-xl border p-3 flex items-center justify-between gap-3 ${
+                          isTerminal
+                            ? 'border-slate-200/70 bg-slate-50/40 opacity-70'
+                            : 'border-slate-200/70 bg-slate-50/60'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div
+                            className={`flex items-center gap-1.5 text-xs font-extrabold ${
+                              isTerminal ? 'text-slate-400' : 'text-slate-800'
+                            }`}
+                          >
+                            <Clock
+                              size={13}
+                              className={`shrink-0 ${
+                                isTerminal ? 'text-slate-400' : 'text-teal-600'
+                              }`}
+                            />
+                            {timeWindow ? (
+                              <span>{timeWindow}</span>
+                            ) : (
+                              <span className="italic">Slot released</span>
+                            )}
+                          </div>
+                          <p
+                            className={`text-xs truncate font-semibold mt-0.5 ${
+                              isTerminal
+                                ? 'text-slate-400 line-through'
+                                : 'text-slate-600'
+                            }`}
+                          >
+                            {b.customerName}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            {durationLabel ? `${durationLabel} · ` : ''}
+                            Ref: {b.referenceCode}
+                          </p>
+                        </div>
+
+                        <div className="shrink-0 text-right">
+                          <StatusBadge status={b.status} />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Desktop Clean Data Table (>= sm viewports) */}
@@ -324,23 +384,52 @@ export function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {todayBookings.map((b) => (
-                        <tr key={b.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-2.5 font-bold text-slate-800">
-                            {format12h(b.slots[0]?.startTime)} – {format12h(b.slots[b.slots.length - 1]?.endTime)}
-                          </td>
-                          <td className="py-2.5 font-medium text-slate-700">{b.customerName}</td>
-                          <td className="py-2.5 font-mono text-[11px] text-teal-700 font-bold">
-                            {b.referenceCode}
-                          </td>
-                          <td className="py-2.5 text-slate-500 font-medium">
-                            {b.slots.length} {b.slots.length === 1 ? 'hr' : 'hrs'}
-                          </td>
-                          <td className="py-2.5 text-right">
-                            <StatusBadge status={b.status} />
-                          </td>
-                        </tr>
-                      ))}
+                      {todayBookings.map((b) => {
+                        const isTerminal = TERMINAL_STATUSES.has(b.status);
+                        const timeWindow = timeWindowFor(b);
+                        const durationLabel = durationLabelFor(b);
+
+                        return (
+                          <tr
+                            key={b.id}
+                            className={`transition-colors ${
+                              isTerminal
+                                ? 'opacity-60 hover:bg-slate-50/40'
+                                : 'hover:bg-slate-50/60'
+                            }`}
+                          >
+                            <td
+                              className={`py-2.5 font-bold ${
+                                isTerminal ? 'text-slate-400' : 'text-slate-800'
+                              }`}
+                            >
+                              {timeWindow ?? (
+                                <span className="italic text-slate-400">
+                                  Slot released
+                                </span>
+                              )}
+                            </td>
+                            <td
+                              className={`py-2.5 font-medium ${
+                                isTerminal
+                                  ? 'text-slate-400 line-through'
+                                  : 'text-slate-700'
+                              }`}
+                            >
+                              {b.customerName}
+                            </td>
+                            <td className="py-2.5 font-mono text-[11px] text-teal-700 font-bold">
+                              {b.referenceCode}
+                            </td>
+                            <td className="py-2.5 text-slate-500 font-medium">
+                              {durationLabel ?? '—'}
+                            </td>
+                            <td className="py-2.5 text-right">
+                              <StatusBadge status={b.status} />
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

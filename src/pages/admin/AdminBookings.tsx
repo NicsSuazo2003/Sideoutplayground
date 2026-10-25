@@ -36,6 +36,8 @@ import { AdminCreateBooking } from './AdminCreateBooking';
 // HELPERS
 // ============================================================
 
+const TERMINAL_STATUSES = new Set<string>(['cancelled', 'expired', 'refunded']);
+
 function format12h(time: string): string {
   if (!time) return '—';
   const [h, m] = time.split(':').map(Number);
@@ -97,6 +99,28 @@ function getTimeRange(slots: any[]): string {
   const start = sorted[0]?.startTime ?? sorted[0]?.start_time;
   const end = sorted[sorted.length - 1]?.endTime ?? sorted[sorted.length - 1]?.end_time;
   return `${format12h(start)} – ${format12h(end)}`;
+}
+
+/**
+ * Time + duration cell for a booking row.
+ * Terminal statuses (cancelled/expired/refunded) have their slots stripped
+ * server-side on release, so we render an honest label instead of "—".
+ */
+function timeCellFor(b: Booking): { primary: string; secondary: string; isTerminal: boolean } {
+  const hasSlots = Array.isArray(b.slots) && b.slots.length > 0;
+  if (hasSlots) {
+    return {
+      primary: getTimeRange(b.slots),
+      secondary: calculateDuration(b.slots),
+      isTerminal: false,
+    };
+  }
+  const isTerminal = TERMINAL_STATUSES.has(b.status);
+  return {
+    primary: isTerminal ? 'Slot released' : '—',
+    secondary: '—',
+    isTerminal,
+  };
 }
 
 function timeLeft(deadline?: string | null): string | null {
@@ -296,7 +320,7 @@ const ACTIONS: Partial<Record<BookingStatus, ActionDef[]>> = {
   ],
 };
 
-const TERMINAL_STATUSES: BookingStatus[] = ['cancelled', 'expired', 'refunded'];
+const TERMINAL_FOR_ACTIONS: BookingStatus[] = ['cancelled', 'expired', 'refunded'];
 
 type BookingExtras = {
   payment_deadline?: string | null;
@@ -740,6 +764,7 @@ export function AdminBookings() {
               <tbody>
                 {pageItems.map((b, i) => {
                   const needsReview = b.status === 'payment_submitted';
+                  const timeCell = timeCellFor(b);
                   return (
                     <motion.tr
                       key={b.id}
@@ -766,8 +791,10 @@ export function AdminBookings() {
                       </td>
                       <td className="p-4 text-slate-600 font-medium">{b.date}</td>
                       <td className="p-4 text-slate-600">
-                        {getTimeRange(b.slots)}
-                        <div className="text-slate-400 text-xs">{calculateDuration(b.slots)}</div>
+                        <div className={timeCell.isTerminal ? 'italic text-slate-400' : ''}>
+                          {timeCell.primary}
+                        </div>
+                        <div className="text-slate-400 text-xs">{timeCell.secondary}</div>
                       </td>
                       <td className="p-4 text-slate-500 text-xs">
                         {new Date(b.createdAt).toLocaleDateString('en-US', {
@@ -941,48 +968,54 @@ export function AdminBookings() {
           <div className="text-center py-8 text-slate-400">No bookings for this date</div>
         ) : (
           <div className="space-y-3">
-            {selectedDayBookings.map((b) => (
-              <div key={b.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <StatusBadge status={b.status} />
-                    <span className="text-teal-600 text-xs font-mono">{b.referenceCode}</span>
-                  </div>
-                  <span className="text-teal-600 font-bold">₱{b.totalAmount}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                  <div>
-                    <span className="text-slate-400">Customer:</span> {b.customerName}
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Email:</span> {b.customerEmail}
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Time:</span> {getTimeRange(b.slots)}
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Duration:</span> {calculateDuration(b.slots)}
-                  </div>
-                  {b.notes && (
-                    <div className="col-span-2">
-                      <span className="text-slate-400">Notes:</span> {b.notes}
+            {selectedDayBookings.map((b) => {
+              const cell = timeCellFor(b);
+              return (
+                <div key={b.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={b.status} />
+                      <span className="text-teal-600 text-xs font-mono">{b.referenceCode}</span>
                     </div>
-                  )}
-                  <div className="col-span-2 text-slate-400">
-                    Booked:{' '}
-                    {new Date(b.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}{' '}
-                    at{' '}
-                    {new Date(b.createdAt).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    <span className="text-teal-600 font-bold">₱{b.totalAmount}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                    <div>
+                      <span className="text-slate-400">Customer:</span> {b.customerName}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Email:</span> {b.customerEmail}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Time:</span>{' '}
+                      <span className={cell.isTerminal ? 'italic text-slate-400' : ''}>
+                        {cell.primary}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Duration:</span> {cell.secondary}
+                    </div>
+                    {b.notes && (
+                      <div className="col-span-2">
+                        <span className="text-slate-400">Notes:</span> {b.notes}
+                      </div>
+                    )}
+                    <div className="col-span-2 text-slate-400">
+                      Booked:{' '}
+                      {new Date(b.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}{' '}
+                      at{' '}
+                      {new Date(b.createdAt).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Modal>
@@ -1180,7 +1213,7 @@ export function AdminBookings() {
                 </p>
               )}
 
-              {TERMINAL_STATUSES.includes(selected.status) && (
+              {TERMINAL_FOR_ACTIONS.includes(selected.status) && (
                 <p className="text-xs text-slate-400">
                   This booking is{' '}
                   <span className="font-semibold text-slate-700">

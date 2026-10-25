@@ -77,9 +77,21 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     const normalized: TimeSlot = { ...slot, price: normalizedPrice };
 
     set((state) => {
-      const exists = state.selectedSlots.some((s) => s.id === normalized.id);
-      if (exists) return state;
-      return { selectedSlots: [...state.selectedSlots, normalized] };
+      // 🛡️ Prevent selecting the exact same slot twice
+      if (state.selectedSlots.some((s) => s.id === normalized.id)) return state;
+
+      // 🛡️ Evict any existing selection that overlaps with the new one.
+      //    This handles the 2hr prime block gracefully — selecting 16-18
+      //    automatically removes 16-17 and 17-18, and vice versa.
+      const newStart = normalized.startTime;
+      const newEnd = normalized.endTime;
+
+      const filtered = state.selectedSlots.filter((s) => {
+        // Keep slots that end before the new one starts, or start after it ends.
+        return s.endTime <= newStart || s.startTime >= newEnd;
+      });
+
+      return { selectedSlots: [...filtered, normalized] };
     });
   },
 

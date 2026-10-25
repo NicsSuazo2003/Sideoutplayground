@@ -218,11 +218,11 @@ export function CheckoutPage() {
         customerEmail,
         customerPhone: customerPhone || undefined,
         date: selectedDate,
-       slots: selectedSlots.map((s) => ({
-  startTime: s.startTime,
-  endTime: s.endTime,
-  price: getSlotPrice(s),   // ← ADD THIS LINE
-})),
+        slots: selectedSlots.map((s) => ({
+          startTime: s.startTime,
+          endTime: s.endTime,
+          // price intentionally omitted — backend computes from duration × rate rules
+        })),
         totalAmount: total,
         notes: notes || undefined,
       });
