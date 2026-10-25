@@ -32,6 +32,7 @@ import { useBookingStore } from '../stores/bookingStore';
 import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Input } from '../components/ui/Input';
+import { FeaturedMerch } from '../components/layout/FeaturedMerch'; // ✅ ADDED
 import {
   usePendingBooking,
   dismissPendingBanner,
@@ -153,47 +154,47 @@ export function LandingPage() {
   };
 
   const getProcessedAvailability = (): TimeSlot[] => {
-  const basePrice = court?.pricePerHour || 150;
+    const basePrice = court?.pricePerHour || 150;
 
-  // 1) Drop the individual 16-17 and 17-18 slots — they are merged into one 2-hr prime slot.
-  const filtered = availability.filter((slot) => !isRemovedSlot(slot));
+    // 1) Drop the individual 16-17 and 17-18 slots — they are merged into one 2-hr prime slot.
+    const filtered = availability.filter((slot) => !isRemovedSlot(slot));
 
-  // 2) If the backend already returned a 16:00-18:00 slot, force its price to 2× base.
-  const existing4to6 = filtered.find((slot) => isFixedSlot(slot));
+    // 2) If the backend already returned a 16:00-18:00 slot, force its price to 2× base.
+    const existing4to6 = filtered.find((slot) => isFixedSlot(slot));
 
-  if (existing4to6) {
-    const corrected: TimeSlot = {
-      ...existing4to6,
+    if (existing4to6) {
+      const corrected: TimeSlot = {
+        ...existing4to6,
+        price: basePrice * 2,
+      };
+      return filtered
+        .map((slot) => (isFixedSlot(slot) ? corrected : slot))
+        .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    }
+
+    // 3) Otherwise build the fixed 2-hr prime slot from the two underlying 1-hr slots.
+    const slot4to5 = availability.find(
+      (s) => s.startTime === '16:00' && s.endTime === '17:00'
+    );
+    const slot5to6 = availability.find(
+      (s) => s.startTime === '17:00' && s.endTime === '18:00'
+    );
+    const is4to6Available =
+      slot4to5?.isAvailable !== false && slot5to6?.isAvailable !== false;
+
+    const fixedSlot: TimeSlot = {
+      id: `fixed-${selectedDate}-16-18`,
+      date: selectedDate,
+      startTime: '16:00',
+      endTime: '18:00',
+      isAvailable: is4to6Available,
       price: basePrice * 2,
     };
-    return filtered
-      .map((slot) => (isFixedSlot(slot) ? corrected : slot))
-      .sort((a, b) => a.startTime.localeCompare(b.startTime));
-  }
 
-  // 3) Otherwise build the fixed 2-hr prime slot from the two underlying 1-hr slots.
-  const slot4to5 = availability.find(
-    (s) => s.startTime === '16:00' && s.endTime === '17:00'
-  );
-  const slot5to6 = availability.find(
-    (s) => s.startTime === '17:00' && s.endTime === '18:00'
-  );
-  const is4to6Available =
-    slot4to5?.isAvailable !== false && slot5to6?.isAvailable !== false;
-
-  const fixedSlot: TimeSlot = {
-    id: `fixed-${selectedDate}-16-18`,
-    date: selectedDate,
-    startTime: '16:00',
-    endTime: '18:00',
-    isAvailable: is4to6Available,
-    price: basePrice * 2,
+    return [...filtered, fixedSlot].sort((a, b) =>
+      a.startTime.localeCompare(b.startTime)
+    );
   };
-
-  return [...filtered, fixedSlot].sort((a, b) =>
-    a.startTime.localeCompare(b.startTime)
-  );
-};
 
   const processedAvailability = getProcessedAvailability();
 
@@ -231,13 +232,13 @@ export function LandingPage() {
   };
 
   const pricePerHour = court?.pricePerHour || 150;
-const getSlotPrice = (slot: TimeSlot) => {
-  if (typeof slot.price === 'number' && slot.price > 0) return slot.price;
-  // Fallback for the fixed 2-hr prime slot if price was somehow stripped
-  if (slot.startTime === '16:00' && slot.endTime === '18:00') return pricePerHour * 2;
-  return pricePerHour;
-};
-const subtotal = selectedSlots.reduce((sum, slot) => sum + getSlotPrice(slot), 0);
+  const getSlotPrice = (slot: TimeSlot) => {
+    if (typeof slot.price === 'number' && slot.price > 0) return slot.price;
+    // Fallback for the fixed 2-hr prime slot if price was somehow stripped
+    if (slot.startTime === '16:00' && slot.endTime === '18:00') return pricePerHour * 2;
+    return pricePerHour;
+  };
+  const subtotal = selectedSlots.reduce((sum, slot) => sum + getSlotPrice(slot), 0);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 overflow-x-hidden">
@@ -284,7 +285,7 @@ const subtotal = selectedSlots.reduce((sum, slot) => sum + getSlotPrice(slot), 0
       </AnimatePresence>
 
       {/* Hero Section (Padding adjusts dynamically so floating banner doesn't cover text) */}
-      <section 
+      <section
         className={`relative overflow-hidden bg-teal-800 text-white min-h-[85vh] flex items-center pb-16 transition-all duration-300 ${
           showPendingBanner ? 'pt-32 sm:pt-36' : 'pt-20'
         }`}
@@ -776,6 +777,9 @@ const subtotal = selectedSlots.reduce((sum, slot) => sum + getSlotPrice(slot), 0
           </div>
         </section>
       )}
+
+      {/* 🛍️ Featured Merch — self-hides when no active products exist */}
+      <FeaturedMerch />
 
       {/* How It Works Grid */}
       <section className="py-14 bg-slate-50">
