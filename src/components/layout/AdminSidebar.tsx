@@ -9,6 +9,7 @@ import {
   Zap,
   Trophy,
   ArrowLeft,
+  ShoppingBag, // ✅ ADDED
 } from 'lucide-react';
 
 const links = [
@@ -18,6 +19,7 @@ const links = [
   { label: 'Customers', href: '/admin/customers', icon: Users },
   { label: 'Court', href: '/admin/court', icon: MapPin },
   { label: 'Pricing', href: '/admin/pricing', icon: DollarSign },
+  { label: 'Merch', href: '/admin/merch', icon: ShoppingBag }, // ✅ ADDED
   { label: 'Reports', href: '/admin/reports', icon: BarChart3 },
 ];
 

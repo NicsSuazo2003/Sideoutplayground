@@ -104,3 +104,21 @@ export interface OpenPlayRegistration {
   createdAt: string;
   paymentScreenshot?: string;
 }
+
+export type MerchCategory = 'paddle' | 'ball' | 'apparel' | 'accessory' | 'other';
+
+export interface Merch {
+  id: string;
+  name: string;
+  description: string;
+  category: MerchCategory;
+  price: number;
+  sku?: string | null;
+  stock?: number | null;
+  imageUrl: string;
+  images: string[];
+  isActive: boolean;
+  isFeatured: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

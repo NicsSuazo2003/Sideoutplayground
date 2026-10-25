@@ -21,6 +21,9 @@ import { AdminCustomers } from './pages/admin/AdminCustomers';
 import { AdminCourt } from './pages/admin/AdminCourt';
 import { AdminReports } from './pages/admin/AdminReports';
 import { AdminPriceRules } from './pages/admin/AdminPriceRules';
+import { MerchPage } from './pages/booking/MerchPage';
+import { MerchDetailPage } from './pages/booking/MerchDetailPage';
+import { AdminMerch } from './pages/admin/AdminMerch';
 
 export default function App() {
   return (
@@ -34,7 +37,9 @@ export default function App() {
         }}
       />
       <Routes>
-        <Route element={<PublicLayout />}>
+          <Route element={<PublicLayout />}>
+          <Route path="/merch" element={<MerchPage />} />
+          <Route path="/merch/:id" element={<MerchDetailPage />} />
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/book/checkout" element={<CheckoutPage />} />
@@ -49,6 +54,7 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="bookings" element={<AdminBookings />} />
           <Route path="openplay" element={<AdminOpenPlay />} />
+          <Route path="/admin/merch" element={<AdminMerch />} />
           <Route path="customers" element={<AdminCustomers />} />
           <Route path="court" element={<AdminCourt />} />
           <Route path="pricing" element={<AdminPriceRules />} />
