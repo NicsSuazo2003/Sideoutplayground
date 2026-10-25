@@ -168,12 +168,12 @@ export function MerchDetailPage() {
 
             {/* CTA */}
             <div className="mt-6 sm:mt-auto sm:pt-6">
-              <a
-                href="https://m.me/sideoutplayground"
-                target="_blank"
-                rel="noreferrer"
-                className="block"
-              >
+             <a
+  href="https://www.facebook.com/profile.php?id=61590081072189"
+  target="_blank"
+  rel="noreferrer"
+  className="block"
+>
                 <Button
                   variant="neon"
                   size="lg"

@@ -6,7 +6,7 @@ export function Footer() {
     <footer className="border-t border-slate-200 bg-white pb-28 pt-12 sm:pb-12 sm:pt-14 text-slate-600">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          
+
           {/* Brand Section */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2.5">
@@ -25,12 +25,18 @@ export function Footer() {
 
             <div className="flex items-center gap-2.5 pt-1">
               {[
-                { icon: Facebook, href: '#', label: 'Facebook' },
+                {
+                  icon: Facebook,
+                  href: 'https://www.facebook.com/profile.php?id=61590081072189',
+                  label: 'Facebook',
+                },
                 { icon: Instagram, href: '#', label: 'Instagram' },
               ].map(({ icon: Icon, href, label }) => (
                 <a
                   key={label}
                   href={href}
+                  target={href === '#' ? undefined : '_blank'}
+                  rel={href === '#' ? undefined : 'noreferrer'}
                   aria-label={label}
                   className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-teal-600 hover:border-teal-300 hover:bg-teal-50/50 transition-all active:scale-95"
                 >
@@ -48,6 +54,7 @@ export function Footer() {
                 ['Home', '/'],
                 ['Book a Court', '/book'],
                 ['Open Play Sessions', '/openplay'],
+                ['Shop Merch', '/merch'],
                 ['Track Reservation', '/track'],
               ].map(([label, href]) => (
                 <li key={label}>

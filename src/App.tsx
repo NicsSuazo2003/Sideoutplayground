@@ -14,6 +14,9 @@ import { MyBookingsPage } from './pages/booking/MyBookingsPage';
 import { OpenPlayPage } from './pages/booking/OpenPlayPage';
 import { OpenPlayRegisterPage } from './pages/booking/OpenPlayRegisterPage';
 
+import { MerchPage } from './pages/booking/MerchPage';
+import { MerchDetailPage } from './pages/booking/MerchDetailPage';
+
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminBookings } from './pages/admin/AdminBookings';
 import { AdminOpenPlay } from './pages/admin/AdminOpenPlay';
@@ -21,8 +24,6 @@ import { AdminCustomers } from './pages/admin/AdminCustomers';
 import { AdminCourt } from './pages/admin/AdminCourt';
 import { AdminReports } from './pages/admin/AdminReports';
 import { AdminPriceRules } from './pages/admin/AdminPriceRules';
-import { MerchPage } from './pages/booking/MerchPage';
-import { MerchDetailPage } from './pages/booking/MerchDetailPage';
 import { AdminMerch } from './pages/admin/AdminMerch';
 
 export default function App() {
@@ -37,9 +38,7 @@ export default function App() {
         }}
       />
       <Routes>
-          <Route element={<PublicLayout />}>
-          <Route path="/merch" element={<MerchPage />} />
-          <Route path="/merch/:id" element={<MerchDetailPage />} />
+        <Route element={<PublicLayout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/book/checkout" element={<CheckoutPage />} />
@@ -48,13 +47,15 @@ export default function App() {
           <Route path="/track" element={<TrackBookingPage />} />
           <Route path="/openplay" element={<OpenPlayPage />} />
           <Route path="/openplay/register/:sessionId" element={<OpenPlayRegisterPage />} />
+          <Route path="/merch" element={<MerchPage />} />
+          <Route path="/merch/:id" element={<MerchDetailPage />} />
         </Route>
 
         <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="bookings" element={<AdminBookings />} />
           <Route path="openplay" element={<AdminOpenPlay />} />
-          <Route path="/admin/merch" element={<AdminMerch />} />
+          <Route path="merch" element={<AdminMerch />} />          {/* ✅ relative */}
           <Route path="customers" element={<AdminCustomers />} />
           <Route path="court" element={<AdminCourt />} />
           <Route path="pricing" element={<AdminPriceRules />} />
