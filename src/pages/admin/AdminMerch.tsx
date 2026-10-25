@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   Pencil,
@@ -8,8 +8,9 @@ import {
   ImagePlus,
   Star,
   Search,
-  Package,
   AlertTriangle,
+  X,
+  PackageX,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import {
@@ -132,7 +133,7 @@ export function AdminMerch() {
     try {
       const url = await uploadImage(file);
       setForm((f) => ({ ...f, images: [...f.images, url] }));
-      toast.success('Gallery image uploaded');
+      toast.success('Gallery image added');
     } catch {
       toast.error('Upload failed');
     } finally {
@@ -202,119 +203,150 @@ export function AdminMerch() {
   };
 
   const filtered = items.filter((m) =>
-    !search ? true : m.name.toLowerCase().includes(search.toLowerCase())
+    !search ? true : m.name.toLowerCase().includes(search.toLowerCase()) || m.sku?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="space-y-5 max-w-6xl pb-24 sm:pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="space-y-5 max-w-6xl mx-auto px-4 sm:px-6 pb-28">
+      {/* Top Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             Merch Management
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Publish paddles, balls, apparel, and accessories to the public Shop page.
+            Manage store inventory, upload photos, and update storefront items.
           </p>
         </div>
         <Button
           variant="neon"
-          size="sm"
+          size="md"
           onClick={openNew}
-          leftIcon={<Plus size={15} />}
-          className="font-bold text-xs shadow-xs self-start sm:self-auto"
+          leftIcon={<Plus size={16} />}
+          className="font-bold text-xs h-11 w-full sm:w-auto shadow-sm"
         >
           New Product
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
+      {/* Search Input */}
+      <div className="relative">
         <Search
           size={16}
           className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
         />
         <input
           type="text"
-          placeholder="Search products…"
+          placeholder="Search product name or SKU…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 shadow-2xs outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
+          className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 shadow-2xs outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
         />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
 
-      {/* Content */}
+      {/* Grid List */}
       {loading ? (
-        <div className="py-20 flex justify-center">
+        <div className="py-24 flex justify-center items-center">
           <LoadingSpinner size={32} />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-400 text-xs sm:text-sm">
-          {items.length === 0
-            ? 'No products yet. Tap "New Product" to add the first one.'
-            : 'No products match your search.'}
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
+          <PackageX size={36} className="mx-auto text-slate-300 mb-2" />
+          <p className="text-sm font-semibold text-slate-700">No products found</p>
+          <p className="text-xs text-slate-400 mt-1">
+            {items.length === 0
+              ? 'Click "+ New Product" above to create your first item.'
+              : 'Try searching with a different term.'}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-          {filtered.map((m) => (
-            <motion.div
-              key={m.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-xs hover:shadow-md transition-shadow"
-            >
-              <div className="relative aspect-[4/3] bg-slate-100">
-                <img src={m.imageUrl} alt={m.name} className="w-full h-full object-cover" />
-                <div className="absolute top-2 left-2 flex gap-1">
-                  {m.isFeatured && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-wider shadow-xs">
-                      <Star size={9} className="fill-current" />
-                      Featured
-                    </span>
-                  )}
-                  {!m.isActive && (
-                    <span className="px-2 py-0.5 rounded-md bg-slate-800/85 text-white text-[10px] font-black uppercase tracking-wider">
-                      Hidden
-                    </span>
-                  )}
+          <AnimatePresence>
+            {filtered.map((m) => (
+              <motion.div
+                key={m.id}
+                layout
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-md transition-shadow"
+              >
+                <div>
+                  <div className="relative aspect-video sm:aspect-[4/3] bg-slate-100">
+                    <img src={m.imageUrl} alt={m.name} className="w-full h-full object-cover" />
+                    <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
+                      {m.isFeatured && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-wider shadow-xs">
+                          <Star size={9} className="fill-current" />
+                          Featured
+                        </span>
+                      )}
+                      {!m.isActive && (
+                        <span className="px-2 py-0.5 rounded-md bg-slate-900/80 text-white text-[10px] font-bold uppercase tracking-wider backdrop-blur-xs">
+                          Hidden
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 sm:p-4">
+                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-teal-600 mb-1">
+                      <span>{m.category}</span>
+                      {m.sku && <span className="text-slate-400 font-mono font-normal">#{m.sku}</span>}
+                    </div>
+
+                    <h3 className="font-bold text-slate-900 text-sm truncate">{m.name}</h3>
+
+                    <div className="flex items-baseline justify-between mt-2">
+                      <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                        ₱{m.price.toLocaleString()}
+                      </span>
+                      <span
+                        className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                          m.stock === null || m.stock === undefined
+                            ? 'bg-slate-100 text-slate-600'
+                            : m.stock <= 0
+                            ? 'bg-rose-50 text-rose-600 font-bold'
+                            : 'bg-emerald-50 text-emerald-700'
+                        }`}
+                      >
+                        {m.stock === null || m.stock === undefined
+                          ? 'Unlimited'
+                          : `${m.stock} in stock`}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="p-3.5 sm:p-4">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-teal-600">
-                  {m.category}
-                </div>
-                <h3 className="font-bold text-slate-900 text-sm truncate mt-0.5">{m.name}</h3>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-base font-black text-slate-900 tracking-tight">
-                    ₱{m.price.toLocaleString()}
-                  </span>
-                  {m.stock !== null && m.stock !== undefined && (
-                    <span className="text-[11px] font-semibold text-slate-400">
-                      {m.stock} in stock
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+
+                <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => openEdit(m)}
                     leftIcon={<Pencil size={13} />}
-                    className="flex-1 font-bold text-xs"
+                    className="flex-1 font-bold text-xs h-9 justify-center"
                   >
                     Edit
                   </Button>
                   <button
                     onClick={() => setDeleteTarget(m)}
-                    className="p-2 text-slate-400 hover:text-rose-600 active:scale-95 transition"
+                    className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition"
                     aria-label="Delete product"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
 
@@ -325,12 +357,12 @@ export function AdminMerch() {
         title={form.id ? 'Edit Product' : 'New Product'}
         size="lg"
       >
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} className="space-y-4 max-h-[75vh] overflow-y-auto px-1">
           <Input
             label="Product Name *"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            placeholder="e.g. Pro Paddle X1"
+            placeholder="e.g. Pro Tour Carbon Paddle"
           />
 
           <div>
@@ -341,7 +373,7 @@ export function AdminMerch() {
               rows={3}
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="Materials, sizes, colors, what makes it great…"
+              placeholder="Materials, weight, grip dimensions, colors..."
               className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 shadow-2xs outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15 resize-none"
             />
           </div>
@@ -356,7 +388,7 @@ export function AdminMerch() {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, category: e.target.value as MerchCategory }))
                 }
-                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 shadow-2xs outline-none focus:ring-2 focus:ring-teal-500/20"
+                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 shadow-2xs outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
@@ -380,36 +412,36 @@ export function AdminMerch() {
               label="SKU (optional)"
               value={form.sku}
               onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
-              placeholder="e.g. PAD-X1-BLK"
+              placeholder="PAD-001"
             />
             <Input
-              label="Stock (empty = unlimited)"
+              label="Stock Quantity (empty = unlimited)"
               type="number"
               value={form.stock}
               onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
-              placeholder="e.g. 25"
+              placeholder="e.g. 50"
             />
           </div>
 
-          {/* Cover image */}
+          {/* Cover image upload */}
           <div>
             <label className="text-xs sm:text-sm font-semibold text-slate-700 block mb-1.5">
               Cover Image *
             </label>
             <div className="flex items-center gap-3">
               {form.imageUrl ? (
-                <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-                  <img src={form.imageUrl} alt="Cover" className="w-full h-full object-cover" />
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
+                  <img src={form.imageUrl} alt="Cover preview" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => setForm((f) => ({ ...f, imageUrl: '' }))}
-                    className="absolute top-1 right-1 p-1 rounded-md bg-red-600/90 text-white hover:bg-red-700 transition"
+                    className="absolute top-1 right-1 p-1 rounded-md bg-rose-600 text-white shadow-xs hover:bg-rose-700 transition"
                   >
-                    <Trash2 size={11} />
+                    <Trash2 size={12} />
                   </button>
                 </div>
               ) : (
-                <div className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-300">
+                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
                   <ImagePlus size={22} />
                 </div>
               )}
@@ -420,13 +452,13 @@ export function AdminMerch() {
                   size="sm"
                   onClick={() => primaryFileRef.current?.click()}
                   loading={uploading}
-                  leftIcon={<Upload size={13} />}
-                  className="font-bold text-xs"
+                  leftIcon={<Upload size={14} />}
+                  className="font-bold text-xs h-9"
                 >
-                  {form.imageUrl ? 'Replace cover' : 'Upload cover'}
+                  {form.imageUrl ? 'Change photo' : 'Upload photo'}
                 </Button>
-                <p className="text-[11px] text-slate-400 mt-1.5">
-                  JPEG, PNG, WebP, or GIF. Max 5MB.
+                <p className="text-[11px] text-slate-400 mt-1">
+                  JPG, PNG, or WebP. 1:1 square recommended.
                 </p>
               </div>
               <input
@@ -439,22 +471,22 @@ export function AdminMerch() {
             </div>
           </div>
 
-          {/* Gallery */}
+          {/* Gallery images */}
           <div>
             <label className="text-xs sm:text-sm font-semibold text-slate-700 block mb-1.5">
-              Gallery Images (optional)
+              Extra Photos (optional)
             </label>
-            <div className="flex flex-wrap gap-2 mb-2">
+            <div className="flex flex-wrap gap-2">
               {form.images.map((url) => (
                 <div
                   key={url}
-                  className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 group"
+                  className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 group"
                 >
                   <img src={url} alt="Gallery" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeGalleryImage(url)}
-                    className="absolute inset-0 bg-slate-900/60 text-white opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
+                    className="absolute inset-0 bg-slate-900/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -463,8 +495,7 @@ export function AdminMerch() {
               <button
                 type="button"
                 onClick={() => galleryFileRef.current?.click()}
-                className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:border-teal-400 hover:text-teal-600 transition"
-                aria-label="Add gallery image"
+                className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:border-teal-500 hover:text-teal-600 transition"
               >
                 <Plus size={18} />
               </button>
@@ -479,39 +510,39 @@ export function AdminMerch() {
           </div>
 
           {/* Toggles */}
-          <div className="flex flex-wrap gap-4 pt-1">
-            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition">
               <input
                 type="checkbox"
                 checked={form.isFeatured}
                 onChange={(e) => setForm((f) => ({ ...f, isFeatured: e.target.checked }))}
                 className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4"
               />
-              <span>Featured on Shop</span>
+              <span className="text-xs font-semibold text-slate-700">Feature on homepage</span>
             </label>
-            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+            <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition">
               <input
                 type="checkbox"
                 checked={form.isActive}
                 onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
                 className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4"
               />
-              <span>Visible to public</span>
+              <span className="text-xs font-semibold text-slate-700">Publicly visible</span>
             </label>
           </div>
 
-          <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
-            <Button type="button" variant="outline" size="md" onClick={closeModal}>
+          <div className="pt-3 flex flex-col sm:flex-row justify-end gap-2 border-t border-slate-100">
+            <Button type="button" variant="outline" size="md" onClick={closeModal} className="h-11">
               Cancel
             </Button>
-            <Button variant="neon" size="md" type="submit" loading={saving} className="font-bold">
-              {form.id ? 'Save Changes' : 'Create Product'}
+            <Button variant="neon" size="md" type="submit" loading={saving} className="font-bold h-11">
+              {form.id ? 'Save Changes' : 'Publish Product'}
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* Delete confirm */}
+      {/* Delete Confirmation */}
       <Modal
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
@@ -519,23 +550,21 @@ export function AdminMerch() {
         size="sm"
       >
         <div className="space-y-4">
-          <div className="flex items-start gap-3 rounded-xl bg-rose-50 border border-rose-200 p-3">
+          <div className="flex items-start gap-3 rounded-xl bg-rose-50 border border-rose-200 p-3.5">
             <AlertTriangle size={18} className="text-rose-600 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-bold text-rose-900">
-                {deleteTarget?.name}
-              </p>
+              <p className="text-sm font-bold text-rose-900">{deleteTarget?.name}</p>
               <p className="text-xs text-rose-700 mt-0.5">
-                This will permanently remove the product from the shop. This cannot be undone.
+                Are you sure? This item will be removed permanently.
               </p>
             </div>
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex gap-2 justify-end">
             <Button variant="outline" size="sm" onClick={() => setDeleteTarget(null)}>
-              Cancel
+              Keep
             </Button>
             <Button variant="destructive" size="sm" onClick={handleDelete} className="font-bold">
-              Delete
+              Delete Forever
             </Button>
           </div>
         </div>
