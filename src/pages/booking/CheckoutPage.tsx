@@ -41,6 +41,15 @@ const GCASH_NUMBER = '09058100973';
 const GCASH_NAME = 'Side Out Playground';
 const PAYMENT_MINUTES = 15;
 
+// Prime windows (fixed 2-hr merged slots) — keep in sync with LandingPage
+const PRIME_WINDOWS = [
+  { start: '16:00', end: '18:00' },
+  { start: '20:00', end: '22:00' },
+] as const;
+
+const isPrimeSlot = (s: { startTime: string; endTime: string }) =>
+  PRIME_WINDOWS.some((w) => w.start === s.startTime && w.end === s.endTime);
+
 export function CheckoutPage() {
   const navigate = useNavigate();
   const {
@@ -68,10 +77,7 @@ export function CheckoutPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
-  // ─────────────────────────────────────────────────────────────
-  // Restore-on-refresh: if store is empty but a pending booking
-  // exists in localStorage, rehydrate and jump straight to payment.
-  // ─────────────────────────────────────────────────────────────
+  // Restore-on-refresh
   useEffect(() => {
     if (booking) {
       setRestoring(false);
@@ -125,7 +131,7 @@ export function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // If the hold has already expired on mount (e.g. rehydrated from ref)
+  // Expired on mount
   useEffect(() => {
     if (!booking?.paymentExpiresAt) return;
     const expiresAt = new Date(booking.paymentExpiresAt).getTime();
@@ -137,7 +143,7 @@ export function CheckoutPage() {
     }
   }, [booking, clearSelection, navigate]);
 
-  // Timer lifecycle during payment / upload phases
+  // Timer
   useEffect(() => {
     if ((step === 'payment' || step === 'upload') && booking) {
       timerRef.current = setInterval(() => {
@@ -159,7 +165,7 @@ export function CheckoutPage() {
     };
   }, [step, booking, clearSelection, navigate]);
 
-  // Clean object URL memory
+  // Object URL cleanup
   useEffect(() => {
     if (!screenshot) {
       setPreviewUrl(null);
@@ -170,7 +176,6 @@ export function CheckoutPage() {
     return () => URL.revokeObjectURL(url);
   }, [screenshot]);
 
-  // Guard render: show spinner while restoring, null only if truly empty
   if (restoring && !booking) {
     return (
       <div className="min-h-screen bg-slate-50 pt-16 sm:pt-20 flex items-center justify-center">
@@ -186,10 +191,10 @@ export function CheckoutPage() {
 
   const pricePerHour = court?.pricePerHour || 150;
 
-  // ✅ FIX: source of truth for per-slot price (300 for 16:00–18:00 prime, 150 otherwise)
+  // Price: honor slot.price if set, otherwise 2× for any prime window, else base
   const getSlotPrice = (slot: { startTime: string; endTime: string; price?: number }) => {
     if (typeof slot.price === 'number' && slot.price > 0) return slot.price;
-    if (slot.startTime === '16:00' && slot.endTime === '18:00') return pricePerHour * 2;
+    if (isPrimeSlot(slot)) return pricePerHour * 2;
     return pricePerHour;
   };
 
@@ -276,7 +281,7 @@ export function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pt-16 sm:pt-20">
-      {/* Mobile Sticky Step & Timer Header */}
+      {/* Mobile Sticky Step & Timer */}
       <div className="sticky top-14 z-30 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur-md sm:hidden">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -350,7 +355,7 @@ export function CheckoutPage() {
           })}
         </div>
 
-        {/* STEP 1: SUMMARY */}
+        {/* STEP 1 */}
         {step === 'summary' && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -482,7 +487,7 @@ export function CheckoutPage() {
           </motion.div>
         )}
 
-        {/* STEP 2: GCASH PAYMENT DETAILS */}
+        {/* STEP 2 */}
         {step === 'payment' && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -640,7 +645,7 @@ export function CheckoutPage() {
           </motion.div>
         )}
 
-        {/* STEP 3: UPLOAD PROOF */}
+        {/* STEP 3 */}
         {step === 'upload' && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}

@@ -32,7 +32,7 @@ import { useBookingStore } from '../stores/bookingStore';
 import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Input } from '../components/ui/Input';
-import { FeaturedMerch } from '../components/layout/FeaturedMerch'; // ✅ ADDED
+import { FeaturedMerch } from '../components/layout/FeaturedMerch';
 import {
   usePendingBooking,
   dismissPendingBanner,
@@ -80,16 +80,26 @@ function getDateStrip(): string[] {
   return dates;
 }
 
-const isFixedSlot = (slot: TimeSlot): boolean => {
-  return slot.startTime === '16:00' && slot.endTime === '18:00';
+// ── PRIME WINDOWS (fixed 2-hr merged slots) ─────────────────────
+const PRIME_WINDOWS = [
+  { start: '16:00', end: '18:00' }, // 4–6 PM
+  { start: '20:00', end: '22:00' }, // 8–10 PM
+] as const;
+
+const addHour = (t: string): string => {
+  const [h, m] = t.split(':').map(Number);
+  return `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 };
 
-const isRemovedSlot = (slot: TimeSlot): boolean => {
-  return (
-    (slot.startTime === '16:00' && slot.endTime === '17:00') ||
-    (slot.startTime === '17:00' && slot.endTime === '18:00')
+const isFixedSlot = (slot: TimeSlot): boolean =>
+  PRIME_WINDOWS.some((w) => slot.startTime === w.start && slot.endTime === w.end);
+
+const isRemovedSlot = (slot: TimeSlot): boolean =>
+  PRIME_WINDOWS.some(
+    (w) =>
+      (slot.startTime === w.start && slot.endTime === addHour(w.start)) ||
+      (slot.startTime === addHour(w.start) && slot.endTime === w.end)
   );
-};
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -100,7 +110,6 @@ export function LandingPage() {
   const [currentImg, setCurrentImg] = useState(0);
   const [isHoveringImg, setIsHoveringImg] = useState(false);
 
-  // 🔵 Pending booking banner
   const { booking: pendingBooking, dismissed } = usePendingBooking();
   const showPendingBanner = !!pendingBooking && !dismissed;
 
@@ -156,44 +165,46 @@ export function LandingPage() {
   const getProcessedAvailability = (): TimeSlot[] => {
     const basePrice = court?.pricePerHour || 150;
 
-    // 1) Drop the individual 16-17 and 17-18 slots — they are merged into one 2-hr prime slot.
+    // 1) drop every 1-hr sub-slot of every prime window
     const filtered = availability.filter((slot) => !isRemovedSlot(slot));
+    const result = [...filtered];
 
-    // 2) If the backend already returned a 16:00-18:00 slot, force its price to 2× base.
-    const existing4to6 = filtered.find((slot) => isFixedSlot(slot));
+    // 2) for each prime window, ensure a merged 2-hr slot at 2× price
+    for (const w of PRIME_WINDOWS) {
+      const existing = result.find(
+        (s) => s.startTime === w.start && s.endTime === w.end
+      );
 
-    if (existing4to6) {
-      const corrected: TimeSlot = {
-        ...existing4to6,
+      if (existing) {
+        const idx = result.indexOf(existing);
+        result[idx] = { ...existing, price: basePrice * 2 };
+        continue;
+      }
+
+      const mid = addHour(w.start);
+      const sub1 = availability.find(
+        (s) => s.startTime === w.start && s.endTime === mid
+      );
+      const sub2 = availability.find(
+        (s) => s.startTime === mid && s.endTime === w.end
+      );
+
+      if (!sub1 && !sub2) continue; // window not offered that day
+
+      const isAvailable =
+        sub1?.isAvailable !== false && sub2?.isAvailable !== false;
+
+      result.push({
+        id: `fixed-${selectedDate}-${w.start.replace(':', '')}-${w.end.replace(':', '')}`,
+        date: selectedDate,
+        startTime: w.start,
+        endTime: w.end,
+        isAvailable,
         price: basePrice * 2,
-      };
-      return filtered
-        .map((slot) => (isFixedSlot(slot) ? corrected : slot))
-        .sort((a, b) => a.startTime.localeCompare(b.startTime));
+      });
     }
 
-    // 3) Otherwise build the fixed 2-hr prime slot from the two underlying 1-hr slots.
-    const slot4to5 = availability.find(
-      (s) => s.startTime === '16:00' && s.endTime === '17:00'
-    );
-    const slot5to6 = availability.find(
-      (s) => s.startTime === '17:00' && s.endTime === '18:00'
-    );
-    const is4to6Available =
-      slot4to5?.isAvailable !== false && slot5to6?.isAvailable !== false;
-
-    const fixedSlot: TimeSlot = {
-      id: `fixed-${selectedDate}-16-18`,
-      date: selectedDate,
-      startTime: '16:00',
-      endTime: '18:00',
-      isAvailable: is4to6Available,
-      price: basePrice * 2,
-    };
-
-    return [...filtered, fixedSlot].sort((a, b) =>
-      a.startTime.localeCompare(b.startTime)
-    );
+    return result.sort((a, b) => a.startTime.localeCompare(b.startTime));
   };
 
   const processedAvailability = getProcessedAvailability();
@@ -234,15 +245,14 @@ export function LandingPage() {
   const pricePerHour = court?.pricePerHour || 150;
   const getSlotPrice = (slot: TimeSlot) => {
     if (typeof slot.price === 'number' && slot.price > 0) return slot.price;
-    // Fallback for the fixed 2-hr prime slot if price was somehow stripped
-    if (slot.startTime === '16:00' && slot.endTime === '18:00') return pricePerHour * 2;
+    if (isFixedSlot(slot)) return pricePerHour * 2;
     return pricePerHour;
   };
   const subtotal = selectedSlots.reduce((sum, slot) => sum + getSlotPrice(slot), 0);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 overflow-x-hidden">
-      {/* 🔵 Pending booking banner (fixed inset-x-0 to float over hero) */}
+      {/* Pending booking banner */}
       <AnimatePresence>
         {showPendingBanner && pendingBooking && (
           <motion.div
@@ -284,7 +294,7 @@ export function LandingPage() {
         )}
       </AnimatePresence>
 
-      {/* Hero Section (Padding adjusts dynamically so floating banner doesn't cover text) */}
+      {/* Hero Section */}
       <section
         className={`relative overflow-hidden bg-teal-800 text-white min-h-[85vh] flex items-center pb-16 transition-all duration-300 ${
           showPendingBanner ? 'pt-32 sm:pt-36' : 'pt-20'
@@ -352,7 +362,7 @@ export function LandingPage() {
               </div>
               <div className="border-l border-white/15 pl-3 sm:pl-6">
                 <p className="text-xs sm:text-sm font-bold text-white mt-1">
-                  {court ? `${format12h(court.openTime)} - ${format12h(court.closeTime)}` : '5AM - 12AM'}
+                  {court ? `${format12h(court.openTime)} - ${format12h(court.closeTime)}` : '5AM - 10PM'}
                 </p>
                 <p className="text-[11px] text-teal-200">Daily Hours</p>
               </div>
@@ -383,7 +393,7 @@ export function LandingPage() {
           {!showDetailsForm ? (
             <div className="grid lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-5 min-w-0">
-                {/* Responsive Date Strip */}
+                {/* Date Strip */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm overflow-hidden">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -477,7 +487,7 @@ export function LandingPage() {
                   </div>
                 </div>
 
-                {/* Available Time Slots Grid */}
+                {/* Time Slots Grid */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
                     <div>
@@ -566,7 +576,7 @@ export function LandingPage() {
                 </div>
               </div>
 
-              {/* Desktop Sticky Summary Sidebar */}
+              {/* Desktop Summary Sidebar */}
               <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <h3 className="font-bold text-slate-800 text-base">Booking Summary</h3>
@@ -600,7 +610,7 @@ export function LandingPage() {
                                   {formatTimeRange(slot.startTime, slot.endTime)}
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <span className="font-bold text-slate-600">₱{slot.price || pricePerHour}</span>
+                                  <span className="font-bold text-slate-600">₱{getSlotPrice(slot)}</span>
                                   <button
                                     onClick={() => deselectSlot(slot.id)}
                                     className="text-slate-400 hover:text-red-500 transition"
@@ -778,7 +788,6 @@ export function LandingPage() {
         </section>
       )}
 
-      {/* 🛍️ Featured Merch — self-hides when no active products exist */}
       <FeaturedMerch />
 
       {/* How It Works Grid */}
@@ -813,7 +822,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Mobile Sticky Reservation Bottom Bar */}
+      {/* Mobile Sticky Bottom Bar */}
       <AnimatePresence>
         {!showDetailsForm && selectedSlots.length > 0 && (
           <motion.div
