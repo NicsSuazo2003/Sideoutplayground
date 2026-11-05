@@ -366,13 +366,7 @@ export function LandingPage() {
                 </p>
                 <p className="text-[11px] text-teal-200">Daily Hours</p>
               </div>
-              <div className="border-l border-white/15 pl-3 sm:pl-6">
-                <div className="flex items-center gap-1 mt-0.5">
-                  <Star size={14} className="fill-amber-400 text-amber-400" />
-                  <span className="text-sm font-bold text-white">{court?.rating || '4.9'}</span>
-                </div>
-                <p className="text-[11px] text-teal-200">Court Score</p>
-              </div>
+              
             </div>
           </motion.div>
         </div>
