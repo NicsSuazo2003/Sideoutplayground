@@ -19,11 +19,13 @@ import {
   Mail,
   Phone,
   ZoomIn,
+  Power,
 } from 'lucide-react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { toast } from 'react-hot-toast';
 import { useAdminStore } from '../../stores/adminStore';
+import { useBookingStore } from '../../stores/bookingStore';
 import { StatusBadge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -67,14 +69,6 @@ function formatLocalDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function isPastBooking(booking: Booking): boolean {
-  if (!booking.slots?.length) return false;
-  const lastSlot = booking.slots[booking.slots.length - 1];
-  const end = (lastSlot as any).endTime ?? (lastSlot as any).end_time;
-  if (!end) return false;
-  return new Date(booking.date + 'T' + end) < new Date();
-}
-
 function calculateDuration(slots: any[]): string {
   if (!slots || slots.length === 0) return '—';
   const sorted = [...slots].sort((a, b) =>
@@ -101,11 +95,6 @@ function getTimeRange(slots: any[]): string {
   return `${format12h(start)} – ${format12h(end)}`;
 }
 
-/**
- * Time + duration cell for a booking row.
- * Terminal statuses (cancelled/expired/refunded) have their slots stripped
- * server-side on release, so we render an honest label instead of "—".
- */
 function timeCellFor(b: Booking): { primary: string; secondary: string; isTerminal: boolean } {
   const hasSlots = Array.isArray(b.slots) && b.slots.length > 0;
   if (hasSlots) {
@@ -134,7 +123,6 @@ function timeLeft(deadline?: string | null): string | null {
   return `${hrs}h ${mins % 60}m left`;
 }
 
-// Pretty label for the custom date chip
 function formatChipDate(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00');
   if (Number.isNaN(d.getTime())) return dateStr;
@@ -168,7 +156,6 @@ const DATE_FILTERS: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Today' },
   { value: 'week', label: 'Next 7 days' },
   { value: 'upcoming', label: 'Upcoming' },
-  // 'custom' is not listed here — it's set via the calendar popover
 ];
 
 type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger';
@@ -345,12 +332,15 @@ export function AdminBookings() {
   const { bookings, isLoading, fetchAllBookings, manageBooking, user } = useAdminStore();
   const isAdmin = user?.role === 'admin';
 
+  // ⭐ NEW: booking-toggle state
+  const court = useBookingStore((s) => s.court);
+  const fetchCourt = useBookingStore((s) => s.fetchCourt);
+  const updateCourtSettings = useAdminStore((s) => s.updateCourtSettings);
+
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<TabKey>('all');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
-  // The chosen calendar day when dateFilter === 'custom'
   const [customDate, setCustomDate] = useState<string>('');
-  // Popover visibility + ref for outside-click handling
   const [showDatePopover, setShowDatePopover] = useState(false);
   const datePopoverRef = useRef<HTMLDivElement>(null);
   const [sortNewest, setSortNewest] = useState(true);
@@ -374,11 +364,15 @@ export function AdminBookings() {
   const [copied, setCopied] = useState(false);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
 
+  const [togglingBookings, setTogglingBookings] = useState(false);
+  const [pendingToggle, setPendingToggle] = useState<boolean | null>(null);
+
   const defaultTabApplied = useRef(false);
 
   useEffect(() => {
     fetchAllBookings();
-  }, [fetchAllBookings]);
+    fetchCourt();
+  }, [fetchAllBookings, fetchCourt]);
 
   // Close the date popover on outside click / Escape
   useEffect(() => {
@@ -399,7 +393,6 @@ export function AdminBookings() {
     };
   }, [showDatePopover]);
 
-  // Tab counts
   const tabCounts = useMemo(() => {
     const counts: Record<TabKey, number> = { review: 0, unpaid: 0, confirmed: 0, history: 0, all: 0 };
     for (const b of bookings as Booking[]) {
@@ -411,21 +404,18 @@ export function AdminBookings() {
     return counts;
   }, [bookings]);
 
-  // Days that have at least one booking (used for dots in the date picker)
   const bookingDays = useMemo(() => {
     const set = new Set<string>();
     for (const b of bookings as Booking[]) set.add(toDay(b.date));
     return set;
   }, [bookings]);
 
-  // Land on "Needs review" the first time data arrives, if work is waiting.
   useEffect(() => {
     if (defaultTabApplied.current || isLoading || (bookings as Booking[]).length === 0) return;
     defaultTabApplied.current = true;
     if (tabCounts.review > 0) setTab('review');
   }, [isLoading, bookings, tabCounts.review]);
 
-  // Filter + sort
   const filtered = useMemo(() => {
     const activeTab = TABS.find((t) => t.key === tab);
     const today = localDayString(0);
@@ -478,7 +468,6 @@ export function AdminBookings() {
     setTab('all');
   };
 
-  // Actions
   const handleStatusUpdate = async (booking: Booking, status: BookingStatus, why?: string) => {
     setUpdatingStatus(status);
     try {
@@ -528,7 +517,22 @@ export function AdminBookings() {
     }
   };
 
-  // Derived for modal
+  const confirmToggleBookings = async () => {
+    if (pendingToggle === null) return;
+    const next = pendingToggle;
+    setPendingToggle(null);
+    setTogglingBookings(true);
+    try {
+      await updateCourtSettings({ bookingsEnabled: next });
+      await fetchCourt();
+      toast.success(next ? 'Online bookings are now OPEN.' : 'Online bookings are now CLOSED.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update booking status.');
+    } finally {
+      setTogglingBookings(false);
+    }
+  };
+
   const todayStr = localDayString(0);
   const modalActions = selected
     ? (ACTIONS[selected.status] ?? []).filter((a) => !(a.adminOnly && !isAdmin))
@@ -539,6 +543,8 @@ export function AdminBookings() {
   const extra = selected as (Booking & BookingExtras) | null;
   const deadline =
     selected?.paymentExpiresAt ?? extra?.payment_deadline ?? extra?.expires_at ?? null;
+
+  const bookingsOpen = court?.bookingsEnabled !== false;
 
   return (
     <div className="space-y-5">
@@ -558,7 +564,49 @@ export function AdminBookings() {
         </div>
       </div>
 
-      {/* Tabs with counts */}
+      {/* ⭐ NEW: Booking open/closed banner */}
+      <div
+        className={`rounded-2xl border p-4 shadow-sm transition ${
+          bookingsOpen ? 'border-teal-200 bg-teal-50/70' : 'border-red-200 bg-red-50/70'
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <div
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+              bookingsOpen ? 'bg-teal-100 text-teal-700' : 'bg-red-100 text-red-700'
+            }`}
+          >
+            <Power size={18} />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p
+              className={`text-sm font-bold ${
+                bookingsOpen ? 'text-teal-900' : 'text-red-900'
+              }`}
+            >
+              {bookingsOpen ? 'Online bookings are OPEN' : 'Online bookings are CLOSED'}
+            </p>
+            <p className={`text-xs ${bookingsOpen ? 'text-teal-700' : 'text-red-700'}`}>
+              {bookingsOpen
+                ? 'Customers can reserve courts from the landing page. Walk-ins are always allowed.'
+                : 'The public booking section is hidden. Existing bookings are unaffected; walk-ins still work.'}
+            </p>
+          </div>
+
+          <Button
+            variant={bookingsOpen ? 'destructive' : 'neon'}
+            size="sm"
+            className="shrink-0 font-bold"
+            loading={togglingBookings}
+            onClick={() => setPendingToggle(!bookingsOpen)}
+          >
+            {bookingsOpen ? 'Close bookings' : 'Open bookings'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabs */}
       <div role="tablist" aria-label="Booking status" className="flex gap-2 overflow-x-auto pb-1">
         {TABS.map((t) => {
           const active = tab === t.key;
@@ -599,7 +647,6 @@ export function AdminBookings() {
           className="sm:w-72"
         />
 
-        {/* Date filter dropdown + calendar picker */}
         <div className="flex items-stretch gap-2">
           <select
             aria-label="Filter by date"
@@ -1043,7 +1090,6 @@ export function AdminBookings() {
               </p>
             )}
 
-            {/* Amount summary */}
             <div className="flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50 p-3">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 {selected.status === 'payment_submitted' ? 'Amount to verify' : 'Total Amount'}
@@ -1053,7 +1099,6 @@ export function AdminBookings() {
               </span>
             </div>
 
-            {/* Payment details */}
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
               <div className="text-slate-400 text-xs mb-2 font-bold uppercase tracking-wider">
                 Payment Details
@@ -1123,7 +1168,6 @@ export function AdminBookings() {
               )}
             </div>
 
-            {/* Customer + booking */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 col-span-2">
                 <div className="text-slate-400 text-xs mb-1 font-bold uppercase tracking-wider">
@@ -1175,7 +1219,6 @@ export function AdminBookings() {
               ))}
             </div>
 
-            {/* Sticky actions bar */}
             <div className="sticky bottom-0 -mx-1 border-t border-slate-200 bg-white px-1 pb-1 pt-3">
               <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
                 Actions
@@ -1278,6 +1321,38 @@ export function AdminBookings() {
                   onClick={confirmPending}
                 >
                   {pendingAction.action.confirm?.confirmLabel || 'Confirm'}
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* ⭐ NEW: Confirm booking-open toggle */}
+      <AnimatePresence>
+        {pendingToggle !== null && (
+          <Modal
+            open={pendingToggle !== null}
+            onClose={() => setPendingToggle(null)}
+            title={pendingToggle ? 'Reopen online bookings?' : 'Close online bookings?'}
+            size="sm"
+          >
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">
+                {pendingToggle
+                  ? 'The public booking section will become visible again and customers will be able to reserve courts.'
+                  : 'The public booking section will be hidden and new online reservations will be rejected. Existing bookings are not affected, and walk-in/manual bookings from the admin panel will still work.'}
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setPendingToggle(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant={pendingToggle ? 'neon' : 'destructive'}
+                  size="sm"
+                  onClick={confirmToggleBookings}
+                >
+                  {pendingToggle ? 'Yes, open bookings' : 'Yes, close bookings'}
                 </Button>
               </div>
             </div>

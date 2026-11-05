@@ -27,6 +27,7 @@ export interface Court {
   closeTime: string;
   dimensions: string;
   surface: string;
+  bookingsEnabled: boolean;      // ⭐ NEW
 }
 
 export interface TimeSlot {

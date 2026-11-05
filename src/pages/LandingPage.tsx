@@ -26,6 +26,7 @@ import {
   ArrowRight,
   X,
   AlertCircle,
+  Power,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useBookingStore } from '../stores/bookingStore';
@@ -82,8 +83,8 @@ function getDateStrip(): string[] {
 
 // ── PRIME WINDOWS (fixed 2-hr merged slots) ─────────────────────
 const PRIME_WINDOWS = [
-  { start: '16:00', end: '18:00' }, // 4–6 PM
-  { start: '20:00', end: '22:00' }, // 8–10 PM
+  { start: '16:00', end: '18:00' },
+  { start: '20:00', end: '22:00' },
 ] as const;
 
 const addHour = (t: string): string => {
@@ -144,13 +145,17 @@ export function LandingPage() {
     ? [court.imageUrl]
     : [];
 
+  const bookingsOpen = court?.bookingsEnabled !== false;
+
   useEffect(() => {
     fetchCourt();
   }, []);
 
   useEffect(() => {
+    // Skip availability fetch when bookings are closed; nothing to show.
+    if (!bookingsOpen) return;
     fetchAvailability(selectedDate);
-  }, [selectedDate]);
+  }, [selectedDate, bookingsOpen]);
 
   useEffect(() => {
     if (allImages.length <= 1 || isHoveringImg) return;
@@ -159,17 +164,19 @@ export function LandingPage() {
   }, [allImages.length, isHoveringImg]);
 
   const scrollToBooking = () => {
+    if (!bookingsOpen) {
+      toast.error('Online bookings are temporarily closed.');
+      return;
+    }
     bookingSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const getProcessedAvailability = (): TimeSlot[] => {
     const basePrice = court?.pricePerHour || 150;
 
-    // 1) drop every 1-hr sub-slot of every prime window
     const filtered = availability.filter((slot) => !isRemovedSlot(slot));
     const result = [...filtered];
 
-    // 2) for each prime window, ensure a merged 2-hr slot at 2× price
     for (const w of PRIME_WINDOWS) {
       const existing = result.find(
         (s) => s.startTime === w.start && s.endTime === w.end
@@ -189,7 +196,7 @@ export function LandingPage() {
         (s) => s.startTime === mid && s.endTime === w.end
       );
 
-      if (!sub1 && !sub2) continue; // window not offered that day
+      if (!sub1 && !sub2) continue;
 
       const isAvailable =
         sub1?.isAvailable !== false && sub2?.isAvailable !== false;
@@ -207,9 +214,10 @@ export function LandingPage() {
     return result.sort((a, b) => a.startTime.localeCompare(b.startTime));
   };
 
-  const processedAvailability = getProcessedAvailability();
+  const processedAvailability = bookingsOpen ? getProcessedAvailability() : [];
 
   const handleSlotClick = (slot: TimeSlot) => {
+    if (!bookingsOpen) return;
     if (!slot.isAvailable) return;
     const already = selectedSlots.find((s) => s.id === slot.id);
     if (already) deselectSlot(slot.id);
@@ -217,6 +225,10 @@ export function LandingPage() {
   };
 
   const handleBookNow = () => {
+    if (!bookingsOpen) {
+      toast.error('Online bookings are temporarily closed.');
+      return;
+    }
     if (selectedSlots.length === 0) {
       toast.error('Select at least one slot');
       return;
@@ -227,6 +239,10 @@ export function LandingPage() {
 
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!bookingsOpen) {
+      toast.error('Online bookings are temporarily closed.');
+      return;
+    }
     if (!customerName.trim()) {
       toast.error('Name is required');
       return;
@@ -294,7 +310,7 @@ export function LandingPage() {
         )}
       </AnimatePresence>
 
-      {/* Hero Section */}
+      {/* Hero */}
       <section
         className={`relative overflow-hidden bg-teal-800 text-white min-h-[85vh] flex items-center pb-16 transition-all duration-300 ${
           showPendingBanner ? 'pt-32 sm:pt-36' : 'pt-20'
@@ -340,10 +356,11 @@ export function LandingPage() {
                 variant="neon"
                 size="lg"
                 onClick={scrollToBooking}
+                disabled={!bookingsOpen}
                 leftIcon={<CalendarDays size={18} />}
                 className="font-bold shadow-lg shadow-teal-900/30"
               >
-                Reserve a Slot
+                {bookingsOpen ? 'Reserve a Slot' : 'Bookings Closed'}
               </Button>
               <Button
                 variant="outline"
@@ -366,356 +383,408 @@ export function LandingPage() {
                 </p>
                 <p className="text-[11px] text-teal-200">Daily Hours</p>
               </div>
-              
+              <div className="border-l border-white/15 pl-3 sm:pl-6">
+                <div className="flex items-center gap-1 mt-0.5">
+                  <Star size={14} className="fill-amber-400 text-amber-400" />
+                  <span className="text-sm font-bold text-white">{court?.rating || '4.9'}</span>
+                </div>
+                <p className="text-[11px] text-teal-200">Court Score</p>
+              </div>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Main Reservation Section */}
+      {/* Main reservation section */}
       <section ref={bookingSectionRef} className="py-10 sm:py-16 scroll-mt-24 sm:scroll-mt-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-6">
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
-              Select Your Schedule
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500">
-              Pick your game date, tap preferred hours, and complete your reservation details.
-            </p>
-          </div>
+          {!bookingsOpen ? (
+            /* ⭐ CLOSED: banner replaces reservation UI */
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-2xl mx-auto rounded-2xl border border-amber-200 bg-amber-50 p-6 sm:p-8 text-center shadow-sm"
+            >
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-700 mb-4">
+                <Power size={24} />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-amber-900 mb-1">
+                Online Bookings Temporarily Closed
+              </h2>
+              <p className="text-sm text-amber-800 mb-1">
+                We&apos;re not accepting online reservations right now.
+              </p>
+              <p className="text-xs text-amber-700 mb-5">
+                Please check back soon, or contact us directly to arrange a walk-in session.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={() => navigate('/track')}
+                  className="font-bold"
+                  rightIcon={<ArrowRight size={16} />}
+                >
+                  Track My Booking
+                </Button>
+                {pendingBooking && (
+                  <Button
+                    variant="neon"
+                    size="md"
+                    onClick={() => navigate('/book/checkout')}
+                    className="font-bold"
+                    rightIcon={<ArrowRight size={16} />}
+                  >
+                    Finish Pending Payment
+                  </Button>
+                )}
+              </div>
+            </motion.div>
+          ) : (
+            <>
+              <div className="mb-6">
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
+                  Select Your Schedule
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Pick your game date, tap preferred hours, and complete your reservation details.
+                </p>
+              </div>
 
-          {!showDetailsForm ? (
-            <div className="grid lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-5 min-w-0">
-                {/* Date Strip */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm overflow-hidden">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4 text-teal-600" />
-                      <h3 className="font-bold text-slate-800 text-sm sm:text-base">Choose Date</h3>
-                    </div>
+              {!showDetailsForm ? (
+                <div className="grid lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-5 min-w-0">
+                    {/* Date strip */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm overflow-hidden">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <CalendarDays className="h-4 w-4 text-teal-600" />
+                          <h3 className="font-bold text-slate-800 text-sm sm:text-base">Choose Date</h3>
+                        </div>
 
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => datePickerRef.current?.showPicker()}
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-teal-600 transition"
-                        title="Jump to date"
-                      >
-                        <CalendarDays size={16} />
-                      </button>
-                      <input
-                        ref={datePickerRef}
-                        type="date"
-                        className="sr-only"
-                        min={dates[0]}
-                        max={dates[dates.length - 1]}
-                        value={selectedDate}
-                        onChange={(e) => {
-                          const picked = e.target.value;
-                          if (picked) {
-                            setSelectedDate(picked);
-                            const today = new Date();
-                            const pickedDate = new Date(picked + 'T12:00:00');
-                            const diffDays = Math.floor(
-                              (pickedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-                            );
-                            setDateOffset(Math.max(0, Math.min(diffDays, dates.length - 7)));
-                          }
-                        }}
-                      />
-                      <button
-                        onClick={() => setDateOffset(Math.max(0, dateOffset - 1))}
-                        disabled={dateOffset === 0}
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-25"
-                      >
-                        <ChevronLeft size={16} />
-                      </button>
-                      <button
-                        onClick={() => setDateOffset(Math.min(dates.length - 7, dateOffset + 1))}
-                        disabled={dateOffset >= dates.length - 7}
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-25"
-                      >
-                        <ChevronRight size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar">
-                    <div className="flex gap-2 sm:grid sm:grid-cols-7 snap-x snap-mandatory">
-                      {visibleDates.map((d) => {
-                        const isSelected = d === selectedDate;
-                        const dateObj = new Date(d + 'T12:00:00');
-                        const isToday = d === new Date().toISOString().split('T')[0];
-
-                        return (
+                        <div className="flex items-center gap-1">
                           <button
-                            key={d}
-                            onClick={() => setSelectedDate(d)}
-                            className={`flex w-[56px] sm:w-auto shrink-0 snap-start flex-col items-center justify-center rounded-xl py-2 px-1 transition-all ${
-                              isSelected
-                                ? 'bg-teal-600 text-white font-bold shadow-md ring-2 ring-teal-600 ring-offset-2'
-                                : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/80'
-                            }`}
+                            onClick={() => datePickerRef.current?.showPicker()}
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-teal-600 transition"
+                            title="Jump to date"
                           >
-                            <span
-                              className={`text-[10px] font-semibold uppercase ${
-                                isSelected ? 'text-teal-100' : 'text-slate-400'
-                              }`}
-                            >
-                              {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
-                            </span>
-                            <span className="text-base sm:text-lg font-black my-0.5">
-                              {dateObj.getDate()}
-                            </span>
-                            <span
-                              className={`text-[9px] uppercase font-bold ${
-                                isToday ? (isSelected ? 'text-white' : 'text-teal-600') : 'opacity-0'
-                              }`}
-                            >
-                              TODAY
-                            </span>
+                            <CalendarDays size={16} />
                           </button>
-                        );
-                      })}
+                          <input
+                            ref={datePickerRef}
+                            type="date"
+                            className="sr-only"
+                            min={dates[0]}
+                            max={dates[dates.length - 1]}
+                            value={selectedDate}
+                            onChange={(e) => {
+                              const picked = e.target.value;
+                              if (picked) {
+                                setSelectedDate(picked);
+                                const today = new Date();
+                                const pickedDate = new Date(picked + 'T12:00:00');
+                                const diffDays = Math.floor(
+                                  (pickedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+                                );
+                                setDateOffset(Math.max(0, Math.min(diffDays, dates.length - 7)));
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={() => setDateOffset(Math.max(0, dateOffset - 1))}
+                            disabled={dateOffset === 0}
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-25"
+                          >
+                            <ChevronLeft size={16} />
+                          </button>
+                          <button
+                            onClick={() => setDateOffset(Math.min(dates.length - 7, dateOffset + 1))}
+                            disabled={dateOffset >= dates.length - 7}
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-25"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar">
+                        <div className="flex gap-2 sm:grid sm:grid-cols-7 snap-x snap-mandatory">
+                          {visibleDates.map((d) => {
+                            const isSelected = d === selectedDate;
+                            const dateObj = new Date(d + 'T12:00:00');
+                            const isToday = d === new Date().toISOString().split('T')[0];
+
+                            return (
+                              <button
+                                key={d}
+                                onClick={() => setSelectedDate(d)}
+                                className={`flex w-[56px] sm:w-auto shrink-0 snap-start flex-col items-center justify-center rounded-xl py-2 px-1 transition-all ${
+                                  isSelected
+                                    ? 'bg-teal-600 text-white font-bold shadow-md ring-2 ring-teal-600 ring-offset-2'
+                                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                                }`}
+                              >
+                                <span
+                                  className={`text-[10px] font-semibold uppercase ${
+                                    isSelected ? 'text-teal-100' : 'text-slate-400'
+                                  }`}
+                                >
+                                  {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
+                                </span>
+                                <span className="text-base sm:text-lg font-black my-0.5">
+                                  {dateObj.getDate()}
+                                </span>
+                                <span
+                                  className={`text-[9px] uppercase font-bold ${
+                                    isToday ? (isSelected ? 'text-white' : 'text-teal-600') : 'opacity-0'
+                                  }`}
+                                >
+                                  TODAY
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Time slots */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
+                        <div>
+                          <h3 className="font-bold text-slate-800 text-sm sm:text-base">
+                            Available Hours
+                          </h3>
+                          <p className="text-xs text-slate-400">
+                            {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
+                              weekday: 'long',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full border border-slate-300 bg-white" />
+                            Open
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-teal-600" />
+                            Selected
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-amber-400" />
+                            2hr Prime
+                          </span>
+                        </div>
+                      </div>
+
+                      {isLoading ? (
+                        <div className="py-12 flex justify-center">
+                          <LoadingSpinner size={28} />
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                          {processedAvailability.map((slot) => {
+                            const isSelected = selectedSlots.some((s) => s.id === slot.id);
+                            const fixed = isFixedSlot(slot);
+
+                            return (
+                              <motion.button
+                                key={slot.id}
+                                whileTap={slot.isAvailable ? { scale: 0.97 } : {}}
+                                onClick={() => handleSlotClick(slot)}
+                                disabled={!slot.isAvailable}
+                                className={`relative flex min-h-[60px] flex-col items-center justify-center rounded-xl p-2.5 text-center transition-all border ${
+                                  isSelected
+                                    ? 'bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20'
+                                    : !slot.isAvailable
+                                    ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                                    : fixed
+                                    ? 'border-amber-300 bg-amber-50/80 text-amber-900 hover:bg-amber-100'
+                                    : 'border-slate-200 bg-white text-slate-700 hover:border-teal-500 hover:bg-teal-50/50'
+                                }`}
+                              >
+                                {fixed && (
+                                  <span className="absolute -top-2 right-2 rounded-full bg-amber-400 px-1.5 py-0.5 text-[8px] font-black tracking-wider text-amber-950 uppercase shadow-sm">
+                                    2hr prime
+                                  </span>
+                                )}
+
+                                <div className="text-[11px] sm:text-xs font-bold leading-tight">
+                                  {formatTimeRange(slot.startTime, slot.endTime)}
+                                </div>
+                                <div
+                                  className={`text-[10px] font-semibold mt-0.5 ${
+                                    isSelected ? 'text-teal-100' : fixed ? 'text-amber-700' : 'text-slate-400'
+                                  }`}
+                                >
+                                  ₱{getSlotPrice(slot)}
+                                </div>
+
+                                {isSelected && (
+                                  <Check size={14} className="absolute top-1.5 right-1.5 text-white" />
+                                )}
+                                {!slot.isAvailable && (
+                                  <Lock size={12} className="absolute top-1.5 right-1.5 text-slate-300" />
+                                )}
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
 
-                {/* Time Slots Grid */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
-                    <div>
-                      <h3 className="font-bold text-slate-800 text-sm sm:text-base">
-                        Available Hours
-                      </h3>
-                      <p className="text-xs text-slate-400">
+                  {/* Desktop summary */}
+                  <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <h3 className="font-bold text-slate-800 text-base">Booking Summary</h3>
+                      <p className="text-xs text-slate-400 mb-3">
                         {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
                           weekday: 'long',
                           month: 'short',
                           day: 'numeric',
                         })}
                       </p>
-                    </div>
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
-                      <span className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full border border-slate-300 bg-white" />
-                        Open
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-teal-600" />
-                        Selected
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-amber-400" />
-                        2hr Prime
-                      </span>
+                      {selectedSlots.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-xs text-slate-400">
+                          Tap available hours to add to your reservation
+                        </div>
+                      ) : (
+                        <>
+                          <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                            {selectedSlots
+                              .sort((a, b) => a.startTime.localeCompare(b.startTime))
+                              .map((slot) => {
+                                const fixed = isFixedSlot(slot);
+                                return (
+                                  <div
+                                    key={slot.id}
+                                    className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs ${
+                                      fixed ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'
+                                    }`}
+                                  >
+                                    <span className={fixed ? 'font-bold text-amber-900' : 'font-semibold text-slate-700'}>
+                                      {formatTimeRange(slot.startTime, slot.endTime)}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-slate-600">₱{getSlotPrice(slot)}</span>
+                                      <button
+                                        onClick={() => deselectSlot(slot.id)}
+                                        className="text-slate-400 hover:text-red-500 transition"
+                                      >
+                                        <X size={13} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+
+                          <div className="mt-4 border-t border-slate-100 pt-3">
+                            <div className="flex items-baseline justify-between">
+                              <span className="text-xs font-semibold text-slate-500">
+                                Subtotal ({selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''})
+                              </span>
+                              <span className="text-xl font-black text-teal-600">₱{subtotal}</span>
+                            </div>
+                          </div>
+
+                          <Button
+                            variant="neon"
+                            size="lg"
+                            className="mt-4 w-full font-bold shadow-md"
+                            onClick={handleBookNow}
+                            rightIcon={<ArrowRight size={16} />}
+                          >
+                            Proceed with Booking
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
-
-                  {isLoading ? (
-                    <div className="py-12 flex justify-center">
-                      <LoadingSpinner size={28} />
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {processedAvailability.map((slot) => {
-                        const isSelected = selectedSlots.some((s) => s.id === slot.id);
-                        const fixed = isFixedSlot(slot);
-
-                        return (
-                          <motion.button
-                            key={slot.id}
-                            whileTap={slot.isAvailable ? { scale: 0.97 } : {}}
-                            onClick={() => handleSlotClick(slot)}
-                            disabled={!slot.isAvailable}
-                            className={`relative flex min-h-[60px] flex-col items-center justify-center rounded-xl p-2.5 text-center transition-all border ${
-                              isSelected
-                                ? 'bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20'
-                                : !slot.isAvailable
-                                ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
-                                : fixed
-                                ? 'border-amber-300 bg-amber-50/80 text-amber-900 hover:bg-amber-100'
-                                : 'border-slate-200 bg-white text-slate-700 hover:border-teal-500 hover:bg-teal-50/50'
-                            }`}
-                          >
-                            {fixed && (
-                              <span className="absolute -top-2 right-2 rounded-full bg-amber-400 px-1.5 py-0.5 text-[8px] font-black tracking-wider text-amber-950 uppercase shadow-sm">
-                                2hr prime
-                              </span>
-                            )}
-
-                            <div className="text-[11px] sm:text-xs font-bold leading-tight">
-                              {formatTimeRange(slot.startTime, slot.endTime)}
-                            </div>
-                            <div
-                              className={`text-[10px] font-semibold mt-0.5 ${
-                                isSelected ? 'text-teal-100' : fixed ? 'text-amber-700' : 'text-slate-400'
-                              }`}
-                            >
-                              ₱{slot.price || pricePerHour}
-                            </div>
-
-                            {isSelected && (
-                              <Check size={14} className="absolute top-1.5 right-1.5 text-white" />
-                            )}
-                            {!slot.isAvailable && (
-                              <Lock size={12} className="absolute top-1.5 right-1.5 text-slate-300" />
-                            )}
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
-              </div>
-
-              {/* Desktop Summary Sidebar */}
-              <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <h3 className="font-bold text-slate-800 text-base">Booking Summary</h3>
-                  <p className="text-xs text-slate-400 mb-3">
-                    {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </p>
-
-                  {selectedSlots.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-xs text-slate-400">
-                      Tap available hours to add to your reservation
+              ) : (
+                /* Details form */
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="max-w-xl mx-auto"
+                >
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                      <h3 className="font-bold text-slate-800 text-base sm:text-lg">Contact Information</h3>
+                      <button
+                        onClick={() => setShowDetailsForm(false)}
+                        className="text-xs font-semibold text-teal-600 hover:text-teal-700"
+                      >
+                        ← Modify slots
+                      </button>
                     </div>
-                  ) : (
-                    <>
-                      <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
-                        {selectedSlots
-                          .sort((a, b) => a.startTime.localeCompare(b.startTime))
-                          .map((slot) => {
-                            const fixed = isFixedSlot(slot);
-                            return (
-                              <div
-                                key={slot.id}
-                                className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs ${
-                                  fixed ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'
-                                }`}
-                              >
-                                <span className={fixed ? 'font-bold text-amber-900' : 'font-semibold text-slate-700'}>
-                                  {formatTimeRange(slot.startTime, slot.endTime)}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-bold text-slate-600">₱{getSlotPrice(slot)}</span>
-                                  <button
-                                    onClick={() => deselectSlot(slot.id)}
-                                    className="text-slate-400 hover:text-red-500 transition"
-                                  >
-                                    <X size={13} />
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                      </div>
 
-                      <div className="mt-4 border-t border-slate-100 pt-3">
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-xs font-semibold text-slate-500">
-                            Subtotal ({selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''})
-                          </span>
-                          <span className="text-xl font-black text-teal-600">₱{subtotal}</span>
-                        </div>
-                      </div>
+                    <div className="mb-5 rounded-xl border border-teal-100 bg-teal-50/60 p-3 text-xs text-slate-600">
+                      <span className="font-semibold text-slate-800">Reservation:</span>{' '}
+                      {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      })}{' '}
+                      · {selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''} ·{' '}
+                      <span className="font-bold text-teal-600">₱{subtotal}</span>
+                    </div>
 
+                    <form onSubmit={handleDetailsSubmit} className="space-y-4">
+                      <Input
+                        label="Full Name *"
+                        placeholder="e.g. Juan Dela Cruz"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        leftIcon={<User size={16} className="text-slate-400" />}
+                      />
+                      <Input
+                        label="Email Address *"
+                        type="email"
+                        placeholder="name@email.com"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        leftIcon={<Mail size={16} className="text-slate-400" />}
+                      />
+                      <Input
+                        label="Mobile Phone *"
+                        placeholder="09xx-xxx-xxxx"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        leftIcon={<Phone size={16} className="text-slate-400" />}
+                      />
+                      <Input
+                        label="Special Notes (Optional)"
+                        placeholder="e.g. paddle rental, beginner briefing"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        leftIcon={<FileText size={16} className="text-slate-400" />}
+                      />
                       <Button
                         variant="neon"
                         size="lg"
-                        className="mt-4 w-full font-bold shadow-md"
-                        onClick={handleBookNow}
+                        className="w-full font-bold shadow-md mt-2"
+                        type="submit"
                         rightIcon={<ArrowRight size={16} />}
                       >
-                        Proceed with Booking
+                        Proceed to Payment Checkout
                       </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Details Contact Form */
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="max-w-xl mx-auto"
-            >
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7 shadow-sm">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                  <h3 className="font-bold text-slate-800 text-base sm:text-lg">Contact Information</h3>
-                  <button
-                    onClick={() => setShowDetailsForm(false)}
-                    className="text-xs font-semibold text-teal-600 hover:text-teal-700"
-                  >
-                    ← Modify slots
-                  </button>
-                </div>
-
-                <div className="mb-5 rounded-xl border border-teal-100 bg-teal-50/60 p-3 text-xs text-slate-600">
-                  <span className="font-semibold text-slate-800">Reservation:</span>{' '}
-                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })}{' '}
-                  · {selectedSlots.length} slot{selectedSlots.length !== 1 ? 's' : ''} ·{' '}
-                  <span className="font-bold text-teal-600">₱{subtotal}</span>
-                </div>
-
-                <form onSubmit={handleDetailsSubmit} className="space-y-4">
-                  <Input
-                    label="Full Name *"
-                    placeholder="e.g. Juan Dela Cruz"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    leftIcon={<User size={16} className="text-slate-400" />}
-                  />
-                  <Input
-                    label="Email Address *"
-                    type="email"
-                    placeholder="name@email.com"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                    leftIcon={<Mail size={16} className="text-slate-400" />}
-                  />
-                  <Input
-                    label="Mobile Phone *"
-                    placeholder="09xx-xxx-xxxx"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    leftIcon={<Phone size={16} className="text-slate-400" />}
-                  />
-                  <Input
-                    label="Special Notes (Optional)"
-                    placeholder="e.g. paddle rental, beginner briefing"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    leftIcon={<FileText size={16} className="text-slate-400" />}
-                  />
-                  <Button
-                    variant="neon"
-                    size="lg"
-                    className="w-full font-bold shadow-md mt-2"
-                    type="submit"
-                    rightIcon={<ArrowRight size={16} />}
-                  >
-                    Proceed to Payment Checkout
-                  </Button>
-                </form>
-              </div>
-            </motion.div>
+                    </form>
+                  </div>
+                </motion.div>
+              )}
+            </>
           )}
         </div>
       </section>
 
-      {/* Facility Features & Court Info Section */}
+      {/* Facility overview */}
       {court && (
         <section className="py-14 bg-white border-y border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -784,7 +853,7 @@ export function LandingPage() {
 
       <FeaturedMerch />
 
-      {/* How It Works Grid */}
+      {/* How it works */}
       <section className="py-14 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
@@ -816,9 +885,9 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Mobile Sticky Bottom Bar */}
+      {/* Mobile sticky bar */}
       <AnimatePresence>
-        {!showDetailsForm && selectedSlots.length > 0 && (
+        {bookingsOpen && !showDetailsForm && selectedSlots.length > 0 && (
           <motion.div
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
